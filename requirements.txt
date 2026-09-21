@@ -13,20 +13,3 @@ pydantic>=2.6
 
 # The registry travels inside the checkpoint as YAML, so serving reads it.
 PyYAML>=6.0
-
-# SHAP and its transitive weight. Together these add roughly 330 MB, mostly
-# scipy, pandas and llvmlite, which puts a deployment near 640 MB.
-#
-# The floors matter. shap requires numpy>=2, and a resolver with no floor here
-# walks numba backwards looking for a version that accepts an older numpy,
-# lands on numba 0.53 from 2021, and tries to compile llvmlite 0.36 from source
-# because no wheel exists for any current Python. The floors keep it on
-# versions that ship wheels.
-#
-# Drop these five lines to deploy without explanations. The service detects the
-# absence and disables the endpoint cleanly. That build is about 310 MB.
-shap>=0.46
-numba>=0.60
-llvmlite>=0.43
-scikit-learn>=1.4
-scipy>=1.11

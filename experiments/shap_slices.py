@@ -1,4 +1,9 @@
-"""SHAP attribution for one alternative's score.
+"""SHAP attribution, for the paper.
+
+This is offline analysis. It runs where four seconds a call costs nothing and
+where the aggregation across many instances is what gives the numbers meaning.
+The serving path does not import it, and the deployed bundle carries none of
+its dependencies.
 
 Features are indicators, one column each, which is the granularity a specifier
 reads. Continuous indicators carry their value, ordered scales carry their level

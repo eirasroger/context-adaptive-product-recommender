@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from core.encoding import AlternativeInput
-from serve.explore import analysis, shapley
+from serve.explore import analysis, compare as compare_module
 
 STATIC = Path(__file__).parent / "static"
 
@@ -30,11 +30,6 @@ class ShortlistRequest(BaseModel):
     context: list[str] = Field(default_factory=list)
     stakeholders: list[str] = Field(default_factory=list)
     alternatives: list[AlternativePayload] = Field(default_factory=list)
-
-
-class ExplainRequest(ShortlistRequest):
-    target: int = 0
-    nsamples: int = shapley.DEFAULT_SAMPLES
 
 
 def build_router(service_getter, device: str = "cpu") -> APIRouter:
@@ -87,7 +82,6 @@ def build_router(service_getter, device: str = "cpu") -> APIRouter:
         """Everything needed to draw the input grid and the selectors."""
         service = service_getter()
         registry = service.registry
-        background = service.background
 
         categories = []
         for key, category in sorted(registry.categories.items()):
@@ -135,15 +129,12 @@ def build_router(service_getter, device: str = "cpu") -> APIRouter:
                         for context_key in sorted(category.available_contexts)
                     ],
                     "fields": fields,
-                    "background_pool": background.size(key),
                 }
             )
 
         return {
             "registry_version": service.meta.registry_version,
             "snapshot": service.meta.snapshot_hash,
-            "background_origin": background.origin,
-            "explanation_available": shapley.available(),
             "categories": categories,
             "stakeholders": [
                 {
@@ -156,40 +147,17 @@ def build_router(service_getter, device: str = "cpu") -> APIRouter:
             "families": {key: key.replace("_", " ") for key in registry.families},
         }
 
-    @router.post("/explain")
-    def explain(request: ExplainRequest) -> dict[str, Any]:
-        """SHAP contributions for one alternative's score."""
-        if not shapley.available():
-            raise HTTPException(
-                status_code=501,
-                detail="This deployment was built without the explanation stack. "
-                "Scoring works; explanations need shap installed.",
-            )
+    @router.post("/compare")
+    def compare(request: ShortlistRequest) -> dict[str, Any]:
+        """Why the leading alternative is ahead of each of the others."""
         service, registry, contexts, stakeholders, alternatives = _resolve(request)
-        if not 0 <= request.target < len(alternatives):
+        if len(alternatives) < 2:
             raise HTTPException(
-                status_code=400,
-                detail=f"target {request.target} is outside the shortlist",
+                status_code=400, detail="a comparison needs at least two alternatives"
             )
-
-        background = service.background
-        columns = shapley.columns_for(registry, request.category)
-        samples = background.rows(
-            request.category, [c.indicator_key for c in columns]
-        )
-
-        return shapley.explain(
-            service.model,
-            registry,
-            request.category,
-            alternatives,
-            request.target,
-            contexts,
-            stakeholders,
-            background_samples=samples,
-            background_origin=background.origin,
-            nsamples=request.nsamples,
-            device=device,
+        return compare_module.compare(
+            service.model, registry, request.category, alternatives,
+            contexts, stakeholders, device,
         )
 
     @router.get("/response")

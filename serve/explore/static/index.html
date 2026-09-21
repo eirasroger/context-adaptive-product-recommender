@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Product Comparison</title>
 <style>
   :root {
@@ -148,25 +148,33 @@
   .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
   .hint { font-size: 12.5px; color: var(--text-muted); }
 
-  .result { display: grid; gap: 14px; }
-  .rank { display: flex; align-items: center; gap: 12px; }
-  .rank .pos { width: 22px; text-align: right; font: 600 13px var(--mono); color: var(--text-muted); }
-  .rank .name { min-width: 150px; font-weight: 600; font-size: 14px; }
-  .rank .track { flex: 1 1 auto; height: 18px; }
-  .rank .fill { display: block; height: 100%; border-radius: 0 4px 4px 0; }
-  .rank .val { width: 52px; font: 13px var(--mono); font-variant-numeric: tabular-nums; }
+  .result { display: grid; gap: 10px; }
+  .rank {
+    display: grid; grid-template-columns: 26px minmax(96px, 168px) 1fr auto;
+    align-items: center; gap: 8px 12px;
+  }
+  .rank .wins {
+    grid-column: 2 / -1; font-size: 12.5px; color: var(--text-muted);
+    margin-top: -2px;
+  }
+  .rank .pos {
+    width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+    font: 640 12px var(--mono); color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .rank.lead .pos { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .rank .name { font-weight: 600; font-size: 14.5px; overflow-wrap: anywhere; }
+  .rank.lead .name { font-weight: 680; }
+  .rank .track { height: 20px; border-radius: 5px; background: var(--plane); }
+  .rank .fill { display: block; height: 100%; border-radius: 5px; min-width: 3px; }
+  .rank .val { font: 14px var(--mono); font-variant-numeric: tabular-nums;
+    font-weight: 620; text-align: right; }
   .rank.disq .name { color: var(--critical); }
 
   .flags { margin-top: 14px; display: grid; gap: 6px; }
   .flag { font-size: 12.5px; color: var(--text-secondary); display: flex; gap: 8px; }
   .flag .marker { color: var(--critical); font-weight: 700; }
   .flag .marker.info { color: var(--text-muted); }
-
-  .precondition {
-    margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--grid);
-    font-size: 12.5px; color: var(--text-muted);
-  }
-  .precondition strong { color: var(--text-secondary); font-weight: 600; }
 
   svg { display: block; width: 100%; height: auto; overflow: visible; }
   table.plain { border-collapse: collapse; width: 100%; font-size: 13px; }
@@ -191,6 +199,47 @@
   .msg { font-size: 13.5px; color: var(--text-muted); padding: 6px 0; }
   .msg.error { color: var(--neg); }
   [hidden] { display: none !important; }
+
+  /* The grid is inherently wide, so on a narrow screen it scrolls sideways
+     with the indicator names pinned. Everything else stacks. */
+  @media (max-width: 760px) {
+    .wrap { padding: 16px 12px 64px; }
+    h1 { font-size: 17px; }
+    .build { width: 100%; order: 3; }
+    .card { padding: 13px; border-radius: 9px; }
+    .setup { gap: 12px; }
+    .setup .field { flex: 1 1 100%; }
+    select, .field > select { width: 100%; }
+    .chips { max-width: none; }
+    .chip { padding: 7px 13px; font-size: 13px; }
+
+    .gridwrap { margin: 0 -13px; padding: 0 13px; }
+    .rowhead {
+      min-width: 132px; max-width: 132px; font-size: 12px;
+      padding-right: 8px;
+      box-shadow: 8px 0 8px -8px rgb(0 0 0 / 0.35);
+    }
+    .rowhead .unit { font-size: 10.5px; }
+    .colhead { min-width: 122px; }
+    .addcol { width: 76px; }
+    .addcol-button span:last-child { display: none; }
+    td.cell input, td.cell select { font-size: 16px; padding: 8px 7px; }
+    .colhead input { font-size: 14px; padding: 7px; }
+    button.tiny { padding: 5px 8px; font-size: 11.5px; }
+
+    .actions { gap: 8px; }
+    .actions .hint { order: 3; flex: 1 1 100%; }
+    button.primary { flex: 1 1 auto; padding: 11px 20px; }
+
+    .rank { grid-template-columns: 24px 1fr auto; row-gap: 5px; gap: 10px; }
+    .rank .track { grid-column: 1 / -1; height: 12px; }
+    .rank .wins { grid-column: 2 / -1; font-size: 12px; }
+  }
+
+  @media (max-width: 420px) {
+    .rowhead { min-width: 116px; max-width: 116px; }
+    .colhead { min-width: 112px; }
+  }
 </style>
 </head>
 <body>
@@ -237,19 +286,6 @@
     <h2>Result</h2>
     <div class="result" id="result"></div>
     <div class="flags" id="flags"></div>
-    <div class="precondition" id="precondition"></div>
-  </div>
-
-  <div class="card" id="explain-card" hidden>
-    <h2 id="explain-title">Why this score</h2>
-    <div class="msg" id="explain-msg"></div>
-    <div id="explain-chart"></div>
-    <div id="explain-table" hidden></div>
-    <div class="actions">
-      <span class="hint" id="explain-note"></span>
-      <span class="spacer"></span>
-      <button id="explain-toggle" type="button">Table</button>
-    </div>
   </div>
 
   <div class="msg" id="status"></div>
@@ -461,7 +497,7 @@ async function runScore() {
   try {
     renderResult(await api("/score", payload()));
     setStatus("");
-    $("explain-card").hidden = true;
+    annotate();
   } catch (err) {
     setStatus(err.message, true);
   } finally {
@@ -476,19 +512,16 @@ function renderResult(data) {
   $("result").replaceChildren(...ranked.map((r) => {
     const index = data.results.indexOf(r);
     const row = document.createElement("div");
-    row.className = "rank" + (r.disqualifying_levels.length ? " disq" : "");
+    row.className = "rank"
+      + (r.rank === 1 ? " lead" : "")
+      + (r.disqualifying_levels.length ? " disq" : "");
+    row.dataset.index = String(index);
     row.innerHTML = `
       <span class="pos">${r.rank}</span>
       <span class="name">${r.id}</span>
       <span class="track"><span class="fill"
         style="width:${(r.score / peak) * 100}%;background:${slot(index)}"></span></span>
       <span class="val">${fmt(r.score)}</span>`;
-    if (state.form.explanation_available) {
-      const why = document.createElement("button");
-      why.className = "tiny"; why.type = "button"; why.textContent = "Why";
-      why.addEventListener("click", () => explain(index, r.id));
-      row.appendChild(why);
-    }
     return row;
   }));
 
@@ -505,129 +538,34 @@ function renderResult(data) {
     }
   }
   $("flags").innerHTML = flags.map((f) => `<div class="flag">${f}</div>`).join("");
-  $("precondition").innerHTML =
-    `<strong>Assumed before scoring.</strong> ${data.eligibility_precondition}`;
   $("result-card").hidden = false;
 }
 
-/* ---------------- explanation ---------------- */
+/* ---------------- what each one wins on ---------------- */
 
-async function explain(index, name) {
-  $("explain-card").hidden = false;
-  $("explain-title").textContent = `Why ${name} scored what it did`;
-  $("explain-msg").className = "msg";
-  $("explain-msg").textContent = "Computing SHAP values. This takes a few seconds.";
-  $("explain-chart").replaceChildren();
-  $("explain-note").textContent = "";
-  $("explain-table").hidden = true;
-  $("explain-chart").hidden = false;
-  $("explain-toggle").textContent = "Table";
-
+async function annotate() {
+  let data;
   try {
-    const data = await api("/explore/explain",
-      { ...payload(), target: index, nsamples: 300 });
-    $("explain-msg").textContent = "";
-    divergingBars($("explain-chart"),
-      data.indicators
-        .filter((r) => Math.abs(r.contribution) > 1e-6)
-        .slice(0, 14)
-        .map((r) => ({
-          label: r.display_name, note: r.value, family: r.family, value: r.contribution,
-        })));
-    $("explain-note").textContent =
-      `From an average of ${fmt(data.baseline)} to ${fmt(data.score)}. Perturbed against `
-      + `${data.background_size} ${data.background === "corpus" ? "real products" : "sampled values"}`
-      + ` over ${data.nsamples} coalitions, with the other alternatives held fixed.`;
-    plainTable($("explain-table"),
-      ["Indicator", "Value", "Family", "Contribution"],
-      data.indicators.map((r) => [
-        r.display_name, r.value, title(r.family),
-        (r.contribution >= 0 ? "+" : "") + fmt(r.contribution, 4),
-      ]));
-  } catch (err) {
-    $("explain-msg").className = "msg error";
-    $("explain-msg").textContent = err.message;
-  }
-}
-
-const NS = "http://www.w3.org/2000/svg";
-function el(name, attrs, parent) {
-  const node = document.createElementNS(NS, name);
-  for (const [k, v] of Object.entries(attrs || {})) {
-    if (v !== null && v !== undefined) node.setAttribute(k, v);
-  }
-  if (parent) parent.appendChild(node);
-  return node;
-}
-
-function barPath(x, y, w, h, r, positive) {
-  const rr = Math.min(r, h / 2, Math.abs(w));
-  if (Math.abs(w) <= 0.5) return `M${x} ${y}v${h}`;
-  return positive
-    ? `M${x} ${y}h${w - rr}a${rr} ${rr} 0 0 1 ${rr} ${rr}v${h - 2 * rr}a${rr} ${rr} 0 0 1 ${-rr} ${rr}h${-(w - rr)}Z`
-    : `M${x} ${y}h${w + rr}a${rr} ${rr} 0 0 0 ${-rr} ${rr}v${h - 2 * rr}a${rr} ${rr} 0 0 0 ${rr} ${rr}h${-(w + rr)}Z`;
-}
-
-function divergingBars(host, rows) {
-  host.replaceChildren();
-  if (!rows.length) {
-    host.innerHTML = `<div class="msg">No indicator moved the score measurably.</div>`;
+    data = await api("/explore/compare", payload());
+  } catch {
     return;
   }
-  const W = 900, barH = 17, gap = 8;
-  const m = { t: 8, r: 80, b: 26, l: 268 };
-  const H = m.t + m.b + rows.length * (barH + gap);
-  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" }, host);
-  svg.style.maxHeight = `${H}px`;
+  const wins = new Map(Object.entries(data.wins || {})
+    .map(([i, list]) => [Number(i), list.slice(0, 2)]));
 
-  const iw = W - m.l - m.r;
-  const peak = Math.max(1e-4, ...rows.map((r) => Math.abs(r.value)));
-  const mid = m.l + iw / 2;
-  const X = (v) => mid + (v / peak) * (iw / 2);
-
-  el("line", { x1: mid, x2: mid, y1: m.t, y2: H - m.b,
-    stroke: "var(--text-muted)", "stroke-width": 1 }, svg);
-  for (const t of [-peak, -peak / 2, 0, peak / 2, peak]) {
-    el("text", { x: X(t), y: H - m.b + 16, "text-anchor": "middle",
-      fill: "var(--text-muted)", "font-size": 11 }, svg)
-      .textContent = (t > 0 ? "+" : "") + t.toFixed(3);
+  for (let index = 0; index < data.scores.length; index++) {
+    const row = document.querySelector(`.rank[data-index="${index}"]`);
+    if (!row) continue;
+    const list = wins.get(index) || [];
+    let text = "";
+    if (list.length) text = `wins on ${list.map((n) => n.toLowerCase()).join(", ")}`;
+    else if (index === data.leader_index) text = "best balance overall";
+    if (!text) continue;
+    const tag = document.createElement("span");
+    tag.className = "wins";
+    tag.textContent = text;
+    row.appendChild(tag);
   }
-
-  rows.forEach((r, i) => {
-    const y = m.t + i * (barH + gap);
-    const positive = r.value >= 0;
-
-    const label = el("text", { x: m.l - 12, y: y + barH - 4, "text-anchor": "end",
-      fill: "var(--text-secondary)", "font-size": 12.5 }, svg);
-    label.textContent = r.label;
-    el("tspan", { fill: "var(--text-muted)" }, label).textContent = `  ${r.note}`;
-
-    const path = el("path", {
-      d: barPath(mid, y, X(r.value) - mid, barH, 4, positive),
-      fill: positive ? "var(--pos)" : "var(--neg)",
-      stroke: "var(--surface-1)", "stroke-width": 2, "paint-order": "stroke",
-    }, svg);
-    path.addEventListener("pointermove", (e) => showTip(e,
-      `<div><strong>${r.label}</strong></div>
-       <div class="t-label">${title(r.family)}, value ${r.note}</div>
-       <div>${positive ? "+" : ""}${fmt(r.value, 4)}</div>`));
-    path.addEventListener("pointerleave", hideTip);
-
-    el("text", { x: X(r.value) + (positive ? 8 : -8), y: y + barH - 4,
-      "text-anchor": positive ? "start" : "end", fill: "var(--text-secondary)",
-      "font-size": 11, "font-family": "var(--mono)" }, svg)
-      .textContent = (positive ? "+" : "") + fmt(r.value, 4);
-  });
-}
-
-function plainTable(host, head, body) {
-  host.innerHTML = `<table class="plain"><thead><tr>${
-    head.map((h) => `<th>${h}</th>`).join("")
-  }</tr></thead><tbody>${
-    body.map((r) => `<tr>${
-      r.map((c, i) => `<td class="${i === 1 || i === 3 ? "num" : ""}">${c}</td>`).join("")
-    }</tr>`).join("")
-  }</tbody></table>`;
 }
 
 /* ---------------- wiring ---------------- */
@@ -640,14 +578,12 @@ function fillCategory() {
   state.columns = [blankColumn(0), blankColumn(1)];
   buildGrid();
   $("result-card").hidden = true;
-  $("explain-card").hidden = true;
 }
 
 $("clear").addEventListener("click", () => {
   state.columns = state.columns.map((_, i) => blankColumn(i));
   buildGrid();
   $("result-card").hidden = true;
-  $("explain-card").hidden = true;
 });
 $("score").addEventListener("click", runScore);
 $("category").addEventListener("change", () => {
@@ -655,12 +591,6 @@ $("category").addEventListener("change", () => {
   fillCategory();
 });
 $("context").addEventListener("change", () => { state.context = $("context").value; });
-$("explain-toggle").addEventListener("click", () => {
-  const table = $("explain-table"), chart = $("explain-chart");
-  const show = table.hidden;
-  table.hidden = !show; chart.hidden = show;
-  $("explain-toggle").textContent = show ? "Chart" : "Table";
-});
 $("theme").addEventListener("click", () => {
   const now = document.documentElement.getAttribute("data-theme");
   const next = now === "dark" ? "light" : now === "light" ? "dark"
