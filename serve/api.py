@@ -19,7 +19,7 @@ from typing import Any
 
 import numpy as np
 import torch
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
@@ -27,6 +27,7 @@ from core.dataset import collate
 from core.encoding import AlternativeInput, encode_set
 from core.registry import Registry
 from model import checkpoint as checkpoint_module
+from serve import limits
 from serve.background import Background
 
 CHECKPOINT_ENV = "RECOMMENDER_CHECKPOINT"
@@ -54,7 +55,10 @@ class ScoreRequest(BaseModel):
         "baseline context when empty.",
     )
     stakeholders: list[str] = Field(default_factory=list)
-    alternatives: list[AlternativePayload]
+    alternatives: list[AlternativePayload] = Field(
+        max_length=limits.MAX_ALTERNATIVES,
+        description="The shortlist to rank.",
+    )
 
 
 class ScoredAlternative(BaseModel):
@@ -253,6 +257,8 @@ def create_app(
         checkpoint_path or os.environ.get(CHECKPOINT_ENV) or DEFAULT_CHECKPOINT
     )
     service: dict[str, Service] = {}
+    limiter = limits.from_env()
+    metered = Depends(limits.gate(limiter))
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -355,13 +361,13 @@ def create_app(
             for key, stakeholder in sorted(registry.stakeholders.items())
         ]
 
-    @app.post("/score", response_model=ScoreResponse)
+    @app.post("/score", response_model=ScoreResponse, dependencies=[metered])
     def score(request: ScoreRequest) -> ScoreResponse:
         return _service().score(request)
 
     from serve.explore.api import build_router
 
-    app.include_router(build_router(_service, device=device))
+    app.include_router(build_router(_service, device=device, metered=metered))
 
     return app
 

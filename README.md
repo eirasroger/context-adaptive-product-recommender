@@ -209,6 +209,35 @@ under 1 GB of memory. No GPU and no database server.
 - **Container.** The `Dockerfile` builds a serving image that listens on `PORT`,
   defaulting to 7860 for platforms that expect it.
 
+### Limits on a public deployment
+
+The endpoints that run the model are rate limited per caller, so a crawler or a
+hot loop cannot spend an unbounded amount of compute. The page, the form and the
+registry listings stay open, so the tool still loads once scoring is refused. A
+refused call returns 429 with `Retry-After`.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `RECOMMENDER_RATE_LIMIT` | 10 | Scoring calls per caller per window |
+| `RECOMMENDER_RATE_LIMIT_TOTAL` | 40 | Scoring calls per window across all callers |
+| `RECOMMENDER_RATE_WINDOW` | 60 | Window length in seconds |
+
+The page scores on a button press and never on typing, so one reading of a
+shortlist is one call. Ten a minute is a person working quickly; a script hits
+it in a second.
+
+Zero on both limits lifts the gate, which is what a local run or a batch script
+wants.
+
+A shortlist is capped at five alternatives, which is the widest set in the
+training corpus. The comparator handles any number, so the cap is about staying
+inside what the evaluation covers.
+
+The counters live in the process. A serverless platform runs several instances
+and recycles them, so the effective ceiling is a multiple of these numbers. They
+bound what one caller can provoke; the platform's own spend limit is what
+guarantees a bill.
+
 `docs/STACK.md` records what every piece costs, with measured numbers.
 
 ## Adding a category

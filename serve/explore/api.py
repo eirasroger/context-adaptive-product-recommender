@@ -9,11 +9,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from core.encoding import AlternativeInput
+from serve import limits
 from serve.explore import analysis, compare as compare_module
 
 STATIC = Path(__file__).parent / "static"
@@ -29,11 +30,18 @@ class ShortlistRequest(BaseModel):
     category: str
     context: list[str] = Field(default_factory=list)
     stakeholders: list[str] = Field(default_factory=list)
-    alternatives: list[AlternativePayload] = Field(default_factory=list)
+    alternatives: list[AlternativePayload] = Field(
+        default_factory=list, max_length=limits.MAX_ALTERNATIVES
+    )
 
 
-def build_router(service_getter, device: str = "cpu") -> APIRouter:
+def build_router(
+    service_getter, device: str = "cpu", metered: Any | None = None
+) -> APIRouter:
     router = APIRouter(prefix="/explore", tags=["explore"])
+    if metered is None:
+        metered = Depends(limits.gate(limits.from_env()))
+    costly = [metered]
 
     def _resolve(request: ShortlistRequest):
         service = service_getter()
@@ -147,7 +155,7 @@ def build_router(service_getter, device: str = "cpu") -> APIRouter:
             "families": {key: key.replace("_", " ") for key in registry.families},
         }
 
-    @router.post("/compare")
+    @router.post("/compare", dependencies=costly)
     def compare(request: ShortlistRequest) -> dict[str, Any]:
         """Why the leading alternative is ahead of each of the others."""
         service, registry, contexts, stakeholders, alternatives = _resolve(request)
@@ -160,7 +168,7 @@ def build_router(service_getter, device: str = "cpu") -> APIRouter:
             contexts, stakeholders, device,
         )
 
-    @router.get("/response")
+    @router.get("/response", dependencies=costly)
     def response(
         category: str,
         indicator: str,
@@ -208,14 +216,14 @@ def build_router(service_getter, device: str = "cpu") -> APIRouter:
             device=device,
         )
 
-    @router.post("/context-sensitivity")
+    @router.post("/context-sensitivity", dependencies=costly)
     def context_sensitivity(request: ShortlistRequest) -> dict[str, Any]:
         service, registry, _, stakeholders, alternatives = _resolve(request)
         return analysis.context_sensitivity(
             service.model, registry, request.category, alternatives, stakeholders, device
         )
 
-    @router.post("/stakeholder-sensitivity")
+    @router.post("/stakeholder-sensitivity", dependencies=costly)
     def stakeholder_sensitivity(request: ShortlistRequest) -> dict[str, Any]:
         service, registry, contexts, _, alternatives = _resolve(request)
         return analysis.stakeholder_sensitivity(

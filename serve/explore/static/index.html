@@ -298,7 +298,7 @@ const fmt = (v, d = 3) => Number(v).toFixed(d);
 const slot = (i) => `var(--series-${(i % 8) + 1})`;
 const title = (s) => String(s).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-const MAX_COLUMNS = 8;
+const MAX_COLUMNS = 5;
 
 const state = {
   form: null, category: null, context: null,
@@ -431,9 +431,12 @@ function addColumnHeader() {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "addcol-button";
-  button.title = "Add another alternative to compare";
+  const full = state.columns.length >= MAX_COLUMNS;
+  button.title = full
+    ? `${MAX_COLUMNS} alternatives is the widest shortlist the model was trained on`
+    : "Add another alternative to compare";
   button.innerHTML = `<span aria-hidden="true">+</span><span>Add</span>`;
-  button.disabled = state.columns.length >= MAX_COLUMNS;
+  button.disabled = full;
   button.addEventListener("click", addColumn);
   th.appendChild(button);
   return th;

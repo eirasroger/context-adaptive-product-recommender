@@ -14,9 +14,8 @@ from model.recommender import ModelConfig, Recommender  # noqa: E402
 
 
 @pytest.fixture(scope="module")
-def client(registry, seeded, tmp_path_factory):
+def checkpoint(registry, seeded, tmp_path_factory):
     from db import release as release_module
-    from serve.api import create_app
 
     document = release_module.export(seeded)
     blob = release_module.canonical_yaml(document)
@@ -40,7 +39,14 @@ def client(registry, seeded, tmp_path_factory):
             metrics={},
         ),
     )
-    with TestClient(create_app(path)) as client:
+    return path
+
+
+@pytest.fixture(scope="module")
+def client(checkpoint):
+    from serve.api import create_app
+
+    with TestClient(create_app(checkpoint)) as client:
         yield client
 
 
@@ -154,3 +160,64 @@ def test_the_bare_domain_reaches_the_tool(client):
     assert response.headers["location"] == "/explore/"
 
     assert client.get("/", follow_redirects=True).status_code == 200
+
+
+def test_a_caller_past_the_rate_limit_is_refused(checkpoint, registry, category_key, monkeypatch):
+    from serve.api import create_app
+
+    monkeypatch.setenv("RECOMMENDER_RATE_LIMIT", "2")
+    monkeypatch.setenv("RECOMMENDER_RATE_LIMIT_TOTAL", "0")
+    payload = _payload(registry, category_key)
+    headers = {"x-forwarded-for": "198.51.100.4"}
+
+    with TestClient(create_app(checkpoint)) as limited:
+        assert limited.post("/score", json=payload, headers=headers).status_code == 200
+        assert limited.post("/score", json=payload, headers=headers).status_code == 200
+        refused = limited.post("/score", json=payload, headers=headers)
+
+    assert refused.status_code == 429
+    assert int(refused.headers["retry-after"]) >= 1
+
+
+def test_the_rate_limit_is_per_caller(checkpoint, registry, category_key, monkeypatch):
+    from serve.api import create_app
+
+    monkeypatch.setenv("RECOMMENDER_RATE_LIMIT", "1")
+    monkeypatch.setenv("RECOMMENDER_RATE_LIMIT_TOTAL", "0")
+    payload = _payload(registry, category_key)
+
+    with TestClient(create_app(checkpoint)) as limited:
+        first = {"x-forwarded-for": "198.51.100.4"}
+        assert limited.post("/score", json=payload, headers=first).status_code == 200
+        assert limited.post("/score", json=payload, headers=first).status_code == 429
+        second = {"x-forwarded-for": "198.51.100.9"}
+        assert limited.post("/score", json=payload, headers=second).status_code == 200
+
+
+def test_the_page_stays_reachable_when_scoring_is_rate_limited(
+    checkpoint, registry, category_key, monkeypatch
+):
+    from serve.api import create_app
+
+    monkeypatch.setenv("RECOMMENDER_RATE_LIMIT", "1")
+    monkeypatch.setenv("RECOMMENDER_RATE_LIMIT_TOTAL", "0")
+    payload = _payload(registry, category_key)
+    headers = {"x-forwarded-for": "198.51.100.4"}
+
+    with TestClient(create_app(checkpoint)) as limited:
+        limited.post("/score", json=payload, headers=headers)
+        assert limited.post("/score", json=payload, headers=headers).status_code == 429
+        assert limited.get("/health", headers=headers).status_code == 200
+        assert limited.get("/explore/form", headers=headers).status_code == 200
+
+
+def test_an_oversized_shortlist_is_refused(client, registry, category_key):
+    from serve import limits
+
+    payload = _payload(registry, category_key, n=limits.MAX_ALTERNATIVES + 1)
+    assert client.post("/score", json=payload).status_code == 422
+
+
+def test_a_shortlist_wider_than_the_corpus_is_refused(client, registry, category_key):
+    payload = _payload(registry, category_key, n=6)
+    assert client.post("/score", json=payload).status_code == 422
