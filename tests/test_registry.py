@@ -88,6 +88,7 @@ def test_required_declaration_makes_a_context_inert(registry, category_key):
         key="needs_something_absent",
         slot=999,
         display_name="Needs something absent",
+        definition_text="Requires an indicator this category lacks.",
         is_baseline=False,
         declarations={
             "*": {

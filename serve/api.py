@@ -26,6 +26,7 @@ from core.dataset import collate
 from core.encoding import AlternativeInput, encode_set
 from core.registry import Registry
 from model import checkpoint as checkpoint_module
+from serve.catalogue import Catalogue
 
 CHECKPOINT_ENV = "RECOMMENDER_CHECKPOINT"
 
@@ -78,10 +79,12 @@ class ScoreResponse(BaseModel):
 class Service:
     """Holds the loaded model and its registry."""
 
-    def __init__(self, checkpoint_path: Path):
-        self.model, self.meta, _ = checkpoint_module.load(checkpoint_path)
+    def __init__(self, checkpoint_path: Path, device: str = "cpu"):
+        self.device = device
+        self.model, self.meta, _ = checkpoint_module.load(checkpoint_path, device=device)
         self.model.eval()
         self.registry: Registry = checkpoint_module.load_registry(checkpoint_path)
+        self.catalogue = Catalogue.open()
 
     def score(self, request: ScoreRequest) -> ScoreResponse:
         registry = self.registry
@@ -155,7 +158,7 @@ class Service:
             ]
         )
         with torch.no_grad():
-            scores = self.model(batch)[0, :n].cpu().numpy()
+            scores = self.model(batch.to(self.device))[0, :n].cpu().numpy()
 
         order = np.argsort(-scores)
         rank_of = {int(index): rank + 1 for rank, index in enumerate(order)}
@@ -239,13 +242,15 @@ class Service:
         return alternatives, per_alternative
 
 
-def create_app(checkpoint_path: Path | str | None = None) -> FastAPI:
+def create_app(
+    checkpoint_path: Path | str | None = None, device: str = "cpu"
+) -> FastAPI:
     path = Path(checkpoint_path or os.environ.get(CHECKPOINT_ENV, "runs/latest/model.pt"))
     service: dict[str, Service] = {}
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
-        service["instance"] = Service(path)
+        service["instance"] = Service(path, device)
         yield
         service.clear()
 
@@ -269,6 +274,7 @@ def create_app(checkpoint_path: Path | str | None = None) -> FastAPI:
             "registry_version": instance.meta.registry_version,
             "snapshot": instance.meta.snapshot_hash,
             "categories": sorted(instance.registry.categories),
+            "catalogue": instance.catalogue is not None,
         }
 
     @app.get("/categories")
@@ -342,7 +348,11 @@ def create_app(checkpoint_path: Path | str | None = None) -> FastAPI:
     def score(request: ScoreRequest) -> ScoreResponse:
         return _service().score(request)
 
+    from serve.explore.api import build_router
+
+    app.include_router(build_router(_service, device=device))
+
     return app
 
 
-app = create_app()
+app = create_app(device=os.environ.get("RECOMMENDER_DEVICE", "cpu"))

@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Product Comparison</title>
+<style>
+  :root {
+    color-scheme: light;
+    --plane: #f9f9f7;
+    --surface-1: #fcfcfb;
+    --raised: #ffffff;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --grid: #e1e0d9;
+    --border: #e1e0d9;
+    --accent: #2a78d6;
+    --pos: #2a78d6;
+    --neg: #e34948;
+    --critical: #d03b3b;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+    --series-4: #eda100;
+    --series-5: #e87ba4;
+    --series-6: #008300;
+    --series-7: #4a3aa7;
+    --series-8: #e34948;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --plane: #0d0d0d; --surface-1: #1a1a19; --raised: #232321;
+      --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+      --grid: #2c2c2a; --border: #2c2c2a;
+      --accent: #3987e5; --pos: #3987e5; --neg: #e66767; --critical: #d03b3b;
+      --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+      --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
+      --series-7: #9085e9; --series-8: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --plane: #0d0d0d; --surface-1: #1a1a19; --raised: #232321;
+    --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+    --grid: #2c2c2a; --border: #2c2c2a;
+    --accent: #3987e5; --pos: #3987e5; --neg: #e66767; --critical: #d03b3b;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+    --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
+    --series-7: #9085e9; --series-8: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--plane); color: var(--text-primary);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 22px 16px 80px; }
+
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; }
+  h1 { font-size: 19px; font-weight: 640; margin: 0; letter-spacing: -0.01em; }
+  .build { font: 12px/1.4 var(--mono); color: var(--text-muted); }
+  .spacer { flex: 1 1 auto; }
+
+  button {
+    font: inherit; cursor: pointer; border-radius: 7px;
+    border: 1px solid var(--border); background: var(--surface-1);
+    color: var(--text-secondary); padding: 6px 12px; font-size: 13.5px;
+  }
+  button:hover { color: var(--text-primary); border-color: var(--text-muted); }
+  button.primary {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+    font-weight: 600; padding: 8px 20px; font-size: 14.5px;
+  }
+  button.primary:hover { filter: brightness(1.08); color: #fff; }
+  button.primary[disabled] { opacity: 0.55; cursor: default; filter: none; }
+  button.tiny { padding: 2px 7px; font-size: 11.5px; border-radius: 5px; }
+
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; margin-top: 16px;
+  }
+  .card > h2 {
+    font-size: 13px; font-weight: 640; margin: 0 0 12px;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);
+  }
+
+  .setup { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field > label {
+    font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--text-muted); font-weight: 620;
+  }
+  select, input {
+    background: var(--plane); color: var(--text-primary); font: inherit;
+    border: 1px solid var(--border); border-radius: 7px; padding: 6px 9px;
+    font-size: 14px;
+  }
+  select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; max-width: 620px; }
+  .chip {
+    border: 1px solid var(--border); border-radius: 999px; background: var(--plane);
+    color: var(--text-secondary); padding: 4px 11px; font-size: 12.5px;
+  }
+  .chip[aria-pressed="true"] {
+    color: var(--text-primary); border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+
+  .gridwrap { overflow-x: auto; margin: 0 -16px; padding: 0 16px; }
+  table.grid { border-collapse: separate; border-spacing: 0; width: 100%; }
+  table.grid th, table.grid td { padding: 0; }
+  .colhead { min-width: 152px; padding: 0 0 10px 8px; vertical-align: bottom; }
+  .colhead .bar { height: 3px; border-radius: 2px; margin-bottom: 7px; }
+  .colhead input { width: 100%; font-weight: 620; font-size: 13.5px; padding: 5px 8px; }
+  .colhead .tools { display: flex; gap: 6px; margin-top: 5px; }
+  .rowhead {
+    position: sticky; left: 0; z-index: 2; background: var(--surface-1);
+    min-width: 236px; max-width: 236px; padding: 3px 12px 3px 0;
+    font-size: 13px; color: var(--text-secondary); text-align: left; font-weight: 400;
+  }
+  .rowhead .unit { color: var(--text-muted); font-size: 11.5px; }
+  .rowhead abbr { text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
+  td.cell { padding: 3px 8px 3px 0; }
+  td.cell input, td.cell select { width: 100%; font-size: 13.5px; padding: 5px 8px; }
+  td.cell input::placeholder { color: var(--text-muted); opacity: 0.65; }
+  tr.familyrow td, tr.familyrow th {
+    padding: 15px 0 5px; font-size: 11px; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--text-muted); font-weight: 640;
+  }
+  tr.familyrow td.line { border-bottom: 1px solid var(--grid); }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
+  .hint { font-size: 12.5px; color: var(--text-muted); }
+
+  .result { display: grid; gap: 14px; }
+  .rank { display: flex; align-items: center; gap: 12px; }
+  .rank .pos { width: 22px; text-align: right; font: 600 13px var(--mono); color: var(--text-muted); }
+  .rank .name { min-width: 150px; font-weight: 600; font-size: 14px; }
+  .rank .track { flex: 1 1 auto; height: 18px; }
+  .rank .fill { display: block; height: 100%; border-radius: 0 4px 4px 0; }
+  .rank .val { width: 52px; font: 13px var(--mono); font-variant-numeric: tabular-nums; }
+  .rank.disq .name { color: var(--critical); }
+
+  .flags { margin-top: 14px; display: grid; gap: 6px; }
+  .flag { font-size: 12.5px; color: var(--text-secondary); display: flex; gap: 8px; }
+  .flag .marker { color: var(--critical); font-weight: 700; }
+  .flag .marker.info { color: var(--text-muted); }
+
+  .precondition {
+    margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--grid);
+    font-size: 12.5px; color: var(--text-muted);
+  }
+  .precondition strong { color: var(--text-secondary); font-weight: 600; }
+
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  table.plain { border-collapse: collapse; width: 100%; font-size: 13px; }
+  table.plain th, table.plain td {
+    text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--border);
+  }
+  table.plain th:first-child, table.plain td:first-child,
+  table.plain th:nth-child(3), table.plain td:nth-child(3) { text-align: left; }
+  table.plain th {
+    color: var(--text-muted); font-size: 11.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  table.plain td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  .tip {
+    position: fixed; pointer-events: none; z-index: 60; background: var(--raised);
+    color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 10px; font-size: 12.5px; max-width: 290px;
+    box-shadow: 0 6px 22px rgb(0 0 0 / 0.16);
+  }
+  .tip .t-label { color: var(--text-muted); font-size: 11.5px; }
+  .msg { font-size: 13.5px; color: var(--text-muted); padding: 6px 0; }
+  .msg.error { color: var(--neg); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Product Comparison</h1>
+    <span class="build" id="build"></span>
+    <span class="spacer"></span>
+    <button id="theme" type="button">Theme</button>
+  </header>
+
+  <div class="card">
+    <h2>Setup</h2>
+    <div class="setup">
+      <div class="field">
+        <label for="category">Category</label>
+        <select id="category"></select>
+      </div>
+      <div class="field">
+        <label for="context">Context</label>
+        <select id="context"></select>
+      </div>
+      <div class="field">
+        <label>Priorities</label>
+        <div class="chips" id="stakeholders"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Alternatives</h2>
+    <div class="gridwrap">
+      <table class="grid" id="grid"></table>
+    </div>
+    <div class="actions">
+      <button id="add" type="button">Add alternative</button>
+      <button id="clear" type="button">Clear all</button>
+      <span class="spacer"></span>
+      <span class="hint">Leave a field blank to say the value is unknown.</span>
+      <button class="primary" id="score" type="button">Score</button>
+    </div>
+  </div>
+
+  <div class="card" id="result-card" hidden>
+    <h2>Result</h2>
+    <div class="result" id="result"></div>
+    <div class="flags" id="flags"></div>
+    <div class="precondition" id="precondition"></div>
+  </div>
+
+  <div class="card" id="explain-card" hidden>
+    <h2 id="explain-title">Why this score</h2>
+    <div class="msg" id="explain-msg"></div>
+    <div id="explain-chart"></div>
+    <div id="explain-table" hidden></div>
+    <div class="actions">
+      <span class="hint" id="explain-note"></span>
+      <span class="spacer"></span>
+      <button id="explain-toggle" type="button">Table</button>
+    </div>
+  </div>
+
+  <div class="msg" id="status"></div>
+</div>
+
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const fmt = (v, d = 3) => Number(v).toFixed(d);
+const slot = (i) => `var(--series-${(i % 8) + 1})`;
+const title = (s) => String(s).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+const state = {
+  form: null, category: null, context: null,
+  stakeholders: new Set(), columns: [],
+};
+
+const tip = Object.assign(document.createElement("div"), { className: "tip", hidden: true });
+document.body.appendChild(tip);
+function showTip(evt, html) {
+  tip.innerHTML = html; tip.hidden = false;
+  const r = tip.getBoundingClientRect(), pad = 14;
+  let x = evt.clientX + pad, y = evt.clientY + pad;
+  if (x + r.width > innerWidth - 8) x = evt.clientX - r.width - pad;
+  if (y + r.height > innerHeight - 8) y = evt.clientY - r.height - pad;
+  tip.style.left = `${Math.max(8, x)}px`;
+  tip.style.top = `${Math.max(8, y)}px`;
+}
+const hideTip = () => { tip.hidden = true; };
+addEventListener("scroll", hideTip, { passive: true });
+
+const api = async (path, body) => {
+  const res = await fetch(path, body
+    ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
+    : undefined);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || res.statusText);
+  return data;
+};
+
+const category = () => state.form.categories.find((c) => c.key === state.category);
+const setStatus = (text, isError = false) => {
+  $("status").textContent = text;
+  $("status").className = isError ? "msg error" : "msg";
+};
+const trim = (v) => {
+  const a = Math.abs(v);
+  if (a === 0) return "0";
+  if (a < 0.001) return v.toExponential(0);
+  if (a < 1) return String(Number(v.toFixed(4)));
+  return String(Number(v.toFixed(a < 100 ? 1 : 0)));
+};
+
+/* ---------------- input grid ---------------- */
+
+const blankColumn = (index) => ({
+  name: `Option ${String.fromCharCode(65 + index)}`, values: {}, levels: {},
+});
+
+function buildGrid() {
+  const grid = $("grid");
+  grid.replaceChildren();
+
+  const head = document.createElement("tr");
+  head.appendChild(Object.assign(document.createElement("th"), { className: "rowhead" }));
+  state.columns.forEach((col, ci) => {
+    const th = document.createElement("th");
+    th.className = "colhead";
+
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    bar.style.background = slot(ci);
+
+    const name = document.createElement("input");
+    name.value = col.name;
+    name.setAttribute("aria-label", "Alternative name");
+    name.addEventListener("input", () => { col.name = name.value; });
+
+    const tools = document.createElement("div");
+    tools.className = "tools";
+    if (state.columns.length > 2) {
+      const del = document.createElement("button");
+      del.className = "tiny"; del.type = "button"; del.textContent = "Remove";
+      del.addEventListener("click", () => { state.columns.splice(ci, 1); buildGrid(); });
+      tools.appendChild(del);
+    }
+
+    th.append(bar, name, tools);
+    head.appendChild(th);
+  });
+  grid.appendChild(head);
+
+  let family = null;
+  for (const field of category().fields) {
+    if (field.family !== family) {
+      family = field.family;
+      const tr = document.createElement("tr");
+      tr.className = "familyrow";
+      const th = document.createElement("th");
+      th.className = "rowhead";
+      th.textContent = state.form.families[family] || family;
+      tr.appendChild(th);
+      for (let i = 0; i < state.columns.length; i++) {
+        tr.appendChild(Object.assign(document.createElement("td"), { className: "line" }));
+      }
+      grid.appendChild(tr);
+    }
+
+    const tr = document.createElement("tr");
+    const th = document.createElement("th");
+    th.className = "rowhead";
+    const label = document.createElement("abbr");
+    label.textContent = field.display_name;
+    label.addEventListener("pointermove", (e) => showTip(e,
+      `<div><strong>${field.display_name}</strong></div>
+       <div class="t-label">${field.definition}</div>`));
+    label.addEventListener("pointerleave", hideTip);
+    th.appendChild(label);
+    if (field.unit) {
+      th.appendChild(Object.assign(document.createElement("div"),
+        { className: "unit", textContent: field.unit }));
+    }
+    tr.appendChild(th);
+
+    for (const col of state.columns) {
+      const td = document.createElement("td");
+      td.className = "cell";
+      td.appendChild(cellFor(field, col));
+      tr.appendChild(td);
+    }
+    grid.appendChild(tr);
+  }
+}
+
+function cellFor(field, col) {
+  if (field.levels.length) {
+    const sel = document.createElement("select");
+    sel.appendChild(new Option("unknown", ""));
+    for (const level of field.levels) {
+      sel.appendChild(new Option(
+        level.disqualifying ? `${level.display_name} (never selectable)` : level.display_name,
+        level.key));
+    }
+    sel.value = col.levels[field.key] ?? "";
+    sel.addEventListener("change", () => {
+      if (sel.value) col.levels[field.key] = sel.value;
+      else delete col.levels[field.key];
+    });
+    return sel;
+  }
+  const input = document.createElement("input");
+  input.type = "number"; input.step = "any"; input.inputMode = "decimal";
+  if (field.range) input.placeholder = `${trim(field.range.low)} to ${trim(field.range.high)}`;
+  input.value = col.values[field.key] ?? "";
+  input.addEventListener("input", () => {
+    if (input.value === "") delete col.values[field.key];
+    else col.values[field.key] = Number(input.value);
+  });
+  return input;
+}
+
+/* ---------------- scoring ---------------- */
+
+const payload = () => ({
+  category: state.category,
+  context: [state.context],
+  stakeholders: [...state.stakeholders],
+  alternatives: state.columns.map((c, i) => ({
+    id: c.name || `Option ${String.fromCharCode(65 + i)}`,
+    values: c.values,
+    levels: c.levels,
+  })),
+});
+
+async function runScore() {
+  const filled = state.columns.filter(
+    (c) => Object.keys(c.values).length || Object.keys(c.levels).length);
+  if (filled.length < 2) {
+    setStatus("Fill in at least two alternatives before scoring.", true);
+    return;
+  }
+  setStatus("Scoring.");
+  $("score").disabled = true;
+  try {
+    renderResult(await api("/score", payload()));
+    setStatus("");
+    $("explain-card").hidden = true;
+  } catch (err) {
+    setStatus(err.message, true);
+  } finally {
+    $("score").disabled = false;
+  }
+}
+
+function renderResult(data) {
+  const ranked = [...data.results].sort((a, b) => a.rank - b.rank);
+  const peak = Math.max(...ranked.map((r) => r.score), 0.0001);
+
+  $("result").replaceChildren(...ranked.map((r) => {
+    const index = data.results.indexOf(r);
+    const row = document.createElement("div");
+    row.className = "rank" + (r.disqualifying_levels.length ? " disq" : "");
+    row.innerHTML = `
+      <span class="pos">${r.rank}</span>
+      <span class="name">${r.id}</span>
+      <span class="track"><span class="fill"
+        style="width:${(r.score / peak) * 100}%;background:${slot(index)}"></span></span>
+      <span class="val">${fmt(r.score)}</span>`;
+    const why = document.createElement("button");
+    why.className = "tiny"; why.type = "button"; why.textContent = "Why";
+    why.addEventListener("click", () => explain(index, r.id));
+    row.appendChild(why);
+    return row;
+  }));
+
+  const flags = [];
+  for (const r of ranked) {
+    for (const level of r.disqualifying_levels) {
+      flags.push(`<span class="marker">!</span><span><strong>${r.id}</strong> sits at
+        <code>${level}</code>, which the registry marks as never selectable.</span>`);
+    }
+    if (r.missing_indicators.length) {
+      const n = r.missing_indicators.length;
+      flags.push(`<span class="marker info">i</span><span><strong>${r.id}</strong>
+        has ${n} indicator${n === 1 ? "" : "s"} left unknown.</span>`);
+    }
+  }
+  $("flags").innerHTML = flags.map((f) => `<div class="flag">${f}</div>`).join("");
+  $("precondition").innerHTML =
+    `<strong>Assumed before scoring.</strong> ${data.eligibility_precondition}`;
+  $("result-card").hidden = false;
+}
+
+/* ---------------- explanation ---------------- */
+
+async function explain(index, name) {
+  $("explain-card").hidden = false;
+  $("explain-title").textContent = `Why ${name} scored what it did`;
+  $("explain-msg").className = "msg";
+  $("explain-msg").textContent = "Computing SHAP values. This takes a few seconds.";
+  $("explain-chart").replaceChildren();
+  $("explain-note").textContent = "";
+  $("explain-table").hidden = true;
+  $("explain-chart").hidden = false;
+  $("explain-toggle").textContent = "Table";
+
+  try {
+    const data = await api("/explore/explain",
+      { ...payload(), target: index, nsamples: 300 });
+    $("explain-msg").textContent = "";
+    divergingBars($("explain-chart"),
+      data.indicators
+        .filter((r) => Math.abs(r.contribution) > 1e-6)
+        .slice(0, 14)
+        .map((r) => ({
+          label: r.display_name, note: r.value, family: r.family, value: r.contribution,
+        })));
+    $("explain-note").textContent =
+      `From an average of ${fmt(data.baseline)} to ${fmt(data.score)}. Perturbed against `
+      + `${data.background_size} ${data.background === "corpus" ? "real products" : "sampled values"}`
+      + ` over ${data.nsamples} coalitions, with the other alternatives held fixed.`;
+    plainTable($("explain-table"),
+      ["Indicator", "Value", "Family", "Contribution"],
+      data.indicators.map((r) => [
+        r.display_name, r.value, title(r.family),
+        (r.contribution >= 0 ? "+" : "") + fmt(r.contribution, 4),
+      ]));
+  } catch (err) {
+    $("explain-msg").className = "msg error";
+    $("explain-msg").textContent = err.message;
+  }
+}
+
+const NS = "http://www.w3.org/2000/svg";
+function el(name, attrs, parent) {
+  const node = document.createElementNS(NS, name);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v !== null && v !== undefined) node.setAttribute(k, v);
+  }
+  if (parent) parent.appendChild(node);
+  return node;
+}
+
+function barPath(x, y, w, h, r, positive) {
+  const rr = Math.min(r, h / 2, Math.abs(w));
+  if (Math.abs(w) <= 0.5) return `M${x} ${y}v${h}`;
+  return positive
+    ? `M${x} ${y}h${w - rr}a${rr} ${rr} 0 0 1 ${rr} ${rr}v${h - 2 * rr}a${rr} ${rr} 0 0 1 ${-rr} ${rr}h${-(w - rr)}Z`
+    : `M${x} ${y}h${w + rr}a${rr} ${rr} 0 0 0 ${-rr} ${rr}v${h - 2 * rr}a${rr} ${rr} 0 0 0 ${rr} ${rr}h${-(w + rr)}Z`;
+}
+
+function divergingBars(host, rows) {
+  host.replaceChildren();
+  if (!rows.length) {
+    host.innerHTML = `<div class="msg">No indicator moved the score measurably.</div>`;
+    return;
+  }
+  const W = 900, barH = 17, gap = 8;
+  const m = { t: 8, r: 80, b: 26, l: 268 };
+  const H = m.t + m.b + rows.length * (barH + gap);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" }, host);
+  svg.style.maxHeight = `${H}px`;
+
+  const iw = W - m.l - m.r;
+  const peak = Math.max(1e-4, ...rows.map((r) => Math.abs(r.value)));
+  const mid = m.l + iw / 2;
+  const X = (v) => mid + (v / peak) * (iw / 2);
+
+  el("line", { x1: mid, x2: mid, y1: m.t, y2: H - m.b,
+    stroke: "var(--text-muted)", "stroke-width": 1 }, svg);
+  for (const t of [-peak, -peak / 2, 0, peak / 2, peak]) {
+    el("text", { x: X(t), y: H - m.b + 16, "text-anchor": "middle",
+      fill: "var(--text-muted)", "font-size": 11 }, svg)
+      .textContent = (t > 0 ? "+" : "") + t.toFixed(3);
+  }
+
+  rows.forEach((r, i) => {
+    const y = m.t + i * (barH + gap);
+    const positive = r.value >= 0;
+
+    const label = el("text", { x: m.l - 12, y: y + barH - 4, "text-anchor": "end",
+      fill: "var(--text-secondary)", "font-size": 12.5 }, svg);
+    label.textContent = r.label;
+    el("tspan", { fill: "var(--text-muted)" }, label).textContent = `  ${r.note}`;
+
+    const path = el("path", {
+      d: barPath(mid, y, X(r.value) - mid, barH, 4, positive),
+      fill: positive ? "var(--pos)" : "var(--neg)",
+      stroke: "var(--surface-1)", "stroke-width": 2, "paint-order": "stroke",
+    }, svg);
+    path.addEventListener("pointermove", (e) => showTip(e,
+      `<div><strong>${r.label}</strong></div>
+       <div class="t-label">${title(r.family)}, value ${r.note}</div>
+       <div>${positive ? "+" : ""}${fmt(r.value, 4)}</div>`));
+    path.addEventListener("pointerleave", hideTip);
+
+    el("text", { x: X(r.value) + (positive ? 8 : -8), y: y + barH - 4,
+      "text-anchor": positive ? "start" : "end", fill: "var(--text-secondary)",
+      "font-size": 11, "font-family": "var(--mono)" }, svg)
+      .textContent = (positive ? "+" : "") + fmt(r.value, 4);
+  });
+}
+
+function plainTable(host, head, body) {
+  host.innerHTML = `<table class="plain"><thead><tr>${
+    head.map((h) => `<th>${h}</th>`).join("")
+  }</tr></thead><tbody>${
+    body.map((r) => `<tr>${
+      r.map((c, i) => `<td class="${i === 1 || i === 3 ? "num" : ""}">${c}</td>`).join("")
+    }</tr>`).join("")
+  }</tbody></table>`;
+}
+
+/* ---------------- wiring ---------------- */
+
+function fillCategory() {
+  const cat = category();
+  $("context").replaceChildren(...cat.contexts.map((c) => new Option(c.display_name, c.key)));
+  state.context = cat.default_context;
+  $("context").value = state.context;
+  state.columns = [blankColumn(0), blankColumn(1), blankColumn(2)];
+  buildGrid();
+  $("result-card").hidden = true;
+  $("explain-card").hidden = true;
+}
+
+$("add").addEventListener("click", () => {
+  if (state.columns.length >= 8) return;
+  state.columns.push(blankColumn(state.columns.length));
+  buildGrid();
+});
+$("clear").addEventListener("click", () => {
+  state.columns = state.columns.map((_, i) => blankColumn(i));
+  buildGrid();
+  $("result-card").hidden = true;
+  $("explain-card").hidden = true;
+});
+$("score").addEventListener("click", runScore);
+$("category").addEventListener("change", () => {
+  state.category = $("category").value;
+  fillCategory();
+});
+$("context").addEventListener("change", () => { state.context = $("context").value; });
+$("explain-toggle").addEventListener("click", () => {
+  const table = $("explain-table"), chart = $("explain-chart");
+  const show = table.hidden;
+  table.hidden = !show; chart.hidden = show;
+  $("explain-toggle").textContent = show ? "Chart" : "Table";
+});
+$("theme").addEventListener("click", () => {
+  const now = document.documentElement.getAttribute("data-theme");
+  const next = now === "dark" ? "light" : now === "light" ? "dark"
+    : (matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "dark");
+  document.documentElement.setAttribute("data-theme", next);
+  try { localStorage.setItem("theme", next); } catch {}
+});
+try {
+  const saved = localStorage.getItem("theme");
+  if (saved) document.documentElement.setAttribute("data-theme", saved);
+} catch {}
+
+(async function start() {
+  try {
+    const form = await api("/explore/form");
+    state.form = form;
+    $("build").textContent =
+      `registry ${form.registry_version ?? "?"} · snapshot ${(form.snapshot ?? "").slice(0, 12)}`;
+    $("category").replaceChildren(
+      ...form.categories.map((c) => new Option(c.display_name, c.key)));
+    state.category = form.categories[0].key;
+    state.stakeholders = new Set([form.stakeholders[0].key]);
+
+    $("stakeholders").replaceChildren(...form.stakeholders.map((s) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.title = s.definition;
+      b.textContent = s.display_name;
+      b.setAttribute("aria-pressed", String(state.stakeholders.has(s.key)));
+      b.addEventListener("click", () => {
+        if (state.stakeholders.has(s.key)) {
+          if (state.stakeholders.size === 1) return;
+          state.stakeholders.delete(s.key);
+        } else state.stakeholders.add(s.key);
+        b.setAttribute("aria-pressed", String(state.stakeholders.has(s.key)));
+      });
+      return b;
+    }));
+
+    fillCategory();
+  } catch (err) {
+    setStatus(`Could not reach the model: ${err.message}`, true);
+  }
+})();
+</script>
+</body>
+</html>

@@ -11,7 +11,10 @@ and the sign-flip checks extend to it. Nothing here is written per category.
 Three kinds:
 
 * **Monotonicity** -- holding everything else ideal, does the score move the way
-  the registry says this indicator should?
+  the registry says this indicator should? Counted as inverted pairs over the
+  pairs the labels actually separate, with a small budget. A swap between two
+  points the registry declares near-equivalent is acceptable, and so is one
+  local wobble in a long sweep. A pattern of inversions is what this catches.
 * **Sign flip** -- when two contexts declare opposite directions over the same
   indicator, does the response actually invert? This is the sharpest available
   evidence that the model learned context rather than memorised a direction.
@@ -51,14 +54,32 @@ from ingest.generators import parametric
 
 DEFAULT_STEPS = 9
 
-#: Rank correlation a monotone response must reach.
-MONOTONE_THRESHOLD = 0.98
+#: Share of decisive pairs that may come out in the wrong order.
+#:
+#: Expressed as a rate so it scales with sweep length. At the default nine
+#: steps a sweep has about thirty-six decisive pairs, so this allows a single
+#: inverted pair and fails on two. One inversion is a local wobble somewhere in
+#: the middle of a range. Two or more says the relationship itself came out
+#: wrong, which is what this tier exists to catch.
+MAX_INVERSION_RATE = 0.05
 
 #: How far the score must actually move across a sweep before the *direction* of
 #: the response means anything at all. Below this the model is not saying
 #: anything about the indicator, and rank correlation would turn numerical noise
 #: into a confident verdict either way.
 MIN_RESPONSE = 0.01
+
+#: Label difference below which two points on a sweep count as tied.
+#:
+#: The registry can declare two levels as nearly equivalent -- adjacent
+#: certification tiers, say -- and where it does, the generated labels for them
+#: differ by less than the model can meaningfully resolve. Demanding a strict
+#: ordering there would contradict the objective: two alternatives that really
+#: are a hair apart should be represented as a hair apart, and a swap between
+#: them is not an error. The tolerance therefore follows the declared geometry
+#: -- declare two levels as close, and the gate stops requiring them to be
+#: separated.
+TIE_EPSILON = 0.03
 
 #: The three things an assertion can conclude.
 PASS = "pass"
@@ -86,9 +107,10 @@ class Assertion:
     observed: float
     threshold: float
     verdict: str
-    #: How far the score actually moved across the sweep.
     response: float = 0.0
     threshold_response: float = MIN_RESPONSE
+    inversions: int = 0
+    decisive: int = 0
 
     @property
     def passed(self) -> bool:
@@ -100,17 +122,25 @@ class Assertion:
 
     def __str__(self) -> str:
         label = {PASS: "PASS", FAIL: "FAIL", NO_RESPONSE: "FLAT"}[self.verdict]
+        head = (
+            f"{label}  {self.kind:14s} {self.category}/{self.indicator} "
+            f"[{self.context}|{self.stakeholder}]"
+        )
         if self.verdict == NO_RESPONSE:
             return (
-                f"{label}  {self.kind:14s} {self.category}/{self.indicator} "
-                f"[{self.context}|{self.stakeholder}] no measurable response "
-                f"(score moved {self.response:.4f} across the sweep, "
-                f"needs {self.threshold_response:.4f})"
+                f"{head} no measurable response: the score moved "
+                f"{self.response:.4f} across the sweep, below "
+                f"{self.threshold_response:.4f}"
+            )
+        if self.decisive:
+            return (
+                f"{head} {self.statement}: {self.inversions} of "
+                f"{self.decisive} decisive pairs inverted, allowing "
+                f"{int(self.threshold * self.decisive)}"
             )
         return (
-            f"{label}  {self.kind:14s} {self.category}/{self.indicator} "
-            f"[{self.context}|{self.stakeholder}] {self.statement} "
-            f"(observed {self.observed:+.3f}, threshold {self.threshold:+.3f})"
+            f"{head} {self.statement}: observed {self.observed:+.3f}, "
+            f"threshold {self.threshold:+.3f}"
         )
 
 
@@ -186,17 +216,38 @@ def score_case(
     return model(batch)[0, : len(case.alternatives)].cpu().numpy()
 
 
-def _spearman(a: Sequence[float], b: Sequence[float]) -> float:
-    """Rank correlation, without pulling in a stats dependency for one formula."""
-    a, b = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
-    if len(a) < 2 or np.allclose(a, a[0]) or np.allclose(b, b[0]):
-        return 0.0
-    rank_a = np.argsort(np.argsort(a)).astype(float)
-    rank_b = np.argsort(np.argsort(b)).astype(float)
-    rank_a -= rank_a.mean()
-    rank_b -= rank_b.mean()
-    denominator = np.sqrt((rank_a**2).sum() * (rank_b**2).sum())
-    return float((rank_a * rank_b).sum() / denominator) if denominator else 0.0
+def count_inversions(
+    expected: Sequence[float],
+    observed: Sequence[float],
+    epsilon: float = TIE_EPSILON,
+) -> tuple[int, int]:
+    """Count pairs that came out in the wrong order, over the pairs that count.
+
+    Returns the number of inverted pairs and the number of decisive ones. A pair
+    whose expected values sit within ``epsilon`` of each other is skipped: the
+    registry declared those two points near-equivalent, so either order is
+    acceptable and requiring one would push the model to separate things that
+    belong together.
+
+    Counting pairs keeps the verdict legible. "Two of thirty-six pairs inverted"
+    says what happened; a correlation coefficient has to be decoded first, and
+    its scale shifts with the length of the sweep.
+    """
+    expected = np.asarray(expected, dtype=float)
+    observed = np.asarray(observed, dtype=float)
+    if len(expected) < 2:
+        return 0, 0
+
+    rows, cols = np.triu_indices(len(expected), k=1)
+    expected_gaps = expected[rows] - expected[cols]
+    observed_gaps = observed[rows] - observed[cols]
+
+    decisive = np.abs(expected_gaps) >= epsilon
+    if not decisive.any():
+        return 0, 0
+
+    disagree = np.sign(expected_gaps[decisive]) != np.sign(observed_gaps[decisive])
+    return int(disagree.sum()), int(decisive.sum())
 
 
 # ---------------------------------------------------------------------------
@@ -210,7 +261,7 @@ def monotonicity_assertions(
     category_key: str,
     stakeholder_key: str,
     steps: int = DEFAULT_STEPS,
-    threshold: float = MONOTONE_THRESHOLD,
+    threshold: float = MAX_INVERSION_RATE,
     device: str | torch.device = "cpu",
 ) -> list[Assertion]:
     """Sweep each indicator the registry declares safe to sweep, and check the
@@ -244,11 +295,11 @@ def monotonicity_assertions(
             # Establish that the model moved before judging which way it moved.
             # Rank correlation over a flat response is noise wearing a verdict.
             response = float(np.max(scores) - np.min(scores))
-            observed = _spearman(case.quality, scores)
+            inversions, decisive = count_inversions(case.prefs, scores)
 
-            if response < MIN_RESPONSE:
+            if response < MIN_RESPONSE or decisive == 0:
                 verdict = NO_RESPONSE
-            elif observed >= threshold:
+            elif inversions <= threshold * decisive:
                 verdict = PASS
             else:
                 verdict = FAIL
@@ -261,10 +312,12 @@ def monotonicity_assertions(
                     context=context_key,
                     stakeholder=stakeholder_key,
                     statement="score follows the declared direction",
-                    observed=observed,
+                    observed=1.0 - (inversions / decisive if decisive else 0.0),
                     threshold=threshold,
                     verdict=verdict,
                     response=response,
+                    inversions=inversions,
+                    decisive=decisive,
                 )
             )
     return out

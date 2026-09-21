@@ -280,3 +280,27 @@ def test_assertion_summary_counts_every_verdict(registry, category_key):
     assert not suite.passed
 
     assert Suite(assertions=[a for a in suite.assertions if a.verdict != FAIL]).passed
+
+
+def test_a_swap_between_near_ties_is_not_a_failure():
+    """The objective says two options a hair apart should be a hair apart.
+
+    A gate that punishes swapping them would push the model to separate things
+    the registry itself declares near-equivalent -- the exact pressure this
+    project rejects permutation losses for.
+    """
+    from eval.behavioural import TIE_EPSILON, count_inversions
+
+    expected = [0.20, 0.60, 0.900, 0.910]
+    swapped = [0.20, 0.60, 0.910, 0.900]
+
+    inversions, decisive = count_inversions(expected, swapped)
+    assert inversions == 0
+    assert decisive == len(expected) * (len(expected) - 1) // 2 - 1
+
+    reversed_big = [0.60, 0.20, 0.900, 0.910]
+    inversions, _ = count_inversions(expected, reversed_big)
+    assert inversions == 1
+
+    flat = [0.5, 0.5 + TIE_EPSILON / 3]
+    assert count_inversions(flat, [0.1, 0.9]) == (0, 0)

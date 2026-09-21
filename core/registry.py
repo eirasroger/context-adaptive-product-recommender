@@ -109,6 +109,7 @@ class ContextSpec:
     key: str
     slot: int
     display_name: str
+    definition_text: str
     is_baseline: bool
     #: category key (or the wildcard) -> indicator key -> declaration
     declarations: Mapping[str, Mapping[str, DeclarationSpec]]
@@ -125,6 +126,7 @@ class StakeholderSpec:
     key: str
     slot: int
     display_name: str
+    definition_text: str
     domain_scope_text: str | None
     #: generator input only, never a model input
     family_priorities: Mapping[str, float]
@@ -366,6 +368,7 @@ def from_document(
             key=row["key"],
             slot=slot_tables["context"][row["key"]],
             display_name=row["display_name"],
+            definition_text=row["definition_text"],
             is_baseline=bool(row["is_baseline"]),
             declarations=declarations.get(row["key"], {}),
         )
@@ -387,6 +390,7 @@ def from_document(
             key=row["key"],
             slot=slot_tables["stakeholder"][row["key"]],
             display_name=row["display_name"],
+            definition_text=row["definition_text"],
             domain_scope_text=row["domain_scope_text"],
             family_priorities=family_priorities.get(row["key"], {}),
             indicator_priorities=indicator_priorities.get(row["key"], {}),

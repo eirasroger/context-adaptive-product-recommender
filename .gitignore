@@ -230,5 +230,6 @@ data/snapshots/
 # Training runs.
 runs/
 
-# Private working notes and plans.
+# Private working notes, plans and conventions.
 docs/
+CLAUDE.md
