@@ -14,6 +14,7 @@ anything.
 
 from __future__ import annotations
 
+import importlib.util
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -22,6 +23,20 @@ import numpy as np
 from core.encoding import AlternativeInput
 from core.registry import Registry
 from serve.explore.analysis import score_many
+
+class ExplanationUnavailable(RuntimeError):
+    """Raised when the deployment was built without the explanation stack."""
+
+
+def available() -> bool:
+    """Whether SHAP can run here.
+
+    It carries numba, llvmlite, scipy, scikit-learn and pandas behind it, which
+    is roughly 330 MB. A deployment under a size limit can leave all of that out
+    and still score, so the import is checked rather than assumed.
+    """
+    return importlib.util.find_spec("shap") is not None
+
 
 MISSING = -1.0
 
@@ -133,7 +148,13 @@ def explain(
     nsamples: int = DEFAULT_SAMPLES,
     device: str = "cpu",
 ) -> dict:
-    import shap
+    try:
+        import shap
+    except ImportError as error:
+        raise ExplanationUnavailable(
+            "This deployment was built without the explanation stack. Install "
+            "shap to enable it."
+        ) from error
 
     columns = columns_for(registry, category_key)
     others = list(alternatives)

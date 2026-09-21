@@ -145,3 +145,52 @@ def test_serving_does_not_import_the_data_stack():
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "", f"serving imports {result.stdout.strip()}"
+
+
+def test_the_explanation_stack_is_optional():
+    """A deployment under a size limit can leave SHAP out and still score.
+
+    SHAP carries numba, llvmlite, scipy, scikit-learn and pandas behind it,
+    roughly 330 MB. The import is deferred so its absence degrades one endpoint
+    instead of stopping the service from starting.
+    """
+    import subprocess
+    import sys
+
+    probe = (
+        "import sys;"
+        "sys.modules['shap'] = None;"
+        "import importlib;"
+        "import serve.explore.shapley as s;"
+        "importlib.reload(s);"
+        "print('starts-without-shap')"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", probe], capture_output=True, text=True, timeout=180
+    )
+    assert result.returncode == 0, result.stderr
+    assert "starts-without-shap" in result.stdout
+
+
+def test_serving_requirements_cover_what_serving_imports():
+    """Every third-party module the serving path imports has to be installed.
+
+    PyYAML went missing from this list once and the deployment would have
+    crashed on import, after a successful build.
+    """
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    text = (root / "requirements.txt").read_text(encoding="utf-8").lower()
+
+    required = {
+        "torch": "torch",
+        "numpy": "numpy",
+        "fastapi": "fastapi",
+        "pydantic": "pydantic",
+        "yaml": "pyyaml",
+    }
+    missing = [
+        module for module, package in required.items() if package not in text
+    ]
+    assert not missing, f"requirements.txt is missing {missing}"

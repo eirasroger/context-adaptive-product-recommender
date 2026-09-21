@@ -447,10 +447,12 @@ function renderResult(data) {
       <span class="track"><span class="fill"
         style="width:${(r.score / peak) * 100}%;background:${slot(index)}"></span></span>
       <span class="val">${fmt(r.score)}</span>`;
-    const why = document.createElement("button");
-    why.className = "tiny"; why.type = "button"; why.textContent = "Why";
-    why.addEventListener("click", () => explain(index, r.id));
-    row.appendChild(why);
+    if (state.form.explanation_available) {
+      const why = document.createElement("button");
+      why.className = "tiny"; why.type = "button"; why.textContent = "Why";
+      why.addEventListener("click", () => explain(index, r.id));
+      row.appendChild(why);
+    }
     return row;
   }));
 

@@ -143,6 +143,7 @@ def build_router(service_getter, device: str = "cpu") -> APIRouter:
             "registry_version": service.meta.registry_version,
             "snapshot": service.meta.snapshot_hash,
             "background_origin": background.origin,
+            "explanation_available": shapley.available(),
             "categories": categories,
             "stakeholders": [
                 {
@@ -158,6 +159,12 @@ def build_router(service_getter, device: str = "cpu") -> APIRouter:
     @router.post("/explain")
     def explain(request: ExplainRequest) -> dict[str, Any]:
         """SHAP contributions for one alternative's score."""
+        if not shapley.available():
+            raise HTTPException(
+                status_code=501,
+                detail="This deployment was built without the explanation stack. "
+                "Scoring works; explanations need shap installed.",
+            )
         service, registry, contexts, stakeholders, alternatives = _resolve(request)
         if not 0 <= request.target < len(alternatives):
             raise HTTPException(
