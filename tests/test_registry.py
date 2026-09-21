@@ -171,3 +171,46 @@ def test_foreign_keys_are_enforced(seeded):
     with pytest.raises(IntegrityError):
         seeded.flush()
     seeded.rollback()
+
+
+def test_excluded_indicators_are_never_swept(registry, category_key):
+    """An indicator the registry refuses to sweep must not reach the generator.
+
+    A control label asserts that the declared direction holds across the whole
+    declared range. Where the registry says it does not, generating one would
+    put a claim into the training data that the registry never made.
+    """
+    from ingest.generators import parametric
+
+    category = registry.category(category_key)
+    excluded = {
+        key for key in category.token_order if not category.members[key].is_sweepable
+    }
+    assert excluded, "seed no longer exercises the exclusion path"
+
+    for context_key in sorted(category.available_contexts):
+        varied = set(
+            parametric.varied_indicators(registry, category_key, [context_key])
+        )
+        assert not (varied & excluded), sorted(varied & excluded)
+
+
+def test_every_exclusion_carries_a_reason(registry, category_key):
+    """The reason is the point. A silent exclusion is an untested gap nobody sees."""
+    category = registry.category(category_key)
+    for key, member in category.members.items():
+        if not member.is_sweepable:
+            assert member.control_note and member.control_note.strip(), key
+
+
+def test_a_sweepable_indicator_has_a_direction_to_sweep(registry, category_key, seeded):
+    """Sweeping an indicator nothing gives a direction would assert nothing."""
+    assert validate.check(seeded) == []
+
+    category = registry.category(category_key)
+    for key in registry.sweepable(category_key):
+        directions = [
+            registry.resolve_direction(category_key, key, [context])[0]
+            for context in sorted(category.available_contexts)
+        ]
+        assert any(d != 0 for d in directions), key

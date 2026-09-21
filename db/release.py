@@ -132,6 +132,8 @@ EXPORT_SPEC: tuple[tuple[str, Any, tuple[str, ...], tuple[str, ...]], ...] = (
             "is_required",
             "relevance_mode",
             "direction_override",
+            "control_mode",
+            "control_note",
             "note",
         ),
         ("category_key", "indicator_key"),

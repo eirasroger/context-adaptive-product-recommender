@@ -60,6 +60,7 @@ def main() -> None:
             "passed": suite.passed,
             "summary": suite.summary(),
             "failures": [str(assertion) for assertion in suite.failures],
+            "no_response": [str(assertion) for assertion in suite.flat],
         }
 
     print(report_module.render(results, path.parent.name))

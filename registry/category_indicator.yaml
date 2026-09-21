@@ -4,124 +4,166 @@ category_indicator:
   is_required: 0
   relevance_mode: always
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: cement_content
   is_required: 0
   relevance_mode: context_declared
   direction_override: null
+  control_mode: exclude
+  control_note: The sources disagree. Higher content supports durability and strength while raising impact and cost, and which side dominates is an open question, so the declared direction is not safe to assert across the whole range. Excluded until that is settled.
   note: null
 - category_key: concrete
   indicator_key: circ_orig
   is_required: 0
   relevance_mode: always
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: compressive_strength
   is_required: 0
   relevance_mode: context_declared
   direction_override: null
+  control_mode: exclude
+  control_note: Higher is better only up to the point where the structural requirement is met, and every alternative reaching a comparison is assumed already adequate. A monotone sweep across the full range would assert that strength keeps buying preference indefinitely, which the indicator's own definition denies. Revisit if an adequacy threshold is ever declared, which would make an ideal-band sweep meaningful.
   note: null
 - category_key: concrete
   indicator_key: cost_labour
   is_required: 0
   relevance_mode: always
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: cost_maintenance
   is_required: 0
   relevance_mode: always
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: cost_product
   is_required: 0
   relevance_mode: always
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: cost_total
   is_required: 0
   relevance_mode: always
   direction_override: null
+  control_mode: exclude
+  control_note: Derived from the three cost components, which are swept individually. Sweeping the total as well would assert the same relationship twice and cannot be done while holding its own sources fixed.
   note: null
 - category_key: concrete
   indicator_key: d_max
   is_required: 0
   relevance_mode: context_declared
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: density
   is_required: 0
   relevance_mode: context_declared
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: fu_haz
   is_required: 0
   relevance_mode: always
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: fu_incin
   is_required: 0
   relevance_mode: always
   direction_override: null
+  control_mode: exclude
+  control_note: 'Declared neutral: energy recovery is better than landfill and worse than material recovery, so there is no direction to sweep. A control case would have to invent one.'
   note: null
 - category_key: concrete
   indicator_key: fu_inert
   is_required: 0
   relevance_mode: always
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: fu_recyc
   is_required: 0
   relevance_mode: always
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: fwu
   is_required: 0
   relevance_mode: always
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: gwp
   is_required: 0
   relevance_mode: always
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: health
   is_required: 0
   relevance_mode: always
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: scm_content
   is_required: 0
   relevance_mode: context_declared
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: slump
   is_required: 0
   relevance_mode: context_declared
   direction_override: null
+  control_mode: exclude
+  control_note: Declared monotone, but the indicator's definition says very high workability can be unnecessary where the application does not call for it, which would make it an ideal band instead. Existing published control data already sweeps it; no further cases are generated and it is not gated until the shape is settled.
   note: null
 - category_key: concrete
   indicator_key: water_to_cement_ratio
   is_required: 0
   relevance_mode: context_declared
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null
 - category_key: concrete
   indicator_key: wdp
   is_required: 0
   relevance_mode: always
   direction_override: null
+  control_mode: sweep
+  control_note: null
   note: null

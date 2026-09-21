@@ -217,6 +217,34 @@ def check(session: Session) -> list[Problem]:
                             )
                         )
 
+        for indicator_key, member in members.items():
+            if member.control_mode != "sweep" or indicator_key not in indicators:
+                continue
+            indicator = indicators[indicator_key]
+            if indicator.is_derived:
+                problems.append(
+                    Problem(
+                        "derived_not_sweepable",
+                        f"category {key} marks derived indicator {indicator_key} "
+                        "as sweepable, but a control case cannot vary it while "
+                        "holding its own sources fixed",
+                    )
+                )
+            declared = any(
+                row.indicator_key == indicator_key and row.direction != 0
+                for row in _all(session, ContextDeclaration)
+                if row.category_key in (WILDCARD, key)
+            )
+            if indicator.default_direction == 0 and not declared:
+                problems.append(
+                    Problem(
+                        "sweepable_needs_direction",
+                        f"category {key} marks {indicator_key} as sweepable, but "
+                        "nothing declares a direction for it, so a control case "
+                        "would have no relationship to assert",
+                    )
+                )
+
         weights = {
             row.provenance_key: row.weight
             for row in _all(session, CategoryProvenanceWeight)

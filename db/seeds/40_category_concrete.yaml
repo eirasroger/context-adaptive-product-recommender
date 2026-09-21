@@ -44,6 +44,16 @@ category:
 
     # `relevance_mode: context_declared` marks an indicator whose relevance flag
     # depends on the active context. Everything else is always relevant.
+    #
+    # `control_mode: exclude` marks an indicator that must NOT be varied on its
+    # own in a control case. A control label asserts that the declared direction
+    # holds across the whole declared range. Where that is not true -- the
+    # relationship turns over, the sources disagree, or the question is still
+    # open -- generating one would put a claim into the training data that the
+    # registry does not actually make. Excluded indicators are therefore also
+    # left out of the behavioural gate: there is nothing to compare against, and
+    # an untested indicator should read as a known gap rather than a silent
+    # pass. Every exclusion carries its reason.
     indicators:
       - {indicator_key: gwp, ref_low: 0.05, ref_high: 0.50}
       - {indicator_key: wdp, ref_low: 0.003, ref_high: 0.30}
@@ -52,27 +62,68 @@ category:
 
       - {indicator_key: circ_orig, ref_low: 0.0, ref_high: 100.0}
       - {indicator_key: fu_recyc, ref_low: 0.0, ref_high: 100.0}
-      - {indicator_key: fu_incin, ref_low: 0.0, ref_high: 100.0}
       - {indicator_key: fu_inert, ref_low: 0.0, ref_high: 100.0}
       - {indicator_key: fu_haz, ref_low: 0.0, ref_high: 10.0}
+      - indicator_key: fu_incin
+        ref_low: 0.0
+        ref_high: 100.0
+        control_mode: exclude
+        control_note: >-
+          Declared neutral: energy recovery is better than landfill and worse
+          than material recovery, so there is no direction to sweep. A control
+          case would have to invent one.
 
       - {indicator_key: cost_product, ref_low: 0.05, ref_high: 0.40}
       - {indicator_key: cost_labour, ref_low: 0.005, ref_high: 0.10}
       - {indicator_key: cost_maintenance, ref_low: 0.005, ref_high: 0.10}
-      - {indicator_key: cost_total, ref_low: 0.06, ref_high: 0.60}
+      - indicator_key: cost_total
+        ref_low: 0.06
+        ref_high: 0.60
+        control_mode: exclude
+        control_note: >-
+          Derived from the three cost components, which are swept individually.
+          Sweeping the total as well would assert the same relationship twice
+          and cannot be done while holding its own sources fixed.
 
       - {indicator_key: health}
 
-      - {indicator_key: compressive_strength, ref_low: 8.0, ref_high: 60.0,
-         relevance_mode: context_declared}
+      - indicator_key: compressive_strength
+        ref_low: 8.0
+        ref_high: 60.0
+        relevance_mode: context_declared
+        control_mode: exclude
+        control_note: >-
+          Higher is better only up to the point where the structural
+          requirement is met, and every alternative reaching a comparison is
+          assumed already adequate. A monotone sweep across the full range would
+          assert that strength keeps buying preference indefinitely, which the
+          indicator's own definition denies. Revisit if an adequacy threshold is
+          ever declared, which would make an ideal-band sweep meaningful.
       - {indicator_key: water_to_cement_ratio, ref_low: 0.30, ref_high: 0.80,
          relevance_mode: context_declared}
-      - {indicator_key: cement_content, ref_low: 200.0, ref_high: 600.0,
-         relevance_mode: context_declared}
+      - indicator_key: cement_content
+        ref_low: 200.0
+        ref_high: 600.0
+        relevance_mode: context_declared
+        control_mode: exclude
+        control_note: >-
+          The sources disagree. Higher content supports durability and strength
+          while raising impact and cost, and which side dominates is an open
+          question, so the declared direction is not safe to assert across the
+          whole range. Excluded until that is settled.
       - {indicator_key: scm_content, ref_low: 0.0, ref_high: 350.0,
          relevance_mode: context_declared}
-      - {indicator_key: slump, ref_low: 10.0, ref_high: 300.0,
-         relevance_mode: context_declared}
+      - indicator_key: slump
+        ref_low: 10.0
+        ref_high: 300.0
+        relevance_mode: context_declared
+        control_mode: exclude
+        control_note: >-
+          Declared monotone, but the indicator's definition says very high
+          workability can be unnecessary where the application does not call for
+          it, which would make it an ideal band instead. Existing published
+          control data already sweeps it; no further cases are generated and it
+          is not gated until the shape is settled.
       - {indicator_key: density, ref_low: 1400.0, ref_high: 3000.0,
          relevance_mode: context_declared}
       - {indicator_key: d_max, ref_low: 4.0, ref_high: 40.0,

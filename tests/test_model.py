@@ -252,3 +252,31 @@ def test_a_checkpoint_refuses_to_shrink(registry):
     smaller.n_indicators -= 1
     with pytest.raises(ValueError, match="append-only"):
         checkpoint_module.grow_state_dict(model.state_dict(), config, smaller)
+
+
+def test_assertion_summary_counts_every_verdict(registry, category_key):
+    """The summary must bucket verdicts it actually produces.
+
+    Counting under hand-written words that drift from the verdict constants is
+    how a reporting step throws away a finished training run.
+    """
+    from eval.behavioural import FAIL, NO_RESPONSE, PASS, Assertion, Suite
+
+    suite = Suite(
+        assertions=[
+            Assertion("monotonicity", category_key, "i", "c", "s", "", 1.0, 0.98, PASS),
+            Assertion("monotonicity", category_key, "j", "c", "s", "", 0.1, 0.98, FAIL),
+            Assertion(
+                "monotonicity", category_key, "k", "c", "s", "", 0.0, 0.98, NO_RESPONSE
+            ),
+        ]
+    )
+    counts = suite.summary()["monotonicity"]
+    assert counts == {PASS: 1, FAIL: 1, NO_RESPONSE: 1}
+
+    # Only a wrong answer fails the gate.
+    assert len(suite.failures) == 1
+    assert len(suite.flat) == 1
+    assert not suite.passed
+
+    assert Suite(assertions=[a for a in suite.assertions if a.verdict != FAIL]).passed

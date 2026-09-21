@@ -178,18 +178,33 @@ def render(results: dict[str, Any], name: str = "") -> str:
         parts.append("")
         for kind, counts in sorted(behavioural.get("summary", {}).items()):
             parts.append(
-                f"- `{kind}`: {counts.get('passed', 0)} passed, "
-                f"{counts.get('failed', 0)} failed"
+                f"- `{kind}`: {counts.get('pass', 0)} passed, "
+                f"{counts.get('fail', 0)} failed, "
+                f"{counts.get('no_response', 0)} no response"
             )
         failures = behavioural.get("failures", [])
         if failures:
             parts.append("")
-            parts.append("Failures:")
+            parts.append("Failures -- the model answered, and answered wrongly:")
             parts.append("")
             for line in failures[:40]:
                 parts.append(f"    {line}")
             if len(failures) > 40:
                 parts.append(f"    ... and {len(failures) - 40} more")
+
+        flat = behavioural.get("no_response", [])
+        if flat:
+            parts.append("")
+            parts.append(
+                "No measurable response -- reported, not gated. The model barely "
+                "moves when these indicators move, which usually means nothing "
+                "in the training data varies them on their own:"
+            )
+            parts.append("")
+            for line in flat[:40]:
+                parts.append(f"    {line}")
+            if len(flat) > 40:
+                parts.append(f"    ... and {len(flat) - 40} more")
 
     by_family = results.get("by_family") or {}
     if by_family:

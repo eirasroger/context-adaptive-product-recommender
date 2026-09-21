@@ -305,15 +305,23 @@ def make_case(
 def varied_indicators(
     registry: Registry, category_key: str, context_keys: Sequence[str]
 ) -> list[str]:
-    """Indicators worth varying: those the registry gives a direction to here.
+    """Indicators worth varying: those the registry gives a direction to here
+    **and** declares safe to sweep.
 
-    An indicator with no direction under the active context carries no declared
-    expectation, so sweeping it would assert nothing.
+    Two separate filters, for two separate reasons. An indicator with no
+    direction under the active context carries no declared expectation, so
+    sweeping it would assert nothing. An indicator marked ``control_mode:
+    exclude`` has a direction that does not hold across its whole range -- it
+    turns over, the sources disagree, or the question is open -- so sweeping it
+    would assert something the registry does not actually claim, and would put
+    that claim into the training data as if it were ground truth.
     """
     category = registry.category(category_key)
     out = []
     for indicator_key in category.token_order:
         if registry.indicator(indicator_key).is_derived:
+            continue
+        if not category.members[indicator_key].is_sweepable:
             continue
         if not registry.is_relevant(category_key, indicator_key, context_keys):
             continue

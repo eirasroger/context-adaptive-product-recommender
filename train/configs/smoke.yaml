@@ -1,7 +1,7 @@
 # Fast sanity run. Not a result.
 name: smoke
 db: data/corpus.db
-registry_version: "0.1.0"
+registry_version: "0.2.0"
 arch:
   dim: 64
   encoder_blocks: 1

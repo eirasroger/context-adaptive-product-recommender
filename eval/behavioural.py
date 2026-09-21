@@ -18,6 +18,18 @@ Three kinds:
 * **Disqualification** -- does a level the registry marks as never-selectable
   actually score below the alternatives around it?
 
+Each assertion returns one of three verdicts, not two. **Only a wrong answer
+fails the gate.** An indicator the model barely responds to is reported
+separately as ``no_response``, because that is a coverage problem rather than a
+correctness one -- almost always it means nothing in the training data ever
+varied that indicator on its own -- and folding it into the failures would hide
+one problem inside another that needs a completely different fix.
+
+Indicators the registry marks as not sweepable are not asserted on at all. If a
+declared direction does not hold across the whole declared range, there is
+nothing to compare the model against, and inventing an expectation would be
+worse than admitting the gap.
+
 This tier is what makes the system credible in production rather than only in a
 paper.
 """
@@ -42,15 +54,28 @@ DEFAULT_STEPS = 9
 #: Rank correlation a monotone response must reach.
 MONOTONE_THRESHOLD = 0.98
 
-#: How much of the sweep's range a sign flip must actually traverse before the
-#: direction of the response means anything. Without this, a flat model passes
-#: the flip test on numerical noise.
+#: How far the score must actually move across a sweep before the *direction* of
+#: the response means anything at all. Below this the model is not saying
+#: anything about the indicator, and rank correlation would turn numerical noise
+#: into a confident verdict either way.
 MIN_RESPONSE = 0.01
+
+#: The three things an assertion can conclude.
+PASS = "pass"
+FAIL = "fail"
+NO_RESPONSE = "no_response"
 
 
 @dataclass
 class Assertion:
-    """One pass/fail statement about the model's behaviour."""
+    """One statement about the model's behaviour, with three possible verdicts.
+
+    ``no_response`` is deliberately not a failure. It says the model barely
+    moves when this indicator moves, which is a different problem from moving
+    the wrong way -- usually it means nothing in the training data ever isolated
+    the indicator. Reporting it as a failure would hide a coverage gap inside a
+    correctness signal, and the two need different fixes.
+    """
 
     kind: str
     category: str
@@ -60,12 +85,30 @@ class Assertion:
     statement: str
     observed: float
     threshold: float
-    passed: bool
+    verdict: str
+    #: How far the score actually moved across the sweep.
+    response: float = 0.0
+    threshold_response: float = MIN_RESPONSE
+
+    @property
+    def passed(self) -> bool:
+        return self.verdict == PASS
+
+    @property
+    def failed(self) -> bool:
+        return self.verdict == FAIL
 
     def __str__(self) -> str:
-        verdict = "PASS" if self.passed else "FAIL"
+        label = {PASS: "PASS", FAIL: "FAIL", NO_RESPONSE: "FLAT"}[self.verdict]
+        if self.verdict == NO_RESPONSE:
+            return (
+                f"{label}  {self.kind:14s} {self.category}/{self.indicator} "
+                f"[{self.context}|{self.stakeholder}] no measurable response "
+                f"(score moved {self.response:.4f} across the sweep, "
+                f"needs {self.threshold_response:.4f})"
+            )
         return (
-            f"{verdict}  {self.kind:14s} {self.category}/{self.indicator} "
+            f"{label}  {self.kind:14s} {self.category}/{self.indicator} "
             f"[{self.context}|{self.stakeholder}] {self.statement} "
             f"(observed {self.observed:+.3f}, threshold {self.threshold:+.3f})"
         )
@@ -77,18 +120,30 @@ class Suite:
 
     @property
     def failures(self) -> list[Assertion]:
-        return [a for a in self.assertions if not a.passed]
+        return [a for a in self.assertions if a.failed]
+
+    @property
+    def flat(self) -> list[Assertion]:
+        """Assertions that could not be judged because the model did not move."""
+        return [a for a in self.assertions if a.verdict == NO_RESPONSE]
 
     @property
     def passed(self) -> bool:
+        """Only a wrong answer fails the gate. An unanswered one is reported."""
         return not self.failures
 
     def summary(self) -> dict[str, dict[str, int]]:
+        """Count assertions per kind, keyed by the verdict constants themselves.
+
+        Keyed on ``PASS``/``FAIL``/``NO_RESPONSE`` rather than on hand-written
+        words, so a verdict can never be counted under a bucket that does not
+        exist.
+        """
         counts: dict[str, dict[str, int]] = defaultdict(
-            lambda: {"passed": 0, "failed": 0}
+            lambda: {PASS: 0, FAIL: 0, NO_RESPONSE: 0}
         )
         for assertion in self.assertions:
-            counts[assertion.kind]["passed" if assertion.passed else "failed"] += 1
+            counts[assertion.kind][assertion.verdict] += 1
         return dict(counts)
 
 
@@ -158,7 +213,14 @@ def monotonicity_assertions(
     threshold: float = MONOTONE_THRESHOLD,
     device: str | torch.device = "cpu",
 ) -> list[Assertion]:
-    """For each indicator, sweep it and check the response follows the registry."""
+    """Sweep each indicator the registry declares safe to sweep, and check the
+    response follows the declared direction.
+
+    ``parametric.varied_indicators`` already drops indicators the registry marks
+    as not sweepable, so an indicator whose direction does not hold across its
+    range is never asserted on. That is the point: there would be nothing to
+    compare the model against.
+    """
     out: list[Assertion] = []
     category = registry.category(category_key)
 
@@ -178,7 +240,19 @@ def monotonicity_assertions(
                 stakeholder_key,
             )
             scores = score_case(model, registry, case, device)
+
+            # Establish that the model moved before judging which way it moved.
+            # Rank correlation over a flat response is noise wearing a verdict.
+            response = float(np.max(scores) - np.min(scores))
             observed = _spearman(case.quality, scores)
+
+            if response < MIN_RESPONSE:
+                verdict = NO_RESPONSE
+            elif observed >= threshold:
+                verdict = PASS
+            else:
+                verdict = FAIL
+
             out.append(
                 Assertion(
                     kind="monotonicity",
@@ -189,7 +263,8 @@ def monotonicity_assertions(
                     statement="score follows the declared direction",
                     observed=observed,
                     threshold=threshold,
-                    passed=observed >= threshold,
+                    verdict=verdict,
+                    response=response,
                 )
             )
     return out
@@ -215,13 +290,22 @@ def sign_flip_assertions(
     for indicator_key in category.token_order:
         if registry.indicator(indicator_key).is_derived:
             continue
+        if not category.members[indicator_key].is_sweepable:
+            continue
+
+        # Both contexts must actually *declare* over the indicator. Setting a
+        # declared direction against an indicator's undeclared default is not a
+        # context inversion: the second context says nothing about it, so there
+        # is no claim to test and no reason to expect a response.
         directions: dict[str, float] = {}
         for context_key in contexts:
-            direction, _ = registry.resolve_direction(
-                category_key, indicator_key, [context_key]
+            declaration = (
+                registry.contexts[context_key]
+                .for_category(category_key)
+                .get(indicator_key)
             )
-            if direction != 0:
-                directions[context_key] = direction
+            if declaration is not None and declaration.direction != 0:
+                directions[context_key] = float(declaration.direction)
 
         opposed = [
             (a, b)
@@ -252,6 +336,14 @@ def sign_flip_assertions(
 
             magnitude = min(abs(responses[0]), abs(responses[1]))
             inverted = responses[0] * responses[1] < 0
+
+            if magnitude < MIN_RESPONSE:
+                verdict = NO_RESPONSE
+            elif inverted:
+                verdict = PASS
+            else:
+                verdict = FAIL
+
             out.append(
                 Assertion(
                     kind="sign_flip",
@@ -262,7 +354,8 @@ def sign_flip_assertions(
                     statement="response inverts between opposed contexts",
                     observed=magnitude if inverted else -magnitude,
                     threshold=MIN_RESPONSE,
-                    passed=inverted and magnitude >= MIN_RESPONSE,
+                    verdict=verdict,
+                    response=magnitude,
                 )
             )
     return out
@@ -311,7 +404,8 @@ def disqualification_assertions(
                     statement=f"level {level.key} scores below every other level",
                     observed=margin,
                     threshold=0.0,
-                    passed=margin > 0.0,
+                    verdict=PASS if margin > 0.0 else FAIL,
+                    response=float(np.max(scores) - np.min(scores)),
                 )
             )
     return out

@@ -89,6 +89,26 @@ def main() -> None:
     model, history = train(config, registry, prepared, on_epoch=log)
     write_history(run_dir / "history.json", history)
 
+    # Persist the weights before anything that merely describes them. Evaluation
+    # and the behavioural suite are reporting steps; a fault in one of them must
+    # not be able to discard a finished training run.
+    checkpoint_path = checkpoint_module.save(
+        run_dir / "model.pt",
+        model,
+        registry,
+        registry_blob,
+        checkpoint_module.CheckpointMeta(
+            registry_version=config.registry_version,
+            registry_content_hash=registry.content_hash,
+            snapshot_hash=snapshot_hash,
+            split_key=config.split_key,
+            created_at=checkpoint_module.now(),
+            metrics={},
+            notes=config.notes,
+        ),
+    )
+    print(f"checkpoint {checkpoint_path}")
+
     device = config.resolved_device()
     results = report_module.evaluate_all(
         model, registry, prepared, device=device, fold="test"
@@ -101,6 +121,9 @@ def main() -> None:
             "passed": suite.passed,
             "summary": suite.summary(),
             "failures": [str(a) for a in suite.failures],
+            # Reported, never gated: an indicator the model does not respond to
+            # is a gap in what the data covers, not a wrong answer.
+            "no_response": [str(a) for a in suite.flat],
         }
 
     (run_dir / "metrics.json").write_text(
@@ -110,6 +133,7 @@ def main() -> None:
         report_module.render(results, config.name), encoding="utf-8"
     )
 
+    # Rewrite with the metrics attached, now that they exist.
     checkpoint_module.save(
         run_dir / "model.pt",
         model,
@@ -128,9 +152,16 @@ def main() -> None:
 
     print()
     print(report_module.render(results, config.name))
-    if suite is not None and not suite.passed:
-        print(f"\nbehavioural gate FAILED: {len(suite.failures)} assertion(s)")
-        raise SystemExit(1)
+    if suite is not None:
+        if suite.flat:
+            print(
+                f"\nnote: {len(suite.flat)} assertion(s) had no measurable "
+                "response. Not a gate failure -- it means the data never "
+                "isolates those indicators. See report.md."
+            )
+        if not suite.passed:
+            print(f"\nbehavioural gate FAILED: {len(suite.failures)} assertion(s)")
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":

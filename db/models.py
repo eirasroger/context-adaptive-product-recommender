@@ -270,6 +270,14 @@ class CategoryIndicator(Base):
             "direction_override IS NULL OR direction_override IN (-1,0,1)",
             name="direction_override",
         ),
+        CheckConstraint("control_mode IN ('sweep','exclude')", name="control_mode"),
+        # Excluding an indicator from control generation removes it from the
+        # behavioural gate too, so the reason has to be written down rather than
+        # left as a silent gap in what is tested.
+        CheckConstraint(
+            "control_mode <> 'exclude' OR control_note IS NOT NULL",
+            name="exclusion_justified",
+        ),
     )
 
     category_key: Mapped[str] = mapped_column(
@@ -286,6 +294,19 @@ class CategoryIndicator(Base):
         Text, nullable=False, default="always"
     )
     direction_override: Mapped[int | None] = mapped_column(Integer)
+    #: Whether a control case may vary this indicator on its own.
+    #:
+    #: ``sweep`` -- the declared direction holds across the whole range, so
+    #: holding everything else ideal and moving this one asserts something true.
+    #: The behavioural suite gates on it.
+    #:
+    #: ``exclude`` -- the relationship is not monotone across the range, is
+    #: disputed, or is still an open question. Generating a control label would
+    #: assert something the registry does not actually claim, so nothing is
+    #: generated and nothing is gated. An untested indicator is a known gap, not
+    #: a silent pass.
+    control_mode: Mapped[str] = mapped_column(Text, nullable=False, default="sweep")
+    control_note: Mapped[str | None] = mapped_column(Text)
     note: Mapped[str | None] = mapped_column(Text)
 
 

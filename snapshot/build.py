@@ -72,11 +72,18 @@ def collect(
     categories: Iterable[str] | None = None,
     provenances: Iterable[str] | None = None,
     folds: Iterable[str] | None = None,
+    sources: Iterable[str] | None = None,
 ) -> dict[str, pd.DataFrame]:
-    """Pull the corpus into three flat frames: sets, members, values."""
+    """Pull the corpus into three flat frames: sets, members, values.
+
+    ``sources`` exists so a run can be restricted to one ingested dataset. A
+    reproduction of a published result has to be able to exclude data generated
+    afterwards, or it is not a reproduction.
+    """
     category_filter = sorted(categories) if categories else None
     provenance_filter = sorted(provenances) if provenances else None
     fold_filter = sorted(folds) if folds else None
+    source_filter = sorted(sources) if sources else None
 
     statement = (
         select(
@@ -100,6 +107,8 @@ def collect(
         statement = statement.where(ComparisonSet.provenance_key.in_(provenance_filter))
     if fold_filter:
         statement = statement.where(DatasetSplit.fold.in_(fold_filter))
+    if source_filter:
+        statement = statement.where(ComparisonSet.source_key.in_(source_filter))
 
     sets = _frame(
         session,
@@ -232,13 +241,14 @@ def build(
     categories: Iterable[str] | None = None,
     provenances: Iterable[str] | None = None,
     folds: Iterable[str] | None = None,
+    sources: Iterable[str] | None = None,
 ) -> tuple[str, Path]:
     """Build the snapshot and register it. Returns its hash and directory."""
     from core import registry as registry_module
 
     registry = registry_module.from_release(session, registry_version)
 
-    frames = collect(session, split_key, categories, provenances, folds)
+    frames = collect(session, split_key, categories, provenances, folds, sources)
     digest = _hash_frames({**frames, "registry": pd.DataFrame({"h": [registry.content_hash]})})
 
 
@@ -255,6 +265,7 @@ def build(
         "categories": sorted(categories) if categories else None,
         "provenances": sorted(provenances) if provenances else None,
         "folds": sorted(folds) if folds else None,
+        "sources": sorted(sources) if sources else None,
     }
     manifest = {
         "content_hash": digest,
@@ -292,6 +303,12 @@ def main() -> None:
     parser.add_argument("--root", default=str(SNAPSHOT_ROOT))
     parser.add_argument("--category", action="append", dest="categories")
     parser.add_argument("--provenance", action="append", dest="provenances")
+    parser.add_argument(
+        "--source",
+        action="append",
+        dest="sources",
+        help="restrict to one ingested dataset; repeatable",
+    )
     args = parser.parse_args()
 
     with session_scope(create_db_engine(args.db)) as session:
@@ -302,6 +319,7 @@ def main() -> None:
             root=Path(args.root),
             categories=args.categories,
             provenances=args.provenances,
+            sources=args.sources,
         )
 
     print(f"snapshot {digest}")

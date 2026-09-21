@@ -263,6 +263,8 @@ def _load_categories(session: Session, doc: dict) -> None:
                 is_required=_bool(member.get("is_required", False)),
                 relevance_mode=member.get("relevance_mode", "always"),
                 direction_override=member.get("direction_override"),
+                control_mode=member.get("control_mode", "sweep"),
+                control_note=(member.get("control_note") or "").strip() or None,
                 note=member.get("note"),
             )
 

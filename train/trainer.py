@@ -97,6 +97,7 @@ def make_loaders(
     val = ComparisonSetDataset(prepared, fold="val")
     if not len(train) or not len(val):
         raise ValueError("the snapshot has no labelled training or validation sets")
+    pin = config.optim.pin_memory and config.resolved_device().startswith("cuda")
     return (
         DataLoader(
             train,
@@ -104,9 +105,16 @@ def make_loaders(
             shuffle=True,
             collate_fn=collate,
             drop_last=False,
+            pin_memory=pin,
+            num_workers=config.optim.num_workers,
         ),
         DataLoader(
-            val, batch_size=config.optim.batch_size, shuffle=False, collate_fn=collate
+            val,
+            batch_size=config.optim.batch_size,
+            shuffle=False,
+            collate_fn=collate,
+            pin_memory=pin,
+            num_workers=config.optim.num_workers,
         ),
     )
 

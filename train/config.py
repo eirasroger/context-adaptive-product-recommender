@@ -25,6 +25,10 @@ class OptimConfig:
     patience: int = 6
     min_delta: float = 1e-5
     seed: int = 0
+    #: Staging batches in pinned memory only helps when there is a device to
+    #: copy them to; on CPU it is pure overhead, so it follows the device.
+    pin_memory: bool = True
+    num_workers: int = 0
 
 
 @dataclass

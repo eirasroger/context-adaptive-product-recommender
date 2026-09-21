@@ -85,6 +85,14 @@ class MembershipSpec:
     relevance_mode: str
     direction_override: int | None
     reference_range: RangeSpec | None
+    #: ``sweep`` or ``exclude`` -- whether a control case may vary this
+    #: indicator alone, and therefore whether the behavioural suite gates on it.
+    control_mode: str = "sweep"
+    control_note: str | None = None
+
+    @property
+    def is_sweepable(self) -> bool:
+        return self.control_mode == "sweep"
 
 
 @dataclass(frozen=True, slots=True)
@@ -242,6 +250,13 @@ class Registry:
             indicator_key in self.contexts[key].for_category(category_key)
             for key in active_contexts
             if key in self.contexts
+        )
+
+    def sweepable(self, category_key: str) -> tuple[str, ...]:
+        """Indicators this category allows a control case to vary on its own."""
+        category = self.category(category_key)
+        return tuple(
+            key for key in category.token_order if category.members[key].is_sweepable
         )
 
     def declared_ideal(
@@ -402,6 +417,8 @@ def from_document(
             relevance_mode=row["relevance_mode"],
             direction_override=row["direction_override"],
             reference_range=ranges.get((row["category_key"], row["indicator_key"])),
+            control_mode=row.get("control_mode", "sweep"),
+            control_note=row.get("control_note"),
         )
 
     weights_by_category: dict[str, dict[str, float]] = {}
