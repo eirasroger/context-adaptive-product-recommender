@@ -1,0 +1,10 @@
+provenance:
+- key: control
+  display_name: Control case
+  definition_text: Deterministically generated from the registry. Every indicator is held at an ideal value except the one under test, whose relationship to the preference score is a declared function. Because the mapping is known, these double as the behavioural test suite.
+- key: expert
+  display_name: Expert annotated
+  definition_text: Scored by a domain practitioner. Few, slow to obtain and the closest thing available to ground truth, so they carry the highest weight per example and are never averaged together at ingest time.
+- key: llm
+  display_name: Language-model labelled
+  definition_text: Scored by a language model against a written assessment brief. Broad coverage of realistic trade-offs, with a self-reported confidence that is used to weight the loss.

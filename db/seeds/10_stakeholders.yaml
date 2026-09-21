@@ -1,0 +1,140 @@
+# Stakeholder archetypes.
+#
+# These are registry entities with learned embeddings, not one-hot positions, so
+# a ninth archetype is a new row and existing checkpoints survive it.
+#
+# `priorities` is a GENERATOR INPUT ONLY. It sets how wide a preference band a
+# control case spans for a given archetype -- a sustainability maximalist should
+# show a wider spread over an environmental indicator than a cost-driven
+# developer does. It is deliberately never fed to the model: the control labels
+# are produced from this table, so handing it to the model as a feature would
+# make the behavioural assertions circular.
+
+stakeholder:
+  - key: sustainability_maximalist
+    display_name: Sustainability maximalist
+    definition_text: >-
+      Strongly minimises environmental impacts and values high secondary content
+      and high recovery rates. Will accept somewhat higher costs when the
+      sustainability gain is significant.
+    priorities:
+      family:
+        environmental_impact: 1.0
+        circularity: 0.8
+        health_safety: 0.5
+        performance: 0.4
+        cost: 0.3
+
+  - key: cost_conscious_developer
+    display_name: Cost-conscious developer
+    definition_text: >-
+      Prioritises low total life-cycle cost. Environmental and circularity
+      indicators remain relevant but are clearly secondary, as long as basic
+      sustainability and performance are not extremely poor.
+    priorities:
+      family:
+        cost: 1.0
+        performance: 0.5
+        environmental_impact: 0.4
+        health_safety: 0.4
+        circularity: 0.3
+
+  - key: occupant_comfort_focused
+    display_name: Occupant comfort focused
+    definition_text: >-
+      Values thermal, acoustic and indoor-environmental quality, and strongly
+      prefers better health certification. Environmental and cost indicators are
+      important but secondary.
+    priorities:
+      family:
+        health_safety: 0.9
+        performance: 0.8
+        environmental_impact: 0.5
+        cost: 0.5
+        circularity: 0.4
+
+  - key: health_safety_focused
+    display_name: Health and safety focused
+    definition_text: >-
+      Prioritises health certification and the absence of hazardous waste, and
+      penalises unknown or non-compliant chemical profiles even when better
+      options are only marginally more expensive. Favours properties that make
+      installation safer.
+    priorities:
+      family:
+        health_safety: 1.0
+        performance: 0.5
+        environmental_impact: 0.5
+        cost: 0.4
+        circularity: 0.4
+      indicator:
+        fu_haz: 1.0
+        slump: 0.5
+
+  - key: circular_economy_advocate
+    display_name: Circular economy advocate
+    definition_text: >-
+      Maximises secondary content and recovery rates and minimises landfilled
+      and hazardous fractions. Environmental impacts matter too, but circularity
+      dominates the trade-offs, and higher cost is acceptable when the
+      circularity gain is substantial.
+    priorities:
+      family:
+        circularity: 1.0
+        environmental_impact: 0.7
+        health_safety: 0.5
+        performance: 0.4
+        cost: 0.3
+      indicator:
+        circ_orig: 1.0
+        fu_recyc: 0.9
+
+  - key: regulatory_aligned_builder
+    display_name: Regulatory-aligned builder
+    definition_text: >-
+      Prefers options that align with current and expected regulatory
+      requirements, and dislikes missing data. Penalises incomplete or unclear
+      profiles by lowering both preference and confidence.
+    priorities:
+      family:
+        health_safety: 0.8
+        environmental_impact: 0.7
+        cost: 0.6
+        performance: 0.6
+        circularity: 0.5
+
+  - key: balanced_optimizer
+    display_name: Balanced optimizer
+    definition_text: >-
+      Seeks a good compromise across every indicator family and avoids extremes
+      in any single dimension. Prefers well-rounded options with no critical
+      weakness over options that excel narrowly.
+    priorities:
+      family:
+        environmental_impact: 0.6
+        circularity: 0.6
+        cost: 0.6
+        health_safety: 0.6
+        performance: 0.6
+
+  - key: pragmatic_contractor
+    display_name: Pragmatic contractor
+    definition_text: >-
+      Prefers options that reduce on-site complexity and risk: adequate
+      workability, robust rather than borderline performance, and an acceptable
+      environmental and cost profile. Health and the absence of hazardous waste
+      count positively where they affect handling safety.
+    domain_scope_text: >-
+      Framed around site installation and on-site risk. The archetype weakens
+      for categories that are specified and purchased without a construction
+      process to simplify.
+    priorities:
+      family:
+        performance: 0.9
+        cost: 0.7
+        health_safety: 0.6
+        environmental_impact: 0.4
+        circularity: 0.4
+      indicator:
+        slump: 0.8
+        compressive_strength: 0.7

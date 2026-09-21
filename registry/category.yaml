@@ -1,0 +1,8 @@
+category:
+- key: concrete
+  display_name: Concrete
+  definition_text: Structural and non-structural concrete mixes compared at material level. The first category implemented, chosen because an open, labelled dataset and a published baseline already exist for it, which makes it the validation case for the architecture rather than its subject.
+  functional_unit_key: kg
+  eligibility_precondition_text: All alternatives are assumed to have passed a separate regulatory prefiltering step establishing basic standards compliance and suitability for the intended exposure class. This model ranks the surviving options on sustainability and contextual performance; it does not check exposure class rules, and its output must not be read as a compliance statement.
+  default_context_key: standard_structural
+  is_active: 1

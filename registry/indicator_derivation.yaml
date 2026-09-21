@@ -1,0 +1,10 @@
+indicator_derivation:
+- derived_key: cost_total
+  source_key: cost_labour
+  coefficient: 1.0
+- derived_key: cost_total
+  source_key: cost_maintenance
+  coefficient: 1.0
+- derived_key: cost_total
+  source_key: cost_product
+  coefficient: 1.0

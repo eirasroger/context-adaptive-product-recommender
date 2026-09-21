@@ -1,0 +1,26 @@
+indicator_family:
+- key: circularity
+  display_name: Circularity and end of life
+  definition_text: 'Where the product''s material came from and where it goes afterwards. Covers secondary content at the input side and the distribution of mass over end-of-life treatment routes at the output side. Direction varies by member: recovery routes are preferred, disposal routes are not.'
+  sort_order: 2
+  is_active: 1
+- key: cost
+  display_name: Life-cycle cost
+  definition_text: Monetary cost per functional unit over the reference service life, split by the stage that incurs it. Lower is better throughout this family.
+  sort_order: 3
+  is_active: 1
+- key: environmental_impact
+  display_name: Environmental impact
+  definition_text: Life-cycle environmental burdens declared per the product's functional unit. Lower is better throughout this family. Members are typically drawn straight from an EPD's impact assessment results.
+  sort_order: 1
+  is_active: 1
+- key: health_safety
+  display_name: Health and safety
+  definition_text: Chemical safety, certification status and hazard exposure, for occupants and for the people who install and dismantle the product. Usually expressed on a certified ordered scale rather than as a measured quantity.
+  sort_order: 4
+  is_active: 1
+- key: performance
+  display_name: Technical performance
+  definition_text: 'What the product does in service: mechanical, physical and constructional properties. This is the family whose direction most often depends on the application context rather than being intrinsic, and the family where a newly added category is most likely to introduce indicators nothing else uses.'
+  sort_order: 5
+  is_active: 1

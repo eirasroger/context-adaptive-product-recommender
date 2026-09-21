@@ -1,0 +1,21 @@
+context:
+- key: acoustic_insulation
+  display_name: Acoustic insulation
+  definition_text: Sound insulation is a primary goal. Mass is the governing mechanism, so denser options are preferred where a density indicator exists; categories that declare a measured acoustic reduction figure instead will prefer that directly. Among alternatives at a similar acoustic level, the decision falls back to sustainability, health and cost.
+  is_baseline: 0
+  is_active: 1
+- key: architectural_finish
+  display_name: Architectural finish
+  definition_text: The product's own surface is the finished, visible surface. Finer aggregate and better workability give smoother, more uniform results. Very high secondary content can harm visual uniformity, so this context reaches into a circularity indicator and reverses its usual direction -- an empirical cross-family effect that nobody would author as a performance requirement, and the reason contexts need a learned residual on top of their declarations.
+  is_baseline: 0
+  is_active: 1
+- key: standard_structural
+  display_name: Standard structural application
+  definition_text: 'Baseline application: load-bearing elements with standard geometry, where every alternative is assumed structurally adequate. No strong bias towards any single performance property, so the decision turns on sustainability, cost and overall robustness. Being a baseline, it stays available for the categories that nominate it whether or not it reaches any of their indicators.'
+  is_baseline: 1
+  is_active: 1
+- key: thermal_insulation
+  display_name: Thermal insulation
+  definition_text: Thermal resistance and reduced dead load matter. Lower density is preferred, which is the exact inverse of the acoustic case over the same indicator -- the pair is the sharpest available test that the model has learned context rather than memorised a direction.
+  is_baseline: 0
+  is_active: 1

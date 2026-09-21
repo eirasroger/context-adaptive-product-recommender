@@ -1,0 +1,137 @@
+"""Run a training job end to end.
+
+Builds the snapshot if one was not named, trains, evaluates on the held-out
+fold, runs the behavioural suite, and writes everything into one run directory:
+the config, the epoch history, the metrics, the assertions and the checkpoint.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+
+from core import registry as registry_module
+from core.prepare import load_or_prepare
+from db.session import create_db_engine, session_scope
+from eval import behavioural, report as report_module
+from model import checkpoint as checkpoint_module
+from snapshot.build import SNAPSHOT_ROOT, build
+from train.config import TrainConfig
+from train.trainer import EpochRecord, train, write_history
+
+
+def resolve_snapshot(config: TrainConfig, session) -> tuple[str, Path]:
+    if config.snapshot:
+        directory = SNAPSHOT_ROOT / config.snapshot
+        if not directory.exists():
+            raise FileNotFoundError(f"no snapshot at {directory}")
+        return config.snapshot, directory
+    return build(
+        session,
+        config.split_key,
+        config.registry_version,
+        categories=config.categories or None,
+        provenances=config.provenances or None,
+    )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Train the recommender.")
+    parser.add_argument("--config", default=None, help="training config YAML")
+    parser.add_argument("--db", default=None)
+    parser.add_argument("--name", default=None)
+    parser.add_argument("--epochs", type=int, default=None)
+    parser.add_argument("--dim", type=int, default=None)
+    parser.add_argument("--batch-size", type=int, default=None)
+    parser.add_argument(
+        "--skip-behavioural",
+        action="store_true",
+        help="skip the behavioural gate (for a quick smoke run only)",
+    )
+    args = parser.parse_args()
+
+    config = TrainConfig.load(args.config) if args.config else TrainConfig()
+    if args.db:
+        config.db = args.db
+    if args.name:
+        config.name = args.name
+    if args.epochs is not None:
+        config.optim.epochs = args.epochs
+    if args.dim is not None:
+        config.arch.dim = args.dim
+    if args.batch_size is not None:
+        config.optim.batch_size = args.batch_size
+
+    engine = create_db_engine(config.db)
+    with session_scope(engine) as session:
+        registry = registry_module.from_release(session, config.registry_version)
+        snapshot_hash, snapshot_dir = resolve_snapshot(config, session)
+        registry_blob = session.get(
+            __import__("db.models", fromlist=["RegistryRelease"]).RegistryRelease,
+            config.registry_version,
+        ).yaml_blob
+
+    prepared = load_or_prepare(registry, snapshot_dir)
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    run_dir = Path(config.output_dir) / f"{config.name}-{stamp}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    config.dump(run_dir / "config.yaml")
+
+    print(f"registry {config.registry_version}  snapshot {snapshot_hash[:12]}")
+    print(f"run {run_dir}")
+
+    def log(record: EpochRecord) -> None:
+        print(record.line())
+
+    model, history = train(config, registry, prepared, on_epoch=log)
+    write_history(run_dir / "history.json", history)
+
+    device = config.resolved_device()
+    results = report_module.evaluate_all(
+        model, registry, prepared, device=device, fold="test"
+    )
+
+    suite = None
+    if not args.skip_behavioural:
+        suite = behavioural.run(model, registry, device=device)
+        results["behavioural"] = {
+            "passed": suite.passed,
+            "summary": suite.summary(),
+            "failures": [str(a) for a in suite.failures],
+        }
+
+    (run_dir / "metrics.json").write_text(
+        json.dumps(results, indent=2, sort_keys=True, default=float), encoding="utf-8"
+    )
+    (run_dir / "report.md").write_text(
+        report_module.render(results, config.name), encoding="utf-8"
+    )
+
+    checkpoint_module.save(
+        run_dir / "model.pt",
+        model,
+        registry,
+        registry_blob,
+        checkpoint_module.CheckpointMeta(
+            registry_version=config.registry_version,
+            registry_content_hash=registry.content_hash,
+            snapshot_hash=snapshot_hash,
+            split_key=config.split_key,
+            created_at=checkpoint_module.now(),
+            metrics=results.get("overall", {}),
+            notes=config.notes,
+        ),
+    )
+
+    print()
+    print(report_module.render(results, config.name))
+    if suite is not None and not suite.passed:
+        print(f"\nbehavioural gate FAILED: {len(suite.failures)} assertion(s)")
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

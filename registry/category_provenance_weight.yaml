@@ -1,0 +1,10 @@
+category_provenance_weight:
+- category_key: concrete
+  provenance_key: control
+  weight: 0.4
+- category_key: concrete
+  provenance_key: expert
+  weight: 0.2
+- category_key: concrete
+  provenance_key: llm
+  weight: 0.4

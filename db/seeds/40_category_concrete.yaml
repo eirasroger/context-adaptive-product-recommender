@@ -1,0 +1,85 @@
+# The first category.
+#
+# Everything in this file is a row. Adding a second category means adding
+# another file shaped exactly like this one -- a functional unit, a category,
+# the indicators it holds, the range each of those is normalised against, and
+# how its labels are weighted. No schema change, no model change, no generator.
+#
+# Reference ranges are DECLARED, not fitted from whatever data happens to be on
+# disk. That is what decouples a trained checkpoint from a particular dataset
+# file. Values outside a declared range are clipped and flagged rather than
+# silently rescaling everything else.
+
+functional_unit:
+  - key: kg
+    display_name: One kilogram
+    quantity_kind: mass
+    unit: kg
+    reference_service_life_years: 50
+    definition_text: >-
+      One kilogram of the hardened product over the reference design life, which
+      is how this category's product declarations report their figures.
+
+category:
+  - key: concrete
+    display_name: Concrete
+    functional_unit_key: kg
+    default_context_key: standard_structural
+    definition_text: >-
+      Structural and non-structural concrete mixes compared at material level.
+      The first category implemented, chosen because an open, labelled dataset
+      and a published baseline already exist for it, which makes it the
+      validation case for the architecture rather than its subject.
+    eligibility_precondition_text: >-
+      All alternatives are assumed to have passed a separate regulatory
+      prefiltering step establishing basic standards compliance and suitability
+      for the intended exposure class. This model ranks the surviving options on
+      sustainability and contextual performance; it does not check exposure
+      class rules, and its output must not be read as a compliance statement.
+
+    provenance_weights:
+      control: 0.4
+      llm: 0.4
+      expert: 0.2
+
+    # `relevance_mode: context_declared` marks an indicator whose relevance flag
+    # depends on the active context. Everything else is always relevant.
+    indicators:
+      - {indicator_key: gwp, ref_low: 0.05, ref_high: 0.50}
+      - {indicator_key: wdp, ref_low: 0.003, ref_high: 0.30}
+      - {indicator_key: fwu, ref_low: 0.0001, ref_high: 0.01, scale: log}
+      - {indicator_key: b, ref_low: 0.0, ref_high: 1.0}
+
+      - {indicator_key: circ_orig, ref_low: 0.0, ref_high: 100.0}
+      - {indicator_key: fu_recyc, ref_low: 0.0, ref_high: 100.0}
+      - {indicator_key: fu_incin, ref_low: 0.0, ref_high: 100.0}
+      - {indicator_key: fu_inert, ref_low: 0.0, ref_high: 100.0}
+      - {indicator_key: fu_haz, ref_low: 0.0, ref_high: 10.0}
+
+      - {indicator_key: cost_product, ref_low: 0.05, ref_high: 0.40}
+      - {indicator_key: cost_labour, ref_low: 0.005, ref_high: 0.10}
+      - {indicator_key: cost_maintenance, ref_low: 0.005, ref_high: 0.10}
+      - {indicator_key: cost_total, ref_low: 0.06, ref_high: 0.60}
+
+      - {indicator_key: health}
+
+      - {indicator_key: compressive_strength, ref_low: 8.0, ref_high: 60.0,
+         relevance_mode: context_declared}
+      - {indicator_key: water_to_cement_ratio, ref_low: 0.30, ref_high: 0.80,
+         relevance_mode: context_declared}
+      - {indicator_key: cement_content, ref_low: 200.0, ref_high: 600.0,
+         relevance_mode: context_declared}
+      - {indicator_key: scm_content, ref_low: 0.0, ref_high: 350.0,
+         relevance_mode: context_declared}
+      - {indicator_key: slump, ref_low: 10.0, ref_high: 300.0,
+         relevance_mode: context_declared}
+      - {indicator_key: density, ref_low: 1400.0, ref_high: 3000.0,
+         relevance_mode: context_declared}
+      - {indicator_key: d_max, ref_low: 4.0, ref_high: 40.0,
+         relevance_mode: context_declared}
+
+range_source_note: >-
+  Plausible envelope for this category under the governing product standard,
+  widened where necessary to contain the published corpus. Declared as a
+  specification; changing one of these changes model behaviour and is a
+  version-bumping event.

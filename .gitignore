@@ -216,3 +216,19 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- project ---------------------------------------------------------------
+# The database is the system of record but is rebuilt from migrations plus
+# seeds; the registry mirror in registry/ is what gets reviewed.
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# Snapshots are large, immutable and reproducible from the database.
+data/snapshots/
+
+# Training runs.
+runs/
+
+# Private working notes and plans.
+docs/

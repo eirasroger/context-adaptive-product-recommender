@@ -1,0 +1,79 @@
+# Application contexts.
+#
+# A context is both a declaration and a learned entity. The declarations below
+# carry cheap, uncontroversial domain knowledge -- which indicators a
+# requirement reaches into, and in which direction. How much that requirement
+# outweighs sustainability, cost and stakeholder priority is left to the model.
+#
+# Declarations name INDICATORS, not categories. That is what makes a context's
+# availability for a category derived rather than maintained: a context is live
+# for a category when that category holds the indicators the context points at,
+# and inert when it does not. Set `is_required` on a declaration when the
+# context is meaningless without that particular indicator -- that is the switch
+# that makes a requirement automatically inert outside the categories it applies
+# to.
+#
+# `category_key` defaults to the wildcard, meaning every category. Giving it a
+# real category key overrides the general row for that category alone.
+
+context:
+  - key: standard_structural
+    display_name: Standard structural application
+    is_baseline: true
+    definition_text: >-
+      Baseline application: load-bearing elements with standard geometry, where
+      every alternative is assumed structurally adequate. No strong bias towards
+      any single performance property, so the decision turns on sustainability,
+      cost and overall robustness. Being a baseline, it stays available for the
+      categories that nominate it whether or not it reaches any of their
+      indicators.
+    declarations:
+      - {indicator_key: compressive_strength, direction: 1, priority: 0.30}
+      - {indicator_key: water_to_cement_ratio, direction: -1, priority: 0.30}
+      - {indicator_key: scm_content, direction: 1, priority: 0.30}
+      - {indicator_key: slump, direction: 1, priority: 0.20}
+      - {indicator_key: cement_content, direction: -1, priority: 0.20}
+      - {indicator_key: density, direction: 0, priority: 0.10}
+      - {indicator_key: d_max, direction: 0, priority: 0.10}
+
+  - key: acoustic_insulation
+    display_name: Acoustic insulation
+    definition_text: >-
+      Sound insulation is a primary goal. Mass is the governing mechanism, so
+      denser options are preferred where a density indicator exists; categories
+      that declare a measured acoustic reduction figure instead will prefer that
+      directly. Among alternatives at a similar acoustic level, the decision
+      falls back to sustainability, health and cost.
+    declarations:
+      - {indicator_key: density, direction: 1, priority: 0.90}
+      - {indicator_key: water_to_cement_ratio, direction: -1, priority: 0.30}
+
+  - key: thermal_insulation
+    display_name: Thermal insulation
+    definition_text: >-
+      Thermal resistance and reduced dead load matter. Lower density is
+      preferred, which is the exact inverse of the acoustic case over the same
+      indicator -- the pair is the sharpest available test that the model has
+      learned context rather than memorised a direction.
+    declarations:
+      - {indicator_key: density, direction: -1, priority: 0.90}
+      - {indicator_key: compressive_strength, direction: 1, priority: 0.30}
+
+  - key: architectural_finish
+    display_name: Architectural finish
+    definition_text: >-
+      The product's own surface is the finished, visible surface. Finer
+      aggregate and better workability give smoother, more uniform results. Very
+      high secondary content can harm visual uniformity, so this context reaches
+      into a circularity indicator and reverses its usual direction -- an
+      empirical cross-family effect that nobody would author as a performance
+      requirement, and the reason contexts need a learned residual on top of
+      their declarations.
+    declarations:
+      - {indicator_key: d_max, direction: -1, priority: 0.80}
+      - {indicator_key: slump, direction: 1, priority: 0.70}
+      - {indicator_key: circ_orig, direction: -1, priority: 0.60}
+      - {indicator_key: compressive_strength, direction: 1, priority: 0.30}
+      - {indicator_key: water_to_cement_ratio, direction: -1, priority: 0.30}
+      - {indicator_key: scm_content, direction: 1, priority: 0.20}
+      - {indicator_key: density, direction: 0, priority: 0.10}

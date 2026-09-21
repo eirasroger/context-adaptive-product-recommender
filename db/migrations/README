@@ -1,0 +1,13 @@
+Alembic migrations for the registry and corpus schema.
+
+The database URL is supplied by env.py from the same place the application
+reads it, so a migration cannot be run against a different file than the one
+the code uses. Set RECOMMENDER_DB to point both somewhere else.
+
+    python -m alembic revision --autogenerate -m "what changed"
+    python -m alembic upgrade head
+
+Migrations run in batch mode: SQLite cannot alter most things in place, so a
+constraint change is applied by rebuilding the table. Constraint names are
+generated from a naming convention in db/models.py for the same reason --
+SQLite cannot drop a constraint it has no name for.

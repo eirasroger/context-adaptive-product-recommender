@@ -1,0 +1,7 @@
+functional_unit:
+- key: kg
+  display_name: One kilogram
+  quantity_kind: mass
+  unit: kg
+  reference_service_life_years: 50.0
+  definition_text: One kilogram of the hardened product over the reference design life, which is how this category's product declarations report their figures.

@@ -1,0 +1,11 @@
+# Fast sanity run. Not a result.
+name: smoke
+db: data/corpus.db
+registry_version: "0.1.0"
+arch:
+  dim: 64
+  encoder_blocks: 1
+  comparator_blocks: 1
+optim:
+  epochs: 1
+  batch_size: 256

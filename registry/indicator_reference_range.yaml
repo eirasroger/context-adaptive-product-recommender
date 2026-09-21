@@ -1,0 +1,201 @@
+indicator_reference_range:
+- category_key: concrete
+  indicator_key: b
+  ref_low: 0.0
+  ref_high: 1.0
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: cement_content
+  ref_low: 200.0
+  ref_high: 600.0
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: circ_orig
+  ref_low: 0.0
+  ref_high: 100.0
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: compressive_strength
+  ref_low: 8.0
+  ref_high: 60.0
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: cost_labour
+  ref_low: 0.005
+  ref_high: 0.1
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: cost_maintenance
+  ref_low: 0.005
+  ref_high: 0.1
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: cost_product
+  ref_low: 0.05
+  ref_high: 0.4
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: cost_total
+  ref_low: 0.06
+  ref_high: 0.6
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: d_max
+  ref_low: 4.0
+  ref_high: 40.0
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: density
+  ref_low: 1400.0
+  ref_high: 3000.0
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: fu_haz
+  ref_low: 0.0
+  ref_high: 10.0
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: fu_incin
+  ref_low: 0.0
+  ref_high: 100.0
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: fu_inert
+  ref_low: 0.0
+  ref_high: 100.0
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: fu_recyc
+  ref_low: 0.0
+  ref_high: 100.0
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: fwu
+  ref_low: 0.0001
+  ref_high: 0.01
+  scale: log
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: gwp
+  ref_low: 0.05
+  ref_high: 0.5
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: scm_content
+  ref_low: 0.0
+  ref_high: 350.0
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: slump
+  ref_low: 10.0
+  ref_high: 300.0
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: water_to_cement_ratio
+  ref_low: 0.3
+  ref_high: 0.8
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.
+- category_key: concrete
+  indicator_key: wdp
+  ref_low: 0.003
+  ref_high: 0.3
+  scale: linear
+  shape: monotone
+  ideal_value: null
+  ideal_low: null
+  ideal_high: null
+  source_note: Plausible envelope for this category under the governing product standard, widened where necessary to contain the published corpus. Declared as a specification; changing one of these changes model behaviour and is a version-bumping event.

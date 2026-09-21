@@ -1,0 +1,211 @@
+indicator:
+- key: b
+  display_name: Biodiversity pressure
+  family_key: environmental_impact
+  value_type: continuous
+  unit: null
+  definition_text: Composite score on a nought-to-one scale aggregating eutrophication, acidification, abiotic resource depletion and ecosystem-related climate impacts. Lower indicates lower pressure on ecosystems. Being an aggregate, it is less diagnostic than its components but is frequently the only ecosystem figure available.
+  default_direction: -1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: cement_content
+  display_name: Cementitious content
+  family_key: performance
+  value_type: continuous
+  unit: kg per m3
+  definition_text: Total cementitious content of the mix. Higher content can support strength and durability but typically raises both environmental impact and cost through clinker. The declared direction reflects the impact and cost side, which dominates once structural adequacy is assumed; supplementary cementitious content can offset the impact for a given total.
+  default_direction: -1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: circ_orig
+  display_name: Circular origin
+  family_key: circularity
+  value_type: continuous
+  unit: '%'
+  definition_text: Share of the product's mass coming from secondary or non-virgin sources. Higher means more substitution of primary raw materials, so higher is better in general. Note that a high value can work against appearance quality where the product's surface is the finished surface, which is a context-specific effect rather than a property of the indicator.
+  default_direction: 1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: compressive_strength
+  display_name: Compressive strength
+  family_key: performance
+  value_type: continuous
+  unit: MPa
+  definition_text: Characteristic compressive strength class. Higher is generally better, but returns diminish sharply once the structural requirement is met, since all alternatives reaching the comparison are assumed already adequate.
+  default_direction: 1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: cost_labour
+  display_name: Workforce cost
+  family_key: cost
+  value_type: continuous
+  unit: currency per functional unit
+  definition_text: Installation, handling and end-of-life removal cost. Lower is better. Separated from purchase cost because a cheaper product that is slower to install is a different proposition from one that is simply expensive.
+  default_direction: -1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: cost_maintenance
+  display_name: Maintenance cost
+  family_key: cost
+  value_type: continuous
+  unit: currency per functional unit
+  definition_text: Maintenance and repair cost accrued over the reference service life. Lower is better. Sensitive to the declared service life, so it is only comparable within one functional unit.
+  default_direction: -1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: cost_product
+  display_name: Product cost
+  family_key: cost
+  value_type: continuous
+  unit: currency per functional unit
+  definition_text: Purchase cost of the product itself, excluding installation and maintenance. Lower is better.
+  default_direction: -1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: cost_total
+  display_name: Total life-cycle cost
+  family_key: cost
+  value_type: continuous
+  unit: currency per functional unit
+  definition_text: Sum of product, workforce and maintenance cost. Derived rather than authored, and carried alongside its components rather than replacing them, so that a decision-maker who cares specifically about maintenance can be distinguished from one who only cares about the total.
+  default_direction: -1
+  nominal_justification: null
+  is_derived: 1
+  is_active: 1
+- key: d_max
+  display_name: Maximum aggregate size
+  family_key: performance
+  value_type: continuous
+  unit: mm
+  definition_text: Largest nominal aggregate size in the mix. Structurally acceptable over a wide range, so it carries no intrinsic direction; smaller sizes favour smooth uniform surfaces and some workability aspects, which makes this indicator meaningful only where the surface is part of the deliverable.
+  default_direction: 0
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: density
+  display_name: Density
+  family_key: performance
+  value_type: continuous
+  unit: kg per m3
+  definition_text: 'Hardened density. Direction is supplied entirely by context and is genuinely opposed between contexts: higher density improves sound insulation while lower density improves thermal insulation and reduces self-weight. Declaring no default direction is the point -- this is the clearest case in the corpus of an indicator whose meaning inverts with the application.'
+  default_direction: 0
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: fu_haz
+  display_name: Hazardous waste disposal
+  family_key: circularity
+  value_type: continuous
+  unit: '%'
+  definition_text: Share of mass disposed of as hazardous waste at end of life. Much lower is strongly better and the ideal is nought. Carries more weight per unit than the other end-of-life routes because it implies a handling and liability burden rather than merely a lost material.
+  default_direction: -1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: fu_incin
+  display_name: Incinerated with energy recovery
+  family_key: circularity
+  value_type: continuous
+  unit: '%'
+  definition_text: 'Share of mass incinerated with energy recovery at end of life. Treated as broadly neutral: better than inert landfill, worse than material recovery. The neutral direction is declared deliberately, not left undeclared.'
+  default_direction: 0
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: fu_inert
+  display_name: Inert landfill
+  family_key: circularity
+  value_type: continuous
+  unit: '%'
+  definition_text: Share of mass ending in inert landfill at end of life. Lower is better.
+  default_direction: -1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: fu_recyc
+  display_name: Recovered at end of life
+  family_key: circularity
+  value_type: continuous
+  unit: '%'
+  definition_text: Share of mass reused, reconditioned, recycled or materially valorised at end of life. Higher is better. One of four end-of-life route shares that together should approximately account for the whole mass.
+  default_direction: 1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: fwu
+  display_name: Freshwater use
+  family_key: environmental_impact
+  value_type: continuous
+  unit: m3 per functional unit
+  definition_text: Unweighted freshwater consumed over the declared life-cycle stages. Reported alongside the scarcity-weighted figure because the two diverge for products made in water-rich regions. Lower is better. Values commonly span more than one order of magnitude, so this indicator is normalised on a logarithmic scale.
+  default_direction: -1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: gwp
+  display_name: Global warming potential
+  family_key: environmental_impact
+  value_type: continuous
+  unit: kg CO2-eq per functional unit
+  definition_text: Greenhouse gas emissions expressed as carbon dioxide equivalent over the declared life-cycle stages. The headline environmental figure on almost every EPD and the indicator most often driving a sustainability-led decision. Lower is better.
+  default_direction: -1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: health
+  display_name: Product health score
+  family_key: health_safety
+  value_type: ordinal
+  unit: null
+  definition_text: 'Certified product health status on an ordered scale running from non-compliance with basic chemical safety, through undocumented and uncertified-but-clean, to four progressively stronger certification tiers. Higher is better. The scale is not equally spaced: the step from non-compliant to merely undocumented is a different kind of step from one certification tier to the next, which is why the level positions are declared individually rather than assumed uniform.'
+  default_direction: 1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: scm_content
+  display_name: Supplementary cementitious content
+  family_key: performance
+  value_type: continuous
+  unit: kg per m3
+  definition_text: Portion of the cementitious content made up of supplementary materials such as slag or fly ash. Higher generally improves circularity and lowers environmental impact per unit of strength, assuming performance stays adequate.
+  default_direction: 1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: slump
+  display_name: Workability
+  family_key: performance
+  value_type: continuous
+  unit: mm
+  definition_text: Consistency measure standing in for workability. Higher generally means easier placing and compaction and a better surface result. Very high values can be unnecessary where the application does not call for them, so this indicator is a candidate for an ideal-band declaration if the labelled evidence supports one; it is currently declared monotone.
+  default_direction: 1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: water_to_cement_ratio
+  display_name: Water to cement ratio
+  family_key: performance
+  value_type: continuous
+  unit: null
+  definition_text: Mass ratio of water to cementitious content. Lower generally means lower permeability and better durability, and is preferred where other factors are equal.
+  default_direction: -1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: wdp
+  display_name: Water deprivation potential
+  family_key: environmental_impact
+  value_type: continuous
+  unit: m3-eq per functional unit
+  definition_text: Water consumption weighted by local scarcity, so the same volume counts for more where water is scarce. Lower is better.
+  default_direction: -1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
