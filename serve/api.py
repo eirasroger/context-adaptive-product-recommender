@@ -20,6 +20,7 @@ from typing import Any
 import numpy as np
 import torch
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
 from core.dataset import collate
@@ -270,6 +271,11 @@ def create_app(
         if "instance" not in service:
             raise HTTPException(status_code=503, detail="model not loaded")
         return service["instance"]
+
+    @app.get("/", include_in_schema=False)
+    def root() -> RedirectResponse:
+        """Send a bare visit to the tool."""
+        return RedirectResponse(url="/explore/")
 
     @app.get("/health")
     def health() -> dict[str, Any]:

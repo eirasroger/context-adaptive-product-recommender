@@ -141,3 +141,16 @@ def test_unknown_category_is_a_404(client):
         json={"category": "not_a_category", "alternatives": [{"id": "a"}]},
     )
     assert response.status_code == 404
+
+
+def test_the_bare_domain_reaches_the_tool(client):
+    """A visitor who types the domain should land somewhere useful.
+
+    A deployment served a JSON 404 at the root once, which reads as a broken
+    site even though every real route was working.
+    """
+    response = client.get("/", follow_redirects=False)
+    assert response.status_code in (302, 307)
+    assert response.headers["location"] == "/explore/"
+
+    assert client.get("/", follow_redirects=True).status_code == 200
