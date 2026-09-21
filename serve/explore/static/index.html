@@ -117,6 +117,18 @@
   .colhead .bar { height: 3px; border-radius: 2px; margin-bottom: 7px; }
   .colhead input { width: 100%; font-weight: 620; font-size: 13.5px; padding: 5px 8px; }
   .colhead .tools { display: flex; gap: 6px; margin-top: 5px; }
+  .addcol { padding: 0 0 10px 8px; vertical-align: bottom; width: 104px; }
+  .addcol-button {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    width: 100%; padding: 9px 10px; border-radius: 8px;
+    border: 1px dashed var(--text-muted); background: transparent;
+    color: var(--text-secondary); font-size: 13px; font-weight: 600;
+  }
+  .addcol-button:hover:not([disabled]) {
+    border-style: solid; border-color: var(--accent); color: var(--accent);
+  }
+  .addcol-button span[aria-hidden] { font-size: 16px; line-height: 1; }
+  .addcol-button[disabled] { opacity: 0.35; cursor: default; }
   .rowhead {
     position: sticky; left: 0; z-index: 2; background: var(--surface-1);
     min-width: 236px; max-width: 236px; padding: 3px 12px 3px 0;
@@ -214,7 +226,6 @@
       <table class="grid" id="grid"></table>
     </div>
     <div class="actions">
-      <button id="add" type="button">Add alternative</button>
       <button id="clear" type="button">Clear all</button>
       <span class="spacer"></span>
       <span class="hint">Leave a field blank to say the value is unknown.</span>
@@ -250,6 +261,8 @@ const $ = (id) => document.getElementById(id);
 const fmt = (v, d = 3) => Number(v).toFixed(d);
 const slot = (i) => `var(--series-${(i % 8) + 1})`;
 const title = (s) => String(s).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+const MAX_COLUMNS = 8;
 
 const state = {
   form: null, category: null, context: null,
@@ -329,6 +342,7 @@ function buildGrid() {
     th.append(bar, name, tools);
     head.appendChild(th);
   });
+  head.appendChild(addColumnHeader());
   grid.appendChild(head);
 
   let family = null;
@@ -344,6 +358,7 @@ function buildGrid() {
       for (let i = 0; i < state.columns.length; i++) {
         tr.appendChild(Object.assign(document.createElement("td"), { className: "line" }));
       }
+      tr.appendChild(document.createElement("td"));
       grid.appendChild(tr);
     }
 
@@ -369,8 +384,29 @@ function buildGrid() {
       td.appendChild(cellFor(field, col));
       tr.appendChild(td);
     }
+    tr.appendChild(document.createElement("td"));
     grid.appendChild(tr);
   }
+}
+
+function addColumnHeader() {
+  const th = document.createElement("th");
+  th.className = "addcol";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "addcol-button";
+  button.title = "Add another alternative to compare";
+  button.innerHTML = `<span aria-hidden="true">+</span><span>Add</span>`;
+  button.disabled = state.columns.length >= MAX_COLUMNS;
+  button.addEventListener("click", addColumn);
+  th.appendChild(button);
+  return th;
+}
+
+function addColumn() {
+  if (state.columns.length >= MAX_COLUMNS) return;
+  state.columns.push(blankColumn(state.columns.length));
+  buildGrid();
 }
 
 function cellFor(field, col) {
@@ -601,17 +637,12 @@ function fillCategory() {
   $("context").replaceChildren(...cat.contexts.map((c) => new Option(c.display_name, c.key)));
   state.context = cat.default_context;
   $("context").value = state.context;
-  state.columns = [blankColumn(0), blankColumn(1), blankColumn(2)];
+  state.columns = [blankColumn(0), blankColumn(1)];
   buildGrid();
   $("result-card").hidden = true;
   $("explain-card").hidden = true;
 }
 
-$("add").addEventListener("click", () => {
-  if (state.columns.length >= 8) return;
-  state.columns.push(blankColumn(state.columns.length));
-  buildGrid();
-});
 $("clear").addEventListener("click", () => {
   state.columns = state.columns.map((_, i) => blankColumn(i));
   buildGrid();
