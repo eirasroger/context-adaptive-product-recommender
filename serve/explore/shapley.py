@@ -21,7 +21,7 @@ import numpy as np
 
 from core.encoding import AlternativeInput
 from core.registry import Registry
-from serve.explore.analysis import score as score_set
+from serve.explore.analysis import score_many
 
 MISSING = -1.0
 
@@ -128,6 +128,7 @@ def explain(
     context_keys: Sequence[str],
     stakeholder_keys: Sequence[str],
     background_samples: Sequence[dict] | None = None,
+    background_origin: str = "reference ranges",
     background_size: int = DEFAULT_BACKGROUND,
     nsamples: int = DEFAULT_SAMPLES,
     device: str = "cpu",
@@ -139,26 +140,26 @@ def explain(
     subject = others[target]
 
     def predict(matrix: np.ndarray) -> np.ndarray:
-        out = np.zeros(len(matrix), dtype=np.float64)
-        for position, row in enumerate(matrix):
+        shortlists = []
+        for row in matrix:
             values: dict[str, float] = {}
             levels: dict[str, str] = {}
             for column, cell in zip(columns, row):
                 column.decode(float(cell), values, levels)
-            candidate = AlternativeInput(subject.key, values, levels)
             shortlist = list(others)
-            shortlist[target] = candidate
-            scores = score_set(
-                model,
-                registry,
-                category_key,
-                shortlist,
-                context_keys,
-                stakeholder_keys,
-                device,
-            )
-            out[position] = float(scores[target])
-        return out
+            shortlist[target] = AlternativeInput(subject.key, values, levels)
+            shortlists.append(shortlist)
+
+        return score_many(
+            model,
+            registry,
+            category_key,
+            shortlists,
+            context_keys,
+            stakeholder_keys,
+            target,
+            device,
+        )
 
     background = _background(
         columns, registry, category_key, background_samples, background_size
@@ -205,7 +206,7 @@ def explain(
                 families.items(), key=lambda kv: abs(kv[1]), reverse=True
             )
         ],
-        "background": "corpus" if background_samples else "reference ranges",
+        "background": background_origin if background_samples else "reference ranges",
         "background_size": int(len(background)),
         "nsamples": int(min(nsamples, MAX_SAMPLES)),
     }

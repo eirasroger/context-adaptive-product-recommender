@@ -26,7 +26,7 @@ from core.dataset import collate
 from core.encoding import AlternativeInput, encode_set
 from core.registry import Registry
 from model import checkpoint as checkpoint_module
-from serve.catalogue import Catalogue
+from serve.background import Background
 
 CHECKPOINT_ENV = "RECOMMENDER_CHECKPOINT"
 
@@ -84,7 +84,7 @@ class Service:
         self.model, self.meta, _ = checkpoint_module.load(checkpoint_path, device=device)
         self.model.eval()
         self.registry: Registry = checkpoint_module.load_registry(checkpoint_path)
-        self.catalogue = Catalogue.open()
+        self.background = Background.open()
 
     def score(self, request: ScoreRequest) -> ScoreResponse:
         registry = self.registry
@@ -242,10 +242,15 @@ class Service:
         return alternatives, per_alternative
 
 
+DEFAULT_CHECKPOINT = Path(__file__).parent / "release" / "model.pt"
+
+
 def create_app(
     checkpoint_path: Path | str | None = None, device: str = "cpu"
 ) -> FastAPI:
-    path = Path(checkpoint_path or os.environ.get(CHECKPOINT_ENV, "runs/latest/model.pt"))
+    path = Path(
+        checkpoint_path or os.environ.get(CHECKPOINT_ENV) or DEFAULT_CHECKPOINT
+    )
     service: dict[str, Service] = {}
 
     @asynccontextmanager
@@ -274,7 +279,7 @@ def create_app(
             "registry_version": instance.meta.registry_version,
             "snapshot": instance.meta.snapshot_hash,
             "categories": sorted(instance.registry.categories),
-            "catalogue": instance.catalogue is not None,
+            "background": instance.background.origin,
         }
 
     @app.get("/categories")

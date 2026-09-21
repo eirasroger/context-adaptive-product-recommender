@@ -53,6 +53,58 @@ def score(
     return model(batch)[0, :n].cpu().numpy()
 
 
+@torch.no_grad()
+def score_many(
+    model,
+    registry: Registry,
+    category_key: str,
+    shortlists: Sequence[Sequence[AlternativeInput]],
+    context_keys: Sequence[str],
+    stakeholder_keys: Sequence[str],
+    target: int,
+    device: str | torch.device = "cpu",
+    chunk: int = 256,
+) -> np.ndarray:
+    """Score many shortlists at once, returning one alternative's score from each.
+
+    SHAP asks for hundreds of variants of the same comparison. Encoding them
+    one at a time and running one forward pass each is the difference between
+    seconds and tens of seconds, and nothing about the model requires it.
+    """
+    out = np.zeros(len(shortlists), dtype=np.float64)
+    model.eval()
+
+    for start in range(0, len(shortlists), chunk):
+        window = shortlists[start : start + chunk]
+        items = []
+        for shortlist in window:
+            encoded = encode_set(
+                registry, category_key, shortlist, context_keys, stakeholder_keys
+            )
+            n = len(shortlist)
+            items.append(
+                {
+                    "index": 0,
+                    "channels": encoded.channels,
+                    "level_slots": encoded.level_slots,
+                    "indicator_slots": encoded.indicator_slots[0],
+                    "family_slots": encoded.family_slots[0],
+                    "category_slot": encoded.category_slot,
+                    "category_key": category_key,
+                    "stakeholder_slots": encoded.stakeholder_slots,
+                    "context_slots": encoded.context_slots,
+                    "pref": np.full(n, np.nan, dtype=np.float32),
+                    "conf": np.full(n, np.nan, dtype=np.float32),
+                    "provenance": "control",
+                }
+            )
+        batch = collate(items).to(device)
+        scores = model(batch)[:, target].cpu().numpy()
+        out[start : start + len(window)] = scores
+
+    return out
+
+
 @dataclass(frozen=True)
 class Series:
     label: str

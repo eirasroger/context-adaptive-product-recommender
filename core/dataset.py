@@ -12,14 +12,16 @@ today.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 
 from core.encoding import NO_LEVEL
-from core.prepare import Prepared
+
+if TYPE_CHECKING:
+    from core.prepare import Prepared
 
 
 @dataclass
@@ -60,7 +62,7 @@ class ComparisonSetDataset(Dataset):
 
     def __init__(
         self,
-        prepared: Prepared,
+        prepared: "Prepared",
         fold: str | None = None,
         require_labels: bool = True,
         indices: Sequence[int] | None = None,

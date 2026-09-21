@@ -87,7 +87,7 @@ def build_router(service_getter, device: str = "cpu") -> APIRouter:
         """Everything needed to draw the input grid and the selectors."""
         service = service_getter()
         registry = service.registry
-        catalogue = getattr(service, "catalogue", None)
+        background = service.background
 
         categories = []
         for key, category in sorted(registry.categories.items()):
@@ -135,14 +135,14 @@ def build_router(service_getter, device: str = "cpu") -> APIRouter:
                         for context_key in sorted(category.available_contexts)
                     ],
                     "fields": fields,
-                    "background_pool": catalogue.count(key) if catalogue else 0,
+                    "background_pool": background.size(key),
                 }
             )
 
         return {
             "registry_version": service.meta.registry_version,
             "snapshot": service.meta.snapshot_hash,
-            "background_available": catalogue is not None,
+            "background_origin": background.origin,
             "categories": categories,
             "stakeholders": [
                 {
@@ -165,12 +165,10 @@ def build_router(service_getter, device: str = "cpu") -> APIRouter:
                 detail=f"target {request.target} is outside the shortlist",
             )
 
-        catalogue = getattr(service, "catalogue", None)
+        background = service.background
         columns = shapley.columns_for(registry, request.category)
-        background = (
-            catalogue.background(request.category, [c.indicator_key for c in columns])
-            if catalogue
-            else None
+        samples = background.rows(
+            request.category, [c.indicator_key for c in columns]
         )
 
         return shapley.explain(
@@ -181,7 +179,8 @@ def build_router(service_getter, device: str = "cpu") -> APIRouter:
             request.target,
             contexts,
             stakeholders,
-            background_samples=background,
+            background_samples=samples,
+            background_origin=background.origin,
             nsamples=request.nsamples,
             device=device,
         )

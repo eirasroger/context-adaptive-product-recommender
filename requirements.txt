@@ -1,18 +1,18 @@
-# Core
-torch>=2.4
+# Serving only. This is the file a deployment installs, so it is deliberately
+# the smallest set that can answer a request. Training and data building need
+# more; see requirements-dev.txt.
+#
+# The CPU wheel is pinned explicitly. Without the index URL, pip resolves to the
+# CUDA build, which is roughly 4.4 GB and useless without a GPU.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.11.0+cpu
 numpy>=1.26
-pandas>=2.2
-pyarrow>=15
 
-# System of record
-SQLAlchemy>=2.0
-alembic>=1.13
-PyYAML>=6.0
-
-# Serving
 fastapi>=0.110
 uvicorn>=0.29
 pydantic>=2.6
 
-# Tests
-pytest>=8.0
+shap>=0.46
+scikit-learn>=1.4
+scipy>=1.11

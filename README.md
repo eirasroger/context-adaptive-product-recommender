@@ -93,7 +93,7 @@ appears.
 Install, then build the database and load the registry:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 python -m alembic upgrade head                 # create the schema
 python -m db.seed                              # load the registry from db/seeds
@@ -142,44 +142,74 @@ Training picks up a CUDA device automatically when one is available.
 
 ## Serving
 
+A run becomes servable by promoting it, which copies the checkpoint and a small
+SHAP reference sample into `serve/release` along with a manifest recording the
+run, the registry version, the snapshot hash and the evaluation:
+
 ```bash
-RECOMMENDER_CHECKPOINT=runs/<run>/model.pt uvicorn serve.api:app
+python -m serve.release runs/<run> --db data/corpus.db --notes "why this one"
 ```
 
-The inference API scores a shortlist and echoes the category's declared
-eligibility precondition in every response, so a score is never mistaken for a
-compliance statement. It also exposes the registry: what categories exist, what
-each is measured per, which contexts apply, and what every indicator means.
+Promotion refuses a run that failed the behavioural gate or that has no
+evaluation on record. Use `--force` to override, and say why in the notes.
+
+Then:
+
+```bash
+uvicorn serve.api:app
+```
+
+The service reads `serve/release` by default, so a deployment carries everything
+it needs and touches no database. Point it elsewhere with
+`RECOMMENDER_CHECKPOINT` and `RECOMMENDER_DB`.
 
 | Route | Purpose |
 |---|---|
+| `GET /explore/` | The comparison tool |
 | `POST /score` | Score a shortlist under a context and stakeholders |
+| `POST /explore/explain` | SHAP contributions for one alternative |
 | `GET /categories` | What can be compared and what each category assumes |
 | `GET /categories/{key}/indicators` | Definitions, ranges, units, levels |
 | `GET /stakeholders` | The archetypes and what each prioritises |
 
-## The explorer
+Every response from `/score` echoes the category's declared eligibility
+precondition, so a score stays distinguishable from a compliance statement.
 
-`GET /explore/` serves an interactive page for inspecting what the model
-learned. Four views, all generated from the registry, so a new category becomes
-explorable as soon as its rows exist:
+## The comparison tool
 
-- **Indicator response.** Sweep one indicator with everything else held at its
-  ideal value and watch the score move, one curve per stakeholder, with the
-  label the registry implies drawn alongside. This is the behavioural gate made
-  visible.
-- **Context sensitivity.** One shortlist scored under every context the category
-  allows, which shows directly whether the top choice depends on the
-  application.
-- **Stakeholder sensitivity.** The same shortlist scored for every archetype.
-- **Attribution.** What each indicator contributed to one alternative's score,
-  measured by withholding the indicator and scoring again. The token
-  representation makes this exact, because a withheld indicator is a state the
-  model already understands.
+`GET /explore/` is a page for scoring a real shortlist. Enter the indicator
+values for each candidate, choose the context and whose priorities apply, and
+read the ranking. Leaving a field blank states that the value is unknown, which
+the model treats as a distinct input.
 
-Every view has a table alongside the chart, works in light and dark, and reads
-its data from JSON endpoints under `/explore/` that can be called directly from
-a notebook or a figure script.
+The form is generated from the registry, so a category becomes usable as soon as
+its rows exist. Ordered scales appear as dropdowns, units and valid ranges come
+from the declarations, and a level marked never-selectable is labelled as such.
+
+Pressing **Why** on a result runs SHAP over that alternative, with the rest of
+the shortlist held fixed, since the score is relative to what it is being
+compared against. Contributions are per indicator, with a sentinel for unknown
+so a missing value is something the explanation can attribute.
+
+Three further endpoints under `/explore/` produce the sweeps used for figures:
+`response`, `context-sensitivity` and `stakeholder-sensitivity`. They return
+JSON and have no page of their own.
+
+## Deploying
+
+The repository carries everything a deployment needs, which is the application,
+`serve/release`, and `requirements.txt`. `requirements.txt` is deliberately the
+serving set alone and pins the CPU build of PyTorch; `requirements-dev.txt` adds
+what training and data building require.
+
+Scoring is about 10 ms and one explanation is a few seconds, on one CPU, in
+under 1 GB of memory. No GPU and no database server.
+
+- **Serverless.** `api/index.py` and `vercel.json` are ready for Vercel.
+- **Container.** The `Dockerfile` builds a serving image that listens on `PORT`,
+  defaulting to 7860 for platforms that expect it.
+
+`docs/STACK.md` records what every piece costs, with measured numbers.
 
 ## Adding a category
 
@@ -210,6 +240,8 @@ Outstanding:
   yet to be run.
 - **A second category.** It amounts to data and rows, and stays unproven until
   it has been done once.
+- **Reading values off a product declaration.** Values are entered by hand
+  today. Extracting them from a document is a later step.
 
 ## Background
 

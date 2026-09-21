@@ -1,0 +1,12 @@
+# The deployment needs the application and serve/release. Nothing else.
+data/
+runs/
+docs/
+tests/
+registry/
+db/migrations/
+experiments/
+.git/
+*.db
+*.parquet
+CLAUDE.md

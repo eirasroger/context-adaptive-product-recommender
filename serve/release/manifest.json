@@ -1,0 +1,59 @@
+{
+  "background_bytes": 102048,
+  "background_rows": 256,
+  "config": {
+    "comparator_blocks": 2,
+    "comparator_heads": 4,
+    "dim": 96,
+    "dropout": 0.1,
+    "encoder_blocks": 2,
+    "encoder_heads": 4,
+    "ffn_factor": 4.0,
+    "n_categories": 1,
+    "n_contexts": 4,
+    "n_families": 5,
+    "n_indicators": 21,
+    "n_levels": 7,
+    "n_stakeholders": 8,
+    "use_context_residual": true,
+    "use_family_prior": true
+  },
+  "evaluation": {
+    "behavioural_passed": true,
+    "behavioural_summary": {
+      "disqualification": {
+        "fail": 0,
+        "no_response": 0,
+        "pass": 8
+      },
+      "monotonicity": {
+        "fail": 0,
+        "no_response": 0,
+        "pass": 448
+      },
+      "sign_flip": {
+        "fail": 0,
+        "no_response": 0,
+        "pass": 8
+      }
+    },
+    "overall": {
+      "band_placement": 0.018386794840517577,
+      "gap_fidelity": 0.04830256015841223,
+      "n_alternatives": 28793,
+      "n_sets": 8231,
+      "pointwise_mae": 0.032753631472587585,
+      "tie_tolerant_tau": 0.9086542166508259,
+      "top1_agreement": 0.9053577937067185
+    }
+  },
+  "model_bytes": 2433739,
+  "model_sha256": "dde485d24c81f50ce5497a16c6213c32df0c5ab045ab93d0baaa4910fb94a1d3",
+  "notes": "First release. Registry 0.2.0, behavioural gate passing on all 464 assertions.",
+  "promoted_at": "2026-09-21T13:51:35.009272+00:00",
+  "registry_content_hash": "e055ea0b1f27df64dd805c3390ea6e9e7a6fe9875d8974fe8db03650cce30038",
+  "registry_version": "0.2.0",
+  "run": "baseline-20260921T125233Z",
+  "snapshot_hash": "f529cfb221f8b1fb01fc08cde1c2e67fcda0ab50a290c5311aa629c232f9da59",
+  "split_key": "default"
+}
