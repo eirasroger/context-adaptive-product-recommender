@@ -1,22 +1,5 @@
 """Turn a snapshot into arrays the training loop can index into cheaply.
 
-``core.encoding`` is the readable definition of what a token means, and it is
-what serving uses for a single request. Running it row by row over a corpus of
-this size would dominate every epoch, so this module computes exactly the same
-thing with array operations, once, and caches the result next to the snapshot.
-A test asserts the two agree; if they ever diverge, the encoder is right and
-this is wrong.
-
-The channels are split in two, because they vary over different things:
-
-* **product channels** depend only on the alternative and its category, so they
-  are computed once per product;
-* **context channels** -- relevance, direction, priority -- depend on the
-  question being asked, so they are computed once per distinct combination of
-  active contexts and shared by every set that asks it.
-
-That split is why the same product can be scored under a different context
-without recomputing anything about the product.
 """
 
 from __future__ import annotations
@@ -50,7 +33,7 @@ CACHE_FILE = "prepared.pkl"
 #: Bumped whenever the encoding changes shape or meaning. The cache is keyed on
 #: it as well as on the data, so a fix here can never be masked by a stale file
 #: computed under the old behaviour.
-CACHE_VERSION = 2
+CACHE_VERSION = 3
 
 
 @dataclass(frozen=True)
@@ -461,11 +444,28 @@ def _within_set(
 # ---------------------------------------------------------------------------
 
 
+def snapshot_hash(snapshot_dir: Path) -> str:
+    """The snapshot's own content hash, from its manifest.
+
+    A real snapshot is stored in a directory named after this, but a fixture
+    kept under a fixed name is not, and keying a cache on the directory name
+    would serve the previous contents back after a rebuild.
+    """
+    import json
+
+    manifest = snapshot_dir / "manifest.json"
+    if manifest.exists():
+        recorded = json.loads(manifest.read_text(encoding="utf-8")).get("content_hash")
+        if recorded:
+            return str(recorded)
+    return snapshot_dir.name
+
+
 def cache_key(registry: Registry, snapshot_dir: Path) -> str:
     digest = hashlib.sha256()
     digest.update(str(CACHE_VERSION).encode("utf-8"))
     digest.update((registry.content_hash or "").encode("utf-8"))
-    digest.update(snapshot_dir.name.encode("utf-8"))
+    digest.update(snapshot_hash(snapshot_dir).encode("utf-8"))
     digest.update("|".join(CHANNELS).encode("utf-8"))
     return digest.hexdigest()[:16]
 

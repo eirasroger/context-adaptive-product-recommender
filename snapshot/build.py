@@ -17,7 +17,7 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Sequence
 
 import pandas as pd
 from sqlalchemy import select
@@ -295,6 +295,39 @@ def build(
     return digest, directory
 
 
+def subset(source: Path, destination: Path, folds: Sequence[str]) -> dict:
+    """Write the named folds of an existing snapshot into another directory.
+
+    Taken from the snapshot rather than from the database, so what comes out is
+    exactly the rows a model was scored on, whatever filtering the snapshot was
+    built with.
+    """
+    source, destination = Path(source), Path(destination)
+    wanted = sorted(folds)
+
+    sets = pd.read_parquet(source / SETS_FILE)
+    sets = sets[sets["fold"].isin(wanted)]
+    members = pd.read_parquet(source / MEMBERS_FILE)
+    members = members[members["set_id"].isin(set(sets["set_id"]))]
+    values = pd.read_parquet(source / VALUES_FILE)
+    values = values[values["product_id"].isin(set(members["product_id"]))]
+
+    frames = {"sets": sets, "members": members, "values": values}
+    destination.mkdir(parents=True, exist_ok=True)
+    for name, filename in (("sets", SETS_FILE), ("members", MEMBERS_FILE), ("values", VALUES_FILE)):
+        frames[name].to_parquet(destination / filename, index=False)
+
+    manifest = json.loads((source / MANIFEST_FILE).read_text(encoding="utf-8"))
+    manifest["content_hash"] = _hash_frames(frames)
+    manifest["derived_from"] = source.name
+    manifest["filter_spec"] = {**manifest.get("filter_spec", {}), "folds": wanted}
+    manifest["row_counts"] = {name: int(len(frame)) for name, frame in frames.items()}
+    (destination / MANIFEST_FILE).write_text(
+        json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8"
+    )
+    return manifest
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build a training snapshot.")
     parser.add_argument("registry_version")
@@ -309,6 +342,12 @@ def main() -> None:
         dest="sources",
         help="restrict to one ingested dataset; repeatable",
     )
+    parser.add_argument(
+        "--fold",
+        action="append",
+        dest="folds",
+        help="restrict to one split fold; repeatable",
+    )
     args = parser.parse_args()
 
     with session_scope(create_db_engine(args.db)) as session:
@@ -319,6 +358,7 @@ def main() -> None:
             root=Path(args.root),
             categories=args.categories,
             provenances=args.provenances,
+            folds=args.folds,
             sources=args.sources,
         )
 

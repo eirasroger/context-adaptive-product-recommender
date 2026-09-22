@@ -1,0 +1,268 @@
+{
+  "behavioural": {
+    "failures": [],
+    "no_response": [],
+    "passed": true,
+    "summary": {
+      "monotonicity": {
+        "fail": 0,
+        "no_response": 0,
+        "pass": 448
+      },
+      "sign_flip": {
+        "fail": 0,
+        "no_response": 0,
+        "pass": 8
+      }
+    }
+  },
+  "by_family": {
+    "circularity": {
+      "band_placement": 0.007739508736987329,
+      "gap_fidelity": 0.010235653844429952,
+      "n_alternatives": 2639,
+      "n_sets": 754,
+      "pointwise_mae": 0.009497752413153648,
+      "tie_tolerant_tau": 1.0,
+      "top1_agreement": 1.0
+    },
+    "cost": {
+      "band_placement": 0.005121311693812696,
+      "gap_fidelity": 0.007772921050028515,
+      "n_alternatives": 1798,
+      "n_sets": 522,
+      "pointwise_mae": 0.006835604552179575,
+      "tie_tolerant_tau": 1.0,
+      "top1_agreement": 1.0
+    },
+    "environmental_impact": {
+      "band_placement": 0.004642652071915664,
+      "gap_fidelity": 0.009149599776587407,
+      "n_alternatives": 5361,
+      "n_sets": 1540,
+      "pointwise_mae": 0.006988791283220053,
+      "tie_tolerant_tau": 1.0,
+      "top1_agreement": 1.0
+    },
+    "health_safety": {
+      "band_placement": 0.007965613479220023,
+      "gap_fidelity": 0.01491216159270761,
+      "n_alternatives": 1808,
+      "n_sets": 508,
+      "pointwise_mae": 0.01142318919301033,
+      "tie_tolerant_tau": 0.9849482596425212,
+      "top1_agreement": 0.844488188976378
+    },
+    "performance": {
+      "band_placement": 0.0068830841322445775,
+      "gap_fidelity": 0.013184524574636671,
+      "n_alternatives": 2611,
+      "n_sets": 743,
+      "pointwise_mae": 0.010342485271394253,
+      "tie_tolerant_tau": 0.9994103773584906,
+      "top1_agreement": 0.971736204576043
+    }
+  },
+  "fold": "test",
+  "overall": {
+    "band_placement": 0.01838679445671899,
+    "gap_fidelity": 0.04830256040872073,
+    "n_alternatives": 28793,
+    "n_sets": 8231,
+    "pointwise_mae": 0.032753631472587585,
+    "tie_tolerant_tau": 0.9086542166508259,
+    "top1_agreement": 0.9053577937067185
+  },
+  "stratified": {
+    "category": {
+      "concrete": {
+        "band_placement": 0.01838679445671899,
+        "gap_fidelity": 0.04830256040872073,
+        "n_alternatives": 28793,
+        "n_sets": 8231,
+        "pointwise_mae": 0.032753631472587585,
+        "tie_tolerant_tau": 0.9086542166508259,
+        "top1_agreement": 0.9053577937067185
+      }
+    },
+    "context": {
+      "acoustic_insulation": {
+        "band_placement": 0.0173058546556642,
+        "gap_fidelity": 0.04602575863462723,
+        "n_alternatives": 6256,
+        "n_sets": 1781,
+        "pointwise_mae": 0.031298715621232986,
+        "tie_tolerant_tau": 0.9127453298652164,
+        "top1_agreement": 0.9163391353172375
+      },
+      "architectural_finish": {
+        "band_placement": 0.01412182381772237,
+        "gap_fidelity": 0.034479926158291076,
+        "n_alternatives": 8646,
+        "n_sets": 2453,
+        "pointwise_mae": 0.02427418902516365,
+        "tie_tolerant_tau": 0.9413900414937759,
+        "top1_agreement": 0.9196901752955564
+      },
+      "standard_structural": {
+        "band_placement": 0.024298753508731855,
+        "gap_fidelity": 0.06797659246121408,
+        "n_alternatives": 8686,
+        "n_sets": 2494,
+        "pointwise_mae": 0.04489467293024063,
+        "tie_tolerant_tau": 0.8686522211996989,
+        "top1_agreement": 0.8757016840417001
+      },
+      "thermal_insulation": {
+        "band_placement": 0.018847210731645993,
+        "gap_fidelity": 0.04659288497273401,
+        "n_alternatives": 5679,
+        "n_sets": 1639,
+        "pointwise_mae": 0.032389722764492035,
+        "tie_tolerant_tau": 0.905511811023622,
+        "top1_agreement": 0.9139719341061623
+      }
+    },
+    "provenance": {
+      "control": {
+        "band_placement": 0.006313492981372056,
+        "gap_fidelity": 0.011425010805604095,
+        "n_alternatives": 18871,
+        "n_sets": 5400,
+        "pointwise_mae": 0.009136870503425598,
+        "tie_tolerant_tau": 0.9983208731459641,
+        "top1_agreement": 0.9744444444444444
+      },
+      "expert": {
+        "band_placement": 0.024321537192274884,
+        "gap_fidelity": 0.05921872137341558,
+        "n_alternatives": 144,
+        "n_sets": 41,
+        "pointwise_mae": 0.04294566810131073,
+        "tie_tolerant_tau": 0.9333333333333333,
+        "top1_agreement": 0.975609756097561
+      },
+      "llm": {
+        "band_placement": 0.041667261666294496,
+        "gap_fidelity": 0.11951804616401726,
+        "n_alternatives": 9778,
+        "n_sets": 2790,
+        "pointwise_mae": 0.07818257808685303,
+        "tie_tolerant_tau": 0.745049504950495,
+        "top1_agreement": 0.7706093189964157
+      }
+    },
+    "set_size": {
+      "n=2": {
+        "band_placement": 0.02006787846821481,
+        "gap_fidelity": 0.04714931157736311,
+        "n_alternatives": 4202,
+        "n_sets": 2101,
+        "pointwise_mae": 0.03056521713733673,
+        "tie_tolerant_tau": 0.9069990412272292,
+        "top1_agreement": 0.9500237981913374
+      },
+      "n=3": {
+        "band_placement": 0.01779382586628572,
+        "gap_fidelity": 0.048198784154512744,
+        "n_alternatives": 5985,
+        "n_sets": 1995,
+        "pointwise_mae": 0.03188846632838249,
+        "tie_tolerant_tau": 0.905209966893187,
+        "top1_agreement": 0.9057644110275689
+      },
+      "n=4": {
+        "band_placement": 0.018182189568855613,
+        "gap_fidelity": 0.04978349601247074,
+        "n_alternatives": 8276,
+        "n_sets": 2069,
+        "pointwise_mae": 0.03383384644985199,
+        "tie_tolerant_tau": 0.9048674452305856,
+        "top1_agreement": 0.889801836636056
+      },
+      "n=5": {
+        "band_placement": 0.017454723954662348,
+        "gap_fidelity": 0.048092470213981386,
+        "n_alternatives": 10330,
+        "n_sets": 2066,
+        "pointwise_mae": 0.0332796573638916,
+        "tie_tolerant_tau": 0.9121457698859237,
+        "top1_agreement": 0.8751210067763795
+      }
+    },
+    "stakeholder": {
+      "balanced_optimizer": {
+        "band_placement": 0.0167746833044357,
+        "gap_fidelity": 0.04294746333068249,
+        "n_alternatives": 3758,
+        "n_sets": 1076,
+        "pointwise_mae": 0.0292234867811203,
+        "tie_tolerant_tau": 0.9156982469962577,
+        "top1_agreement": 0.8986988847583643
+      },
+      "circular_economy_advocate": {
+        "band_placement": 0.02315928102197016,
+        "gap_fidelity": 0.05641554085741518,
+        "n_alternatives": 3801,
+        "n_sets": 1088,
+        "pointwise_mae": 0.038936689496040344,
+        "tie_tolerant_tau": 0.894675701839303,
+        "top1_agreement": 0.9090073529411765
+      },
+      "cost_conscious_developer": {
+        "band_placement": 0.021762641386490304,
+        "gap_fidelity": 0.05967588325317867,
+        "n_alternatives": 3625,
+        "n_sets": 1049,
+        "pointwise_mae": 0.039390742778778076,
+        "tie_tolerant_tau": 0.8827415359207267,
+        "top1_agreement": 0.8932316491897044
+      },
+      "health_safety_focused": {
+        "band_placement": 0.016040544141804763,
+        "gap_fidelity": 0.03732288559159507,
+        "n_alternatives": 3894,
+        "n_sets": 1106,
+        "pointwise_mae": 0.026091385632753372,
+        "tie_tolerant_tau": 0.9485238455715367,
+        "top1_agreement": 0.9240506329113924
+      },
+      "occupant_comfort_focused": {
+        "band_placement": 0.018808429553995237,
+        "gap_fidelity": 0.04766915773845593,
+        "n_alternatives": 3774,
+        "n_sets": 1088,
+        "pointwise_mae": 0.033210624009370804,
+        "tie_tolerant_tau": 0.9062250598563448,
+        "top1_agreement": 0.9071691176470589
+      },
+      "pragmatic_contractor": {
+        "band_placement": 0.01956705998321225,
+        "gap_fidelity": 0.0631284759383151,
+        "n_alternatives": 3737,
+        "n_sets": 1064,
+        "pointwise_mae": 0.03987385705113411,
+        "tie_tolerant_tau": 0.8650186384147538,
+        "top1_agreement": 0.856203007518797
+      },
+      "regulatory_aligned_builder": {
+        "band_placement": 0.017372642659409934,
+        "gap_fidelity": 0.0437810786244214,
+        "n_alternatives": 3569,
+        "n_sets": 1011,
+        "pointwise_mae": 0.030014367774128914,
+        "tie_tolerant_tau": 0.9160867785509619,
+        "top1_agreement": 0.904055390702275
+      },
+      "sustainability_maximalist": {
+        "band_placement": 0.020931886927062916,
+        "gap_fidelity": 0.05594674844957206,
+        "n_alternatives": 3743,
+        "n_sets": 1065,
+        "pointwise_mae": 0.03829307109117508,
+        "tie_tolerant_tau": 0.8921453692848769,
+        "top1_agreement": 0.9070422535211268
+      }
+    }
+  }
+}

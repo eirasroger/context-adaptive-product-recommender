@@ -1,18 +1,4 @@
 """Promote a training run to the artefacts the service ships.
-
-A deployment serves whatever is in ``serve/release``. Promoting is an explicit,
-reviewable act: the checkpoint that goes to production is a tracked file with a
-recorded hash and a manifest saying which run, which registry version and which
-snapshot it came from, so a deployed model can always be traced back.
-
-Three files, all small enough to live in the repository:
-
-    serve/release/model.pt        the checkpoint
-    serve/release/background.json the SHAP reference sample
-    serve/release/manifest.json   where it came from
-
-Training runs stay out of version control. This is the one place a checkpoint
-crosses into it.
 """
 
 from __future__ import annotations
@@ -28,6 +14,9 @@ from serve.background import BACKGROUND_FILE, DEFAULT_ROWS, RELEASE_DIR, sample_
 
 MODEL_FILE = "model.pt"
 MANIFEST_FILE = "manifest.json"
+METRICS_FILE = "metrics.json"
+FIXTURE_DIR = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "snapshot"
+MAX_STRATUM_REGRESSION = 0.001
 
 #: A checkpoint belongs in the repository. A corpus does not. If a promotion
 #: produces artefacts past this, something is being shipped that should not be.
@@ -46,6 +35,54 @@ class GateFailed(Exception):
     pass
 
 
+def refresh_fixture(snapshot_dir: Path, fixture_dir: Path = FIXTURE_DIR) -> dict:
+    """Rewrite the evaluation fixture from the snapshot the model was scored on.
+
+    The fixture holds data, so it goes stale the moment the corpus grows, which
+    makes rebuilding it by hand a step that gets forgotten exactly once.
+    """
+    from snapshot.build import subset
+
+    snapshot_dir = Path(snapshot_dir)
+    if not snapshot_dir.exists():
+        raise GateFailed(
+            f"no snapshot at {snapshot_dir}, so the evaluation fixture cannot "
+            "be refreshed. Promote on the machine that trained the run, or "
+            "pass force=True and rebuild the fixture separately."
+        )
+
+    fixture_dir = Path(fixture_dir)
+    fixture_dir.mkdir(parents=True, exist_ok=True)
+    # The prepared cache is keyed on the snapshot's content hash, so a stale one
+    # is inert rather than wrong. Removing it keeps the directory honest.
+    for stale in fixture_dir.glob("*-prepared.pkl"):
+        stale.unlink()
+    return subset(snapshot_dir, fixture_dir, folds=["test"])
+
+
+def regression_against_release(run_dir: Path, release_dir: Path):
+    """Strata that got worse than the release this run would replace.
+
+    The behavioural gate says the model learned the right shape. This says it
+    did not get worse at anything on the way, which an overall average hides.
+    """
+    from eval import report as report_module
+
+    baseline_path = Path(release_dir) / METRICS_FILE
+    incoming_path = Path(run_dir) / METRICS_FILE
+    if not baseline_path.exists() or not incoming_path.exists():
+        return None
+
+    return report_module.gate(
+        json.loads(incoming_path.read_text(encoding="utf-8")),
+        report_module.Thresholds(
+            max_stratum_regression=MAX_STRATUM_REGRESSION,
+            require_behavioural=False,
+        ),
+        json.loads(baseline_path.read_text(encoding="utf-8")),
+    )
+
+
 def promote(
     run_dir: Path,
     database: str | None = None,
@@ -53,6 +90,8 @@ def promote(
     rows: int = DEFAULT_ROWS,
     notes: str = "",
     force: bool = False,
+    fixture_dir: Path = FIXTURE_DIR,
+    snapshot_root: Path | None = None,
 ) -> dict:
     run_dir = Path(run_dir)
     checkpoint = run_dir / "model.pt"
@@ -72,13 +111,32 @@ def promote(
             "before promoting, or pass force=True."
         )
 
+    verdict = regression_against_release(run_dir, release_dir)
+    if verdict is not None and not verdict.passed and not force:
+        raise GateFailed(
+            f"{run_dir.name} is worse than the release it would replace:\n"
+            + "\n".join(f"  - {reason}" for reason in verdict.reasons)
+            + "\nPass force=True and say in the notes why it ships anyway."
+        )
+
     release_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(checkpoint, release_dir / MODEL_FILE)
+    if (run_dir / METRICS_FILE).exists():
+        shutil.copy2(run_dir / METRICS_FILE, release_dir / METRICS_FILE)
 
     from model import checkpoint as checkpoint_module
 
     described = checkpoint_module.describe(checkpoint)
     meta = described["meta"]
+
+    try:
+        from snapshot.build import SNAPSHOT_ROOT
+
+        root = Path(snapshot_root) if snapshot_root else SNAPSHOT_ROOT
+        refresh_fixture(root / (meta.get("snapshot_hash") or "unrecorded"), fixture_dir)
+    except GateFailed:
+        if not force:
+            raise
 
     background_rows = 0
     if database:

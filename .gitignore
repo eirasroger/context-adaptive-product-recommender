@@ -227,6 +227,9 @@ data/*.db-shm
 # Snapshots are large, immutable and reproducible from the database.
 data/snapshots/
 
+
+*-prepared.pkl
+
 # Training runs.
 runs/
 

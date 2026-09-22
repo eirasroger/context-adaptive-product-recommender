@@ -1,4 +1,4 @@
-"""What gets shipped, and what refuses to ship."""
+
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from serve import release as release_module
 from serve.background import Background
 
 
-def _run(tmp_path, registry, passed: bool | None):
+def _run(tmp_path, registry, passed: bool | None, gap: float = 0.05):
     run_dir = tmp_path / "run"
     run_dir.mkdir()
 
@@ -37,13 +37,53 @@ def _run(tmp_path, registry, passed: bool | None):
     )
     if passed is not None:
         (run_dir / "metrics.json").write_text(
-            json.dumps({
-                "overall": {"gap_fidelity": 0.05},
-                "behavioural": {"passed": passed, "failures": [] if passed else ["x"]},
-            }),
-            encoding="utf-8",
+            json.dumps(_metrics(passed, gap)), encoding="utf-8"
         )
     return run_dir
+
+
+def _snapshot(root, digest="abc123"):
+    """A snapshot small enough to read, holding one set in each fold."""
+    import pandas as pd
+
+    directory = root / digest
+    directory.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({
+        "set_id": [1, 2], "external_id": ["a", "b"], "category_key": ["c", "c"],
+        "provenance_key": ["control", "control"], "generator_key": [None, None],
+        "fold": ["train", "test"], "stakeholder_keys": ["s", "s"],
+        "context_keys": ["x", "x"],
+    }).to_parquet(directory / "sets.parquet", index=False)
+    pd.DataFrame({
+        "set_id": [1, 2], "position": [0, 0], "product_id": [10, 20],
+        "local_key": ["p", "q"], "pref": [0.5, 0.5], "conf": [1.0, 1.0],
+        "scale_semantics": ["absolute_reference"] * 2,
+    }).to_parquet(directory / "members.parquet", index=False)
+    pd.DataFrame({
+        "product_id": [10, 20], "indicator_key": ["gwp", "gwp"],
+        "present": [1, 1], "value_num": [0.1, 0.2], "level_key": [None, None],
+    }).to_parquet(directory / "values.parquet", index=False)
+    (directory / "manifest.json").write_text(
+        json.dumps({"content_hash": digest, "filter_spec": {}, "row_counts": {}}),
+        encoding="utf-8",
+    )
+    return directory
+
+
+def _promote(run_dir, tmp_path, **kwargs):
+    """Promote with every artefact directory pointed away from the repository."""
+    kwargs.setdefault("release_dir", tmp_path / "release")
+    kwargs.setdefault("fixture_dir", tmp_path / "fixture")
+    kwargs.setdefault("snapshot_root", _snapshot(tmp_path / "snapshots").parent)
+    return release_module.promote(run_dir, database=None, **kwargs)
+
+
+def _metrics(passed: bool = True, gap: float = 0.05) -> dict:
+    return {
+        "overall": {"gap_fidelity": gap},
+        "stratified": {"context": {"standard": {"gap_fidelity": gap}}},
+        "behavioural": {"passed": passed, "failures": [] if passed else ["x"]},
+    }
 
 
 def test_a_failing_run_is_refused(tmp_path, registry):
@@ -54,22 +94,21 @@ def test_a_failing_run_is_refused(tmp_path, registry):
     """
     run_dir = _run(tmp_path, registry, passed=False)
     with pytest.raises(release_module.GateFailed, match="behavioural gate"):
-        release_module.promote(run_dir, database=None, release_dir=tmp_path / "release")
+        _promote(run_dir, tmp_path)
     assert not (tmp_path / "release" / "model.pt").exists()
 
 
 def test_an_unevaluated_run_is_refused(tmp_path, registry):
     run_dir = _run(tmp_path, registry, passed=None)
     with pytest.raises(release_module.GateFailed, match="no evaluation"):
-        release_module.promote(run_dir, database=None, release_dir=tmp_path / "release")
+        _promote(run_dir, tmp_path)
 
 
 def test_forcing_records_that_it_was_forced(tmp_path, registry):
     """Shipping a failing model stays possible and stays on the record."""
     run_dir = _run(tmp_path, registry, passed=False)
-    manifest = release_module.promote(
-        run_dir, database=None, release_dir=tmp_path / "release",
-        force=True, notes="known bad, for a reproduction",
+    manifest = _promote(
+        run_dir, tmp_path, force=True, notes="known bad, for a reproduction",
     )
     assert manifest["evaluation"]["behavioural_passed"] is False
     assert manifest["notes"]
@@ -78,7 +117,7 @@ def test_forcing_records_that_it_was_forced(tmp_path, registry):
 def test_a_passing_run_ships_with_its_provenance(tmp_path, registry):
     run_dir = _run(tmp_path, registry, passed=True)
     release_dir = tmp_path / "release"
-    manifest = release_module.promote(run_dir, database=None, release_dir=release_dir)
+    manifest = _promote(run_dir, tmp_path, release_dir=release_dir)
 
     assert (release_dir / "model.pt").exists()
     assert manifest["snapshot_hash"] == "abc123"
@@ -264,3 +303,109 @@ def test_every_third_party_import_is_declared():
         "imported but absent from the requirements files: "
         + ", ".join(f"{name} ({where})" for name, where in sorted(undeclared.items()))
     )
+
+
+def _released(release_dir, gap: float):
+    """A release directory holding only the metrics a promotion compares against."""
+    release_dir.mkdir(parents=True, exist_ok=True)
+    (release_dir / release_module.METRICS_FILE).write_text(
+        json.dumps(_metrics(gap=gap)), encoding="utf-8"
+    )
+    return release_dir
+
+
+def test_a_promotion_ships_the_metrics_it_was_gated_on(tmp_path, registry):
+    """Without them the next promotion has nothing to compare against, and the
+    regression gate silently becomes a no-op."""
+    run_dir = _run(tmp_path, registry, passed=True)
+    release_dir = tmp_path / "release"
+
+    _promote(run_dir, tmp_path, release_dir=release_dir)
+
+    shipped = json.loads(
+        (release_dir / release_module.METRICS_FILE).read_text(encoding="utf-8")
+    )
+    assert shipped == json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
+
+
+def test_a_run_worse_than_the_shipped_release_is_refused(tmp_path, registry):
+    run_dir = _run(tmp_path, registry, passed=True, gap=0.20)
+    release_dir = _released(tmp_path / "release", gap=0.05)
+
+    with pytest.raises(release_module.GateFailed, match="worse than the release"):
+        _promote(run_dir, tmp_path, release_dir=release_dir)
+
+    assert not (release_dir / "model.pt").exists()
+
+
+def test_a_run_that_improves_a_stratum_ships(tmp_path, registry):
+    run_dir = _run(tmp_path, registry, passed=True, gap=0.02)
+    release_dir = _released(tmp_path / "release", gap=0.05)
+
+    _promote(run_dir, tmp_path, release_dir=release_dir)
+
+    assert (release_dir / "model.pt").exists()
+
+
+def test_the_first_promotion_has_nothing_to_regress_against(tmp_path, registry):
+    run_dir = _run(tmp_path, registry, passed=True, gap=0.99)
+
+    _promote(run_dir, tmp_path)
+
+    assert (tmp_path / "release" / "model.pt").exists()
+
+
+def test_a_regression_can_be_forced_and_says_so(tmp_path, registry):
+    run_dir = _run(tmp_path, registry, passed=True, gap=0.20)
+    release_dir = _released(tmp_path / "release", gap=0.05)
+
+    manifest = _promote(
+        run_dir, tmp_path, release_dir=release_dir, force=True,
+        notes="shipped knowingly",
+    )
+
+    assert manifest["notes"] == "shipped knowingly"
+
+
+def test_promoting_refreshes_the_evaluation_fixture(tmp_path, registry):
+    """The fixture holds data, so it is stale the moment the corpus grows.
+
+    Rebuilding it by hand is a step that gets forgotten once and then reports a
+    model that is not the one deployed.
+    """
+    import pandas as pd
+
+    run_dir = _run(tmp_path, registry, passed=True)
+    fixture = tmp_path / "fixture"
+
+    _promote(run_dir, tmp_path, fixture_dir=fixture)
+
+    manifest = json.loads((fixture / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["derived_from"] == "abc123"
+    assert manifest["filter_spec"]["folds"] == ["test"]
+
+    sets = pd.read_parquet(fixture / "sets.parquet")
+    assert list(sets["fold"].unique()) == ["test"], "a non-test fold came through"
+    assert list(pd.read_parquet(fixture / "members.parquet")["product_id"]) == [20]
+    assert list(pd.read_parquet(fixture / "values.parquet")["product_id"]) == [20]
+
+
+def test_a_refresh_drops_the_cache_the_old_contents_produced(tmp_path, registry):
+    run_dir = _run(tmp_path, registry, passed=True)
+    fixture = tmp_path / "fixture"
+    fixture.mkdir()
+    stale = fixture / "deadbeef-prepared.pkl"
+    stale.write_bytes(b"old")
+
+    _promote(run_dir, tmp_path, fixture_dir=fixture)
+
+    assert not stale.exists()
+
+
+def test_a_promotion_that_cannot_refresh_the_fixture_is_refused(tmp_path, registry):
+    run_dir = _run(tmp_path, registry, passed=True)
+
+    with pytest.raises(release_module.GateFailed, match="no snapshot at"):
+        _promote(run_dir, tmp_path, snapshot_root=tmp_path / "nowhere")
+
+    assert not (tmp_path / "release" / "manifest.json").exists()

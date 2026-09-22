@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -67,9 +68,17 @@ def test_the_manifest_describes_the_checkpoint_beside_it(shipped):
     assert manifest["model_sha256"] == serve_release.digest(SHIPPED)
 
 
+def test_the_release_carries_the_baseline_the_next_promotion_needs(shipped):
+    metrics = RELEASE_DIR / serve_release.METRICS_FILE
+    assert metrics.exists(), "the release ships no metrics.json"
+
+    recorded = json.loads(metrics.read_text(encoding="utf-8"))
+    assert recorded.get("stratified"), "the baseline holds no strata to compare"
+    assert recorded["behavioural"]["passed"] is True
+
+
 def test_the_shipped_checkpoint_passes_the_behavioural_suite():
-    """The run-time gate judges a checkpoint in runs/. This judges the one that
-    deploys, which is the only one anybody talks to."""
+
     if not SHIPPED.exists():
         pytest.skip("nothing has been promoted yet")
 

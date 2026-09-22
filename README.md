@@ -152,8 +152,18 @@ python -m pytest tests
 
 The whole suite runs from a clean checkout: every test builds its own registry
 from `db/seeds/`, and the checks on what ships read the committed checkpoint.
-CI runs it on Python 3.12, the version the deployment uses. Metrics and training
-need the corpus and stay outside it.
+CI runs it on Python 3.12, the version the deployment uses.
+
+That includes the metrics. `tests/fixtures/snapshot/` holds the test fold, 1.8 MB
+of parquet, and the shipped checkpoint is scored against it and compared with the
+metrics recorded at promotion. Normalisation is against declared ranges and the
+within-set channel is computed per set, so the fold on its own reproduces the
+full snapshot's numbers exactly.
+
+`serve.release.promote` rewrites the fixture from the snapshot the model was
+scored on, so retraining on more data carries it along. A test refuses any
+release whose fixture came from a different snapshot than the checkpoint.
+Training still needs the corpus and stays outside CI.
 
 After a deliberate change to the API surface, re-record the committed schema:
 
