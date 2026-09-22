@@ -6,17 +6,13 @@ migration can never be run against a different file than the one the code uses.
 
 from __future__ import annotations
 
-import sys
 from logging.config import fileConfig
-from pathlib import Path
 
 from alembic import context
 from sqlalchemy import event
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-
-from db.models import Base  # noqa: E402
-from db.session import create_db_engine, db_path  # noqa: E402
+from db.models import Base
+from db.session import create_db_engine, db_path
 
 config = context.config
 

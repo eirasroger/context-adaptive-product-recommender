@@ -1,4 +1,4 @@
-# The deployment needs the application and serve/release. Nothing else.
+
 data/
 runs/
 docs/
@@ -10,3 +10,4 @@ experiments/
 *.db
 *.parquet
 CLAUDE.md
+pyproject.toml

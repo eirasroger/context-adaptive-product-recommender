@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 import torch
@@ -40,6 +41,12 @@ def _run(tmp_path, registry, passed: bool | None, gap: float = 0.05):
             json.dumps(_metrics(passed, gap)), encoding="utf-8"
         )
     return run_dir
+
+
+def _root() -> Path:
+    """The repository root. A subprocess inherits the working directory, which
+    is wherever pytest was invoked from, so it has to be told."""
+    return Path(__file__).resolve().parents[1]
 
 
 def _snapshot(root, digest="abc123"):
@@ -180,7 +187,7 @@ def test_serving_does_not_import_the_data_stack():
          "heavy = {'pandas', 'pyarrow', 'sqlalchemy', 'alembic'};"
          "found = sorted(m for m in sys.modules if m.split('.')[0] in heavy);"
          "print(','.join(found))"],
-        capture_output=True, text=True, timeout=180,
+        capture_output=True, text=True, timeout=180, cwd=_root(),
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "", f"serving imports {result.stdout.strip()}"
@@ -202,16 +209,14 @@ def test_serving_never_imports_the_explanation_stack():
          "heavy = {'shap', 'numba', 'llvmlite', 'sklearn', 'scipy'};"
          "found = sorted(m for m in sys.modules if m.split('.')[0] in heavy);"
          "print(','.join(found))"],
-        capture_output=True, text=True, timeout=180,
+        capture_output=True, text=True, timeout=180, cwd=_root(),
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "", f"serving imports {result.stdout.strip()}"
 
 
 def test_the_explanation_stack_is_absent_from_serving_requirements():
-    from pathlib import Path
-
-    root = Path(__file__).resolve().parents[1]
+    root = _root()
     serving = (root / "requirements.txt").read_text(encoding="utf-8").lower()
     for package in ("shap", "numba", "llvmlite", "scikit-learn", "scipy"):
         assert package not in serving, f"{package} is in the serving requirements"
@@ -226,9 +231,7 @@ def test_serving_requirements_cover_what_serving_imports():
     PyYAML went missing from this list once and the deployment would have
     crashed on import, after a successful build.
     """
-    from pathlib import Path
-
-    root = Path(__file__).resolve().parents[1]
+    root = _root()
     text = (root / "requirements.txt").read_text(encoding="utf-8").lower()
 
     required = {
@@ -257,9 +260,8 @@ def test_every_third_party_import_is_declared():
     import re
     import sys
     from importlib.metadata import packages_distributions
-    from pathlib import Path
 
-    root = Path(__file__).resolve().parents[1]
+    root = _root()
     first_party = {
         "app", "core", "db", "eval", "experiments", "ingest", "model",
         "registry", "serve", "snapshot", "tests", "train",
@@ -409,3 +411,22 @@ def test_a_promotion_that_cannot_refresh_the_fixture_is_refused(tmp_path, regist
         _promote(run_dir, tmp_path, snapshot_root=tmp_path / "nowhere")
 
     assert not (tmp_path / "release" / "manifest.json").exists()
+
+
+def test_the_pyproject_declares_no_dependencies():
+    """It is tool configuration, and requirements.txt is what deploys.
+
+    A [project] or [build-system] table would give Vercel's builder a second,
+    thinner answer about what to install, and the first sign would be a
+    deployment that built cleanly and crashed on import.
+    """
+    import tomllib
+
+    root = _root()
+    config = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+
+    assert set(config) == {"tool"}, (
+        f"pyproject.toml declares {sorted(set(config) - {'tool'})}; keep "
+        "dependencies in requirements.txt, or teach the deployment about them"
+    )
+    assert "pyproject.toml" in (root / ".vercelignore").read_text(encoding="utf-8")

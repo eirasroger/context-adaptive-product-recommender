@@ -7,16 +7,11 @@ that could drift from it.
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from core import registry as registry_module  # noqa: E402
-from db.seed import seed  # noqa: E402
-from db.session import create_all, create_db_engine, session_factory  # noqa: E402
+from core import registry as registry_module
+from db.seed import seed
+from db.session import create_all, create_db_engine, session_factory
 
 
 @pytest.fixture(scope="session")
