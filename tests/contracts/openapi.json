@@ -1,0 +1,713 @@
+{
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ScoreRequest": {
+        "properties": {
+          "alternatives": {
+            "description": "The shortlist to rank.",
+            "items": {
+              "$ref": "#/components/schemas/serve__api__AlternativePayload"
+            },
+            "maxItems": 5,
+            "title": "Alternatives",
+            "type": "array"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "context": {
+            "description": "Active application contexts. Defaults to the category's baseline context when empty.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Context",
+            "type": "array"
+          },
+          "stakeholders": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stakeholders",
+            "type": "array"
+          }
+        },
+        "required": [
+          "category",
+          "alternatives"
+        ],
+        "title": "ScoreRequest",
+        "type": "object"
+      },
+      "ScoreResponse": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "contexts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Contexts",
+            "type": "array"
+          },
+          "eligibility_precondition": {
+            "title": "Eligibility Precondition",
+            "type": "string"
+          },
+          "functional_unit": {
+            "title": "Functional Unit",
+            "type": "string"
+          },
+          "model_snapshot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Snapshot"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "registry_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registry Version"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ScoredAlternative"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "stakeholders": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stakeholders",
+            "type": "array"
+          }
+        },
+        "required": [
+          "category",
+          "functional_unit",
+          "eligibility_precondition",
+          "contexts",
+          "stakeholders",
+          "registry_version",
+          "model_snapshot",
+          "results",
+          "notes"
+        ],
+        "title": "ScoreResponse",
+        "type": "object"
+      },
+      "ScoredAlternative": {
+        "properties": {
+          "disqualifying_levels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Disqualifying Levels",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "missing_indicators": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Indicators",
+            "type": "array"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "score",
+          "rank",
+          "missing_indicators",
+          "disqualifying_levels"
+        ],
+        "title": "ScoredAlternative",
+        "type": "object"
+      },
+      "ShortlistRequest": {
+        "properties": {
+          "alternatives": {
+            "items": {
+              "$ref": "#/components/schemas/serve__explore__api__AlternativePayload"
+            },
+            "maxItems": 5,
+            "title": "Alternatives",
+            "type": "array"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "context": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Context",
+            "type": "array"
+          },
+          "stakeholders": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stakeholders",
+            "type": "array"
+          }
+        },
+        "required": [
+          "category"
+        ],
+        "title": "ShortlistRequest",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "serve__api__AlternativePayload": {
+        "properties": {
+          "id": {
+            "description": "Caller's identifier for this alternative",
+            "title": "Id",
+            "type": "string"
+          },
+          "levels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Level keys for indicators declared on an ordered or unordered scale.",
+            "title": "Levels",
+            "type": "object"
+          },
+          "values": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Numeric indicator values. Omit an indicator you have no value for; omission means unknown and is never imputed.",
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "AlternativePayload",
+        "type": "object"
+      },
+      "serve__explore__api__AlternativePayload": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "levels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Levels",
+            "type": "object"
+          },
+          "values": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "AlternativePayload",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Inference API.\n\nSubmit a shortlist and a context, receive a score per alternative. The response\nalways echoes the category's declared eligibility precondition, because the\nmodel ranks options that are assumed to have already passed regulatory\nprefiltering and saying so is the difference between a recommendation and a\ncompliance claim.\n\nThe registry comes from the checkpoint, not from the live database, so the\nserved semantics are exactly the ones the weights were trained under.\n",
+    "title": "Context-adaptive product recommender",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/categories": {
+      "get": {
+        "description": "What can be compared, and what each category assumes about its input.",
+        "operationId": "categories_categories_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Categories Categories Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Categories"
+      }
+    },
+    "/categories/{category_key}/indicators": {
+      "get": {
+        "operationId": "indicators_categories__category_key__indicators_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "category_key",
+            "required": true,
+            "schema": {
+              "title": "Category Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Indicators Categories  Category Key  Indicators Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Indicators"
+      }
+    },
+    "/explore/compare": {
+      "post": {
+        "description": "Why the leading alternative is ahead of each of the others.",
+        "operationId": "compare_explore_compare_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShortlistRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Compare Explore Compare Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compare",
+        "tags": [
+          "explore"
+        ]
+      }
+    },
+    "/explore/context-sensitivity": {
+      "post": {
+        "operationId": "context_sensitivity_explore_context_sensitivity_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShortlistRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Context Sensitivity Explore Context Sensitivity Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Context Sensitivity",
+        "tags": [
+          "explore"
+        ]
+      }
+    },
+    "/explore/form": {
+      "get": {
+        "description": "Everything needed to draw the input grid and the selectors.",
+        "operationId": "form_explore_form_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Form Explore Form Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Form",
+        "tags": [
+          "explore"
+        ]
+      }
+    },
+    "/explore/response": {
+      "get": {
+        "operationId": "response_explore_response_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": true,
+            "schema": {
+              "title": "Category",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "indicator",
+            "required": true,
+            "schema": {
+              "title": "Indicator",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "context",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Context"
+            }
+          },
+          {
+            "in": "query",
+            "name": "stakeholders",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Stakeholders"
+            }
+          },
+          {
+            "in": "query",
+            "name": "steps",
+            "required": false,
+            "schema": {
+              "default": 21,
+              "title": "Steps",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Response Explore Response Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Response",
+        "tags": [
+          "explore"
+        ]
+      }
+    },
+    "/explore/stakeholder-sensitivity": {
+      "post": {
+        "operationId": "stakeholder_sensitivity_explore_stakeholder_sensitivity_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShortlistRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Stakeholder Sensitivity Explore Stakeholder Sensitivity Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Stakeholder Sensitivity",
+        "tags": [
+          "explore"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Health Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/score": {
+      "post": {
+        "operationId": "score_score_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScoreRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Score"
+      }
+    },
+    "/stakeholders": {
+      "get": {
+        "operationId": "stakeholders_stakeholders_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Stakeholders Stakeholders Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Stakeholders"
+      }
+    }
+  }
+}

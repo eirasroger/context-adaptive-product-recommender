@@ -1,0 +1,82 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+import torch
+import yaml
+
+from db import release as db_release
+from eval import behavioural
+from model import checkpoint as checkpoint_module
+from serve import release as serve_release
+
+RELEASE_DIR = Path(__file__).resolve().parents[1] / "serve" / "release"
+MIRROR_DIR = Path(__file__).resolve().parents[1] / "registry"
+SHIPPED = RELEASE_DIR / "model.pt"
+
+RELEASE_STEPS = (
+    "python -m db.seed && python -m db.release <version> && "
+    "python -m model.restamp serve/release/model.pt <version>"
+)
+
+
+@pytest.fixture(scope="module")
+def document(seeded):
+    return db_release.export(seeded)
+
+
+@pytest.fixture(scope="module")
+def shipped():
+    if not SHIPPED.exists():
+        pytest.skip("nothing has been promoted yet")
+    return torch.load(SHIPPED, map_location="cpu", weights_only=False)
+
+
+def test_the_registry_mirror_is_an_export_of_the_seeds(document):
+    """The mirror is an export, never an input.
+
+    Editing it by hand would put a reviewed diff in front of someone that the
+    database never agreed to.
+    """
+    mirror: dict[str, list[dict]] = {}
+    for path in sorted(MIRROR_DIR.glob("*.yaml")):
+        mirror.update(yaml.safe_load(path.read_text(encoding="utf-8")))
+
+    assert set(mirror) == set(document), "the mirror is missing or has extra tables"
+    for table in document:
+        assert mirror[table] == document[table], (
+            f"registry/{table}.yaml is stale; re-run: {RELEASE_STEPS}"
+        )
+
+
+def test_the_shipped_checkpoint_carries_the_seeded_registry(shipped, document):
+    """Serving reads the blob inside the checkpoint, so a seed edit reaches a
+    deployment only once it has been released and stamped in."""
+    assert shipped["registry_blob"] == db_release.canonical_yaml(document), (
+        f"the shipped checkpoint is stamped with an older registry; {RELEASE_STEPS}"
+    )
+    assert shipped["meta"]["registry_content_hash"] == db_release.content_hash(document)
+
+
+def test_the_manifest_describes_the_checkpoint_beside_it(shipped):
+    manifest = serve_release.read_manifest(RELEASE_DIR)
+    assert manifest is not None, "serve/release holds a model with no manifest"
+    assert manifest["registry_content_hash"] == shipped["meta"]["registry_content_hash"]
+    assert manifest["registry_version"] == shipped["meta"]["registry_version"]
+    assert manifest["model_sha256"] == serve_release.digest(SHIPPED)
+
+
+def test_the_shipped_checkpoint_passes_the_behavioural_suite():
+    """The run-time gate judges a checkpoint in runs/. This judges the one that
+    deploys, which is the only one anybody talks to."""
+    if not SHIPPED.exists():
+        pytest.skip("nothing has been promoted yet")
+
+    model, _, _ = checkpoint_module.load(SHIPPED, device="cpu")
+    registry = checkpoint_module.load_registry(SHIPPED)
+    suite = behavioural.run(model, registry, device="cpu")
+
+    assert suite.assertions, "the suite made no assertions at all"
+    assert suite.passed, "\n".join(str(failure) for failure in suite.failures)
+    assert not suite.flat, "\n".join(str(flat) for flat in suite.flat)

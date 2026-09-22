@@ -145,6 +145,17 @@ Tests:
 python -m pytest tests
 ```
 
+The whole suite runs from a clean checkout: every test builds its own registry
+from `db/seeds/`, and the checks on what ships read the committed checkpoint.
+CI runs it on Python 3.12, the version the deployment uses. Metrics and training
+need the corpus and stay outside it.
+
+After a deliberate change to the API surface, re-record the committed schema:
+
+```bash
+RECOMMENDER_UPDATE_CONTRACT=1 python -m pytest tests/test_api_contract.py
+```
+
 Most commands accept `--db` for a database elsewhere, or set `RECOMMENDER_DB`.
 Training picks up a CUDA device automatically when one is available.
 
