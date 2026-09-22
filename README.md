@@ -62,9 +62,8 @@ many alternatives it had. Near-ties are treated as near-ties.
 **Evaluation has a tier that is pass or fail.** Control cases are generated from
 the registry with a known answer, so they double as a test suite: the score
 moves the way the registry says it should, and it inverts when two contexts
-disagree about an indicator. A level the registry marks never-selectable is
-asserted to score last, for a category that declares one. Metrics say how close
-the model is. These say whether it learned the right thing.
+disagree about an indicator. Metrics say how close the model is. These say
+whether it learned the right thing.
 
 **Nothing trains off the live database.** Each run freezes the data into a
 content-hashed snapshot and records that hash plus the registry version with the
@@ -124,9 +123,8 @@ Train, evaluate and gate in one go:
 python -m train.run --config train/configs/default.yaml
 ```
 
-A config that names no `registry_version` trains under the newest release, and
-the version it resolved to is written into the run directory and the checkpoint.
-Pin one to reproduce an earlier run.
+A config that names no `registry_version` trains under the newest release and
+records which one that was. Pin one to reproduce an earlier run.
 
 That writes a run directory holding the config used, the epoch history, the
 metrics, the behavioural results and the checkpoint. Re-evaluate an existing
@@ -150,20 +148,14 @@ Tests:
 python -m pytest tests
 ```
 
-The whole suite runs from a clean checkout: every test builds its own registry
-from `db/seeds/`, and the checks on what ships read the committed checkpoint.
-CI runs it on Python 3.12, the version the deployment uses.
+The suite runs from a clean checkout. Every test builds its own registry from
+`db/seeds/`, and the checks on what ships read the committed checkpoint. CI runs
+it on Python 3.12, the version the deployment uses.
 
-That includes the metrics. `tests/fixtures/snapshot/` holds the test fold, 1.8 MB
-of parquet, and the shipped checkpoint is scored against it and compared with the
-metrics recorded at promotion. Normalisation is against declared ranges and the
-within-set channel is computed per set, so the fold on its own reproduces the
-full snapshot's numbers exactly.
-
-`serve.release.promote` rewrites the fixture from the snapshot the model was
-scored on, so retraining on more data carries it along. A test refuses any
-release whose fixture came from a different snapshot than the checkpoint.
-Training still needs the corpus and stays outside CI.
+`tests/fixtures/snapshot/` holds the test fold, 1.8 MB of parquet. The shipped
+checkpoint is scored against it and compared with the metrics recorded at
+promotion, which `serve.release.promote` keeps in step. Training needs the
+corpus and stays outside CI.
 
 After a deliberate change to the API surface, re-record the committed schema:
 
@@ -218,8 +210,7 @@ the model treats as a distinct input.
 
 The form is generated from the registry, so a category becomes usable as soon as
 its rows exist. Ordered scales appear as dropdowns, units and valid ranges come
-from the declarations, and a level the registry marks never-selectable is
-labelled as such.
+from the declarations, and a level marked never-selectable is labelled as such.
 
 Pressing **Why** on a result runs SHAP over that alternative, with the rest of
 the shortlist held fixed, since the score is relative to what it is being
@@ -257,11 +248,9 @@ refused call returns 429 with `Retry-After`.
 | `RECOMMENDER_RATE_LIMIT_TOTAL` | 40 | Scoring calls per window across all callers |
 | `RECOMMENDER_RATE_WINDOW` | 60 | Window length in seconds |
 
-The window lives in the process that serves the call. One container holds one
-window, so the totals above are exact. On a serverless host that runs several
-instances, each holds its own, and the effective ceiling is the total times the
-number of instances alive. Treat it as a brake on a runaway client rather than
-as a spend cap.
+The window lives in the serving process. One container holds one window, so the
+totals above are exact. A serverless host gives each instance its own, which
+multiplies the ceiling by the instances alive.
 
 The page scores on a button press and never on typing, so one reading of a
 shortlist is one call. Ten a minute is a person working quickly; a script hits
