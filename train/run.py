@@ -14,12 +14,38 @@ from pathlib import Path
 
 from core import registry as registry_module
 from core.prepare import load_or_prepare
+from db import release as release_module
+from db.models import RegistryRelease
 from db.session import create_db_engine, session_scope
 from eval import behavioural, report as report_module
 from model import checkpoint as checkpoint_module
 from snapshot.build import SNAPSHOT_ROOT, build
 from train.config import TrainConfig
 from train.trainer import EpochRecord, train, write_history
+
+
+def resolve_registry(config: TrainConfig, session):
+    """The release the config names, or the newest one when it names none.
+
+    A config that pins reproduces an old run. A config that leaves it out
+    follows the registry, which is what a config meant to be retrained wants.
+    Either way the resolved version is written back, so the run directory and
+    the checkpoint record which one it actually was.
+    """
+    if config.registry_version is None:
+        release = release_module.latest_release(session)
+        if release is None:
+            raise SystemExit(
+                "the database holds no registry release; cut one with db.release"
+            )
+        config.registry_version = release.version
+    else:
+        release = session.get(RegistryRelease, config.registry_version)
+        if release is None:
+            raise SystemExit(f"no registry release {config.registry_version}")
+
+    registry = registry_module.from_release(session, config.registry_version)
+    return registry, release.yaml_blob
 
 
 def resolve_snapshot(config: TrainConfig, session) -> tuple[str, Path]:
@@ -66,12 +92,8 @@ def main() -> None:
 
     engine = create_db_engine(config.db)
     with session_scope(engine) as session:
-        registry = registry_module.from_release(session, config.registry_version)
+        registry, registry_blob = resolve_registry(config, session)
         snapshot_hash, snapshot_dir = resolve_snapshot(config, session)
-        registry_blob = session.get(
-            __import__("db.models", fromlist=["RegistryRelease"]).RegistryRelease,
-            config.registry_version,
-        ).yaml_blob
 
     prepared = load_or_prepare(registry, snapshot_dir)
 

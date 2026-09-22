@@ -2,7 +2,7 @@
 #
 # The portable deployment path: any container host, a VPS, or a Hugging Face
 # Docker Space. Vercel does not use this file, it builds from requirements.txt
-# and api/index.py.
+# and the top-level app.py.
 #
 # Only the serving dependencies are installed. Training and data building are
 # offline work and have no place in a request-serving image.

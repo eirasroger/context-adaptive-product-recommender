@@ -1,7 +1,6 @@
 # Baseline training configuration.
 name: baseline
 db: data/corpus.db
-registry_version: "0.2.0"
 split_key: default
 device: auto
 output_dir: runs

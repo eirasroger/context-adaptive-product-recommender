@@ -203,3 +203,64 @@ def test_serving_requirements_cover_what_serving_imports():
         module for module, package in required.items() if package not in text
     ]
     assert not missing, f"requirements.txt is missing {missing}"
+
+
+def test_every_third_party_import_is_declared():
+    """Nothing may be imported that the requirements files do not ask for.
+
+    A package installed for an unrelated reason makes a missing requirement
+    invisible on the machine that wrote the code, and the build that finds it is
+    the one on a clean checkout. This is the direct-import half of that; an
+    optional dependency of a declared package, such as the test client's HTTP
+    library, still surfaces only on a clean install.
+    """
+    import ast
+    import re
+    import sys
+    from importlib.metadata import packages_distributions
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    first_party = {
+        "app", "core", "db", "eval", "experiments", "ingest", "model",
+        "registry", "serve", "snapshot", "tests", "train",
+    }
+
+    def _normalise(name: str) -> str:
+        return name.strip().lower().replace("_", ".").replace("-", ".")
+
+    declared = set()
+    for name in ("requirements.txt", "requirements-dev.txt"):
+        for line in (root / name).read_text(encoding="utf-8").splitlines():
+            # A comment naming a package is not a declaration of it, and the
+            # first version of this test read the whole file as one string and
+            # so could not tell the difference.
+            requirement = line.split("#")[0].strip()
+            if not requirement or requirement.startswith("-"):
+                continue
+            declared.add(_normalise(re.split(r"[\[<>=!~;\s]", requirement)[0]))
+
+    distributions = packages_distributions()
+
+    undeclared: dict[str, str] = {}
+    for path in sorted(root.rglob("*.py")):
+        if "__pycache__" in path.parts:
+            continue
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Import):
+                modules = [alias.name.split(".")[0] for alias in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                modules = [node.module.split(".")[0]]
+            else:
+                continue
+            for module in modules:
+                if module in sys.stdlib_module_names or module in first_party:
+                    continue
+                for name in distributions.get(module, [module]):
+                    if _normalise(name) not in declared:
+                        undeclared[name] = str(path.relative_to(root))
+
+    assert not undeclared, (
+        "imported but absent from the requirements files: "
+        + ", ".join(f"{name} ({where})" for name, where in sorted(undeclared.items()))
+    )

@@ -61,9 +61,10 @@ many alternatives it had. Near-ties are treated as near-ties.
 
 **Evaluation has a tier that is pass or fail.** Control cases are generated from
 the registry with a known answer, so they double as a test suite: the score
-moves the way the registry says it should, it inverts when two contexts disagree
-about an indicator, and a level marked never-selectable scores last. Metrics say
-how close the model is. These say whether it learned the right thing.
+moves the way the registry says it should, and it inverts when two contexts
+disagree about an indicator. A level the registry marks never-selectable is
+asserted to score last, for a category that declares one. Metrics say how close
+the model is. These say whether it learned the right thing.
 
 **Nothing trains off the live database.** Each run freezes the data into a
 content-hashed snapshot and records that hash plus the registry version with the
@@ -122,6 +123,10 @@ Train, evaluate and gate in one go:
 ```bash
 python -m train.run --config train/configs/default.yaml
 ```
+
+A config that names no `registry_version` trains under the newest release, and
+the version it resolved to is written into the run directory and the checkpoint.
+Pin one to reproduce an earlier run.
 
 That writes a run directory holding the config used, the epoch history, the
 metrics, the behavioural results and the checkpoint. Re-evaluate an existing
@@ -203,7 +208,8 @@ the model treats as a distinct input.
 
 The form is generated from the registry, so a category becomes usable as soon as
 its rows exist. Ordered scales appear as dropdowns, units and valid ranges come
-from the declarations, and a level marked never-selectable is labelled as such.
+from the declarations, and a level the registry marks never-selectable is
+labelled as such.
 
 Pressing **Why** on a result runs SHAP over that alternative, with the rest of
 the shortlist held fixed, since the score is relative to what it is being
@@ -240,6 +246,12 @@ refused call returns 429 with `Retry-After`.
 | `RECOMMENDER_RATE_LIMIT` | 10 | Scoring calls per caller per window |
 | `RECOMMENDER_RATE_LIMIT_TOTAL` | 40 | Scoring calls per window across all callers |
 | `RECOMMENDER_RATE_WINDOW` | 60 | Window length in seconds |
+
+The window lives in the process that serves the call. One container holds one
+window, so the totals above are exact. On a serverless host that runs several
+instances, each holds its own, and the effective ceiling is the total times the
+number of instances alive. Treat it as a brake on a runaway client rather than
+as a spend cap.
 
 The page scores on a button press and never on typing, so one reading of a
 shortlist is one call. Ten a minute is a person working quickly; a script hits

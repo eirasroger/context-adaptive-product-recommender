@@ -55,7 +55,9 @@ class ArchConfig:
 class TrainConfig:
     name: str = "default"
     db: str | None = None
-    registry_version: str = "0.1.0"
+    #: Pin a release to reproduce an old run. Left out, the newest release is
+    #: resolved at run time and written back, so a config cannot go stale.
+    registry_version: str | None = None
     snapshot: str | None = None
     split_key: str = "default"
     device: str = "auto"

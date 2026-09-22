@@ -1,4 +1,9 @@
 """Caps on how much work the service will do for one caller.
+
+The window is in-process. One serving process holds one window, so the totals
+are exact for a container. A serverless host running several instances gives
+each its own, which makes the ceiling the total times the instances alive. This
+is a brake on a runaway client, and a spend cap belongs upstream of it.
 """
 
 from __future__ import annotations
