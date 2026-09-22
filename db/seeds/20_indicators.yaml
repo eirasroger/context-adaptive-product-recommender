@@ -173,57 +173,72 @@ indicator:
     value_type: ordinal
     default_direction: 1
     definition_text: >-
-      Certified product health status on an ordered scale running from
-      non-compliance with basic chemical safety, through undocumented and
-      uncertified-but-clean, to four progressively stronger certification tiers.
-      Higher is better. The scale is not equally spaced: the step from
-      non-compliant to merely undocumented is a different kind of step from one
+      Material health status on an ordered scale running from hazardous
+      substances present, through undocumented and screened-but-uncertified, to
+      the four Cradle to Cradle Certified Material Health achievement levels.
+      Higher is better. The scale is unevenly spaced: the step from an
+      unassessed product to a screened one is a different kind of step from one
       certification tier to the next, which is why the level positions are
-      declared individually rather than assumed uniform.
+      declared individually rather than assumed uniform. The scale records what
+      has been assessed and published about a product's chemistry. It carries no
+      statement about legal compliance, which the category's eligibility
+      precondition places outside this model.
     levels:
       - level_key: h0
         level_index: 0
-        display_name: Non-compliant
+        display_name: Hazardous substances present
         normalised_position: 0.0
-        is_disqualifying: true
         definition_text: >-
-          Fails basic chemical safety requirements. A product at this level
-          should never be selected, whatever else it offers.
+          Contains one or more substances on the ECHA Candidate List of
+          substances of very high concern, or restricted under REACH Annex XVII.
       - level_key: h1
         level_index: 1
         display_name: Undocumented
         normalised_position: 0.4
         definition_text: >-
-          No toxicity or certification data available. Not known to be unsafe,
-          but nothing has been verified.
+          No material health assessment published. The chemistry is unknown in
+          both directions.
       - level_key: h2
         level_index: 2
-        display_name: Uncertified, no identified hazards
+        display_name: No listed substances, uncertified
         normalised_position: 0.9
         definition_text: >-
-          No formal certification, but no hazardous content has been identified.
-          Materially different from undocumented, which is why the gap to the
-          level below is much larger than the gaps above.
+          Screened against the ECHA Candidate List and REACH Annex XVII with
+          nothing found, holding no Cradle to Cradle certification. Materially
+          different from undocumented, which is why the gap to the level below
+          is much larger than the gaps above.
       - level_key: h3
         level_index: 3
-        display_name: Certified, entry tier
+        display_name: Material Health Bronze
         normalised_position: 0.925
-        definition_text: Lowest of the four certification tiers.
+        definition_text: >-
+          Cradle to Cradle Certified Version 4.0, Material Health category,
+          Bronze achievement level: at least 75% of the product by weight
+          assessed against the Material Health Assessment Methodology.
       - level_key: h4
         level_index: 4
-        display_name: Certified, second tier
+        display_name: Material Health Silver
         normalised_position: 0.95
-        definition_text: Second of the four certification tiers.
+        definition_text: >-
+          Cradle to Cradle Certified Version 4.0, Material Health category,
+          Silver achievement level: at least 95% of the product by weight
+          assessed.
       - level_key: h5
         level_index: 5
-        display_name: Certified, third tier
+        display_name: Material Health Gold
         normalised_position: 0.975
-        definition_text: Third of the four certification tiers.
+        definition_text: >-
+          Cradle to Cradle Certified Version 4.0, Material Health category, Gold
+          achievement level: the whole product assessed, with every material
+          under review found compatible with human and environmental health.
       - level_key: h6
         level_index: 6
-        display_name: Certified, top tier
+        display_name: Material Health Platinum
         normalised_position: 1.0
-        definition_text: Highest certification tier available on this scale.
+        definition_text: >-
+          Cradle to Cradle Certified Version 4.0, Material Health category,
+          Platinum achievement level: the whole product assessed, meeting the
+          additional Platinum requirements on top of Gold.
 
   # --- technical performance ------------------------------------------------
   - key: compressive_strength

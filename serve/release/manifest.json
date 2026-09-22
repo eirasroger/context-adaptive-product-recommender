@@ -47,12 +47,12 @@
       "top1_agreement": 0.9053577937067185
     }
   },
-  "model_bytes": 2433739,
-  "model_sha256": "dde485d24c81f50ce5497a16c6213c32df0c5ab045ab93d0baaa4910fb94a1d3",
-  "notes": "First release. Registry 0.2.0, behavioural gate passing on all 464 assertions.",
+  "model_bytes": 2433291,
+  "model_sha256": "4436efa2897ddde937ad3a899a61d9fad4986efad9d758d1b4f4f7d5fd799d23",
+  "notes": "Registry 0.2.1 restamped onto the 0.2.0 weights: the health scale's level names and definitions changed, nothing the model reads. Behavioural gate passing on all 456 assertions.",
   "promoted_at": "2026-09-21T13:51:35.009272+00:00",
-  "registry_content_hash": "e055ea0b1f27df64dd805c3390ea6e9e7a6fe9875d8974fe8db03650cce30038",
-  "registry_version": "0.2.0",
+  "registry_content_hash": "9c80663241bc28c3068d3e1b929effadf56fbf625a0a559c33bf2070e3d23ff2",
+  "registry_version": "0.2.1",
   "run": "baseline-20260921T125233Z",
   "snapshot_hash": "f529cfb221f8b1fb01fc08cde1c2e67fcda0ab50a290c5311aa629c232f9da59",
   "split_key": "default"

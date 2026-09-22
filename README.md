@@ -131,6 +131,14 @@ checkpoint without retraining:
 python -m eval.run runs/<run>/model.pt --device cuda
 ```
 
+A registry change that touches no model input (a level renamed, a definition
+rewritten) reaches a deployed model only by swapping the blob the checkpoint
+carries. The tool refuses if anything else moved:
+
+```bash
+python -m model.restamp serve/release/model.pt 0.2.1
+```
+
 Tests:
 
 ```bash

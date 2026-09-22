@@ -16,7 +16,7 @@ stakeholder:
   is_active: 1
 - key: health_safety_focused
   display_name: Health and safety focused
-  definition_text: Prioritises health certification and the absence of hazardous waste, and penalises unknown or non-compliant chemical profiles even when better options are only marginally more expensive. Favours properties that make installation safer.
+  definition_text: Prioritises material health certification and the absence of hazardous waste, and penalises unknown or hazardous chemical profiles even when better options are only marginally more expensive. Favours properties that make installation safer.
   domain_scope_text: null
   is_active: 1
 - key: occupant_comfort_focused

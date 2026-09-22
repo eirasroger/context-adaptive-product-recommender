@@ -164,7 +164,7 @@ indicator:
   family_key: health_safety
   value_type: ordinal
   unit: null
-  definition_text: 'Certified product health status on an ordered scale running from non-compliance with basic chemical safety, through undocumented and uncertified-but-clean, to four progressively stronger certification tiers. Higher is better. The scale is not equally spaced: the step from non-compliant to merely undocumented is a different kind of step from one certification tier to the next, which is why the level positions are declared individually rather than assumed uniform.'
+  definition_text: 'Material health status on an ordered scale running from hazardous substances present, through undocumented and screened-but-uncertified, to the four Cradle to Cradle Certified Material Health achievement levels. Higher is better. The scale is unevenly spaced: the step from an unassessed product to a screened one is a different kind of step from one certification tier to the next, which is why the level positions are declared individually rather than assumed uniform. The scale records what has been assessed and published about a product''s chemistry. It carries no statement about legal compliance, which the category''s eligibility precondition places outside this model.'
   default_direction: 1
   nominal_justification: null
   is_derived: 0
