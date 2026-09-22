@@ -1,6 +1,5 @@
-[project]
-name ="x"
-version="1"
+
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
