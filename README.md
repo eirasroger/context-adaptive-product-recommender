@@ -24,51 +24,75 @@ exercise.
 
 ## How it works
 
-**The registry is the specification.** It holds the indicators, what they mean,
-which way is better, and the range each is measured against. It holds the
-categories, what each is measured per, and which indicators apply. It holds the
-contexts and the stakeholder archetypes. Changing a row here changes how the
-model behaves, so registry changes are reviewed and version-stamped like code.
+### One scoring call
 
-**Indicators are shared.** An impact indicator is the same entity wherever it
-appears, so a category that reuses existing indicators costs nothing extra to
-support. Each belongs to a family, and a new indicator starts from what the
-model has learned about its family.
+```mermaid
+flowchart TD
+  IN["a shortlist of 2 to 5 alternatives<br/>a context, one or more stakeholders"]
+  TOK["one token per applicable indicator"]
+  ENC["encoder<br/>attention within an alternative, across its indicators"]
+  CMP["comparator<br/>attention across alternatives, blind to indicators"]
+  OUT["a score per alternative"]
+  IN --> TOK --> ENC --> CMP --> OUT
+```
 
-**Contexts declare which indicators they care about.** Whether a context applies
-to a category follows from whether that category holds those indicators. A
-requirement that depends on an indicator only some categories have switches
-itself off for the rest, and no list is maintained by hand.
+The comparator never sees an indicator, so comparing two concretes and comparing
+two facade systems are the same operation. That is where transfer between
+categories comes from.
 
-**Each alternative is a bag of tokens, one per indicator.** A token carries what
-the indicator is, how the value compares to its declared range, how it compares
-to the other alternatives on the table, whether it is present, whether it counts
-in this context, and which way the context pulls it. Adding an indicator adds a
-token, which is why nothing else has to move. The representation also keeps
-"this category has no such indicator" distinct from "this product is missing a
-value for it": the first has no token, the second has a token that says so.
+Each token carries:
 
-**The network has two levels of attention.** The first looks within an
-alternative across its indicators and produces one embedding for it. The second
-looks across alternatives and compares them. The second stage is blind to
-indicators, which makes comparing alternatives in one category and in another
-the same operation, and is where transfer between categories comes from.
+| | |
+|---|---|
+| identity | its family's embedding plus the indicator's own |
+| value | against the declared range, and against the others on the table |
+| state | present, relevant in this context |
+| context | which way this context pulls it, and how hard |
+
+Adding an indicator adds a token, which is why nothing else moves. A category
+without the indicator has no token; a product missing the value has a token
+saying so.
+
+### What is fixed and what is learned
+
+| Declared in the registry | Learned from data |
+|---|---|
+| what an indicator means and which way is better | a family embedding, and each indicator's own on top of it |
+| the range each is measured against, per category | a level embedding for each rung of an ordered scale |
+| the positions of an ordered scale's levels | a residual per context, on top of its declarations |
+| which indicators a category holds | an embedding per stakeholder archetype |
+| what each context pulls on, and how hard | the encoder, comparator and scoring head |
+
+The learned parts are zero-initialised, so a new indicator starts as its family
+and a new context starts as exactly its declarations.
+
+### Where the registry travels
+
+```mermaid
+flowchart LR
+  SEEDS["db/seeds/*.yaml"] --> DB[("database")]
+  DB -->|release| MIRROR["registry/*.yaml<br/>reviewed as a diff"]
+  DB --> SNAP["snapshot<br/>frozen and content-hashed"]
+  DB --> TRAIN["train"]
+  SNAP --> TRAIN
+  TRAIN --> CK["checkpoint<br/>carries the registry it trained under"]
+  CK -->|promote| REL["serve/release/"]
+  REL --> DEP["deployment"]
+```
+
+The weights record the snapshot hash and the registry version, so a result
+traces back to what produced it. The deployment needs no database.
 
 **Training targets the ordering and the gaps.** The distance between two options
-is what someone acts on, so the loss penalises getting a gap wrong as well as
-getting an order wrong. Every decision carries equal weight regardless of how
-many alternatives it had. Near-ties are treated as near-ties.
+is what someone acts on, so the loss penalises a wrong gap as well as a wrong
+order. Every decision weighs the same whatever its size, and near-ties are
+treated as near-ties.
 
-**Evaluation has a tier that is pass or fail.** Control cases are generated from
-the registry with a known answer, so they double as a test suite: the score
-moves the way the registry says it should, and it inverts when two contexts
-disagree about an indicator. Metrics say how close the model is. These say
-whether it learned the right thing.
-
-**Nothing trains off the live database.** Each run freezes the data into a
-content-hashed snapshot and records that hash plus the registry version with the
-weights, so a result can be traced back to what produced it. A checkpoint also
-carries its own registry, which keeps it interpretable on its own.
+**Evaluation has a tier that is pass or fail.** Control cases generated from the
+registry have a known answer, so they double as a test suite: the score moves
+the way the registry says it should, and inverts when two contexts disagree.
+Metrics say how close the model is. These say whether it learned the right
+thing.
 
 ## Layout
 
