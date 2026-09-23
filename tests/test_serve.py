@@ -48,6 +48,14 @@ def test_health_reports_what_is_loaded(client):
     assert body["categories"]
 
 
+def test_health_names_the_deployed_commit(client, monkeypatch):
+    """The smoke test waits for this to show the commit it was triggered by."""
+    from serve.api import COMMIT_ENV
+
+    monkeypatch.setenv(COMMIT_ENV, "b11d5ea3")
+    assert client.get("/api/health").json()["commit"] == "b11d5ea3"
+
+
 def test_scoring_echoes_the_eligibility_precondition(client, registry, category_key):
     """The API must never let a score be mistaken for a compliance statement."""
     response = client.post("/api/score", json=_payload(registry, category_key))

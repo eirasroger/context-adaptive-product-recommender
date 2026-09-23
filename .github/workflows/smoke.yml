@@ -1,0 +1,29 @@
+name: Smoke test
+
+# Vercel reports each deployment to GitHub; this checks the live site after
+# every successful production deploy. It reads the public address only.
+on: deployment_status
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check the live site
+        run: >-
+          python tests/smoke.py https://context-adaptive-product-recommende.vercel.app
+          --commit ${{ github.event.deployment.sha }}

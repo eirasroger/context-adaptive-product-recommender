@@ -29,6 +29,7 @@ from serve.engine import ServedModel
 from serve.explore import analysis
 
 MODEL_ENV = "RECOMMENDER_MODEL"
+COMMIT_ENV = "VERCEL_GIT_COMMIT_SHA"
 
 
 class AlternativePayload(BaseModel):
@@ -273,6 +274,7 @@ def create_app(
             "registry_version": instance.registry_version,
             "snapshot": instance.snapshot_hash,
             "categories": sorted(instance.registry.categories),
+            "commit": os.environ.get(COMMIT_ENV),
         }
 
     @api.get("/categories")
