@@ -193,9 +193,13 @@ def test_serving_never_imports_the_explanation_stack():
     import subprocess
     import sys
 
+    # app.py builds the deployed app, which needs a frontend build; the imports
+    # are the same without one.
     result = subprocess.run(
         [sys.executable, "-c",
-         "import sys, serve.api, app;"
+         "import functools, sys, serve.api;"
+         "serve.api.create_app = functools.partial(serve.api.create_app, frontend=None);"
+         "import app;"
          "heavy = {'shap', 'numba', 'llvmlite', 'sklearn', 'scipy'};"
          "found = sorted(m for m in sys.modules if m.split('.')[0] in heavy);"
          "print(','.join(found))"],
