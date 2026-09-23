@@ -556,13 +556,32 @@ CPU build of PyTorch.
 On one CPU, a scoring call takes about 10 ms, a comparison about 45 ms, and
 the process holds about 650 MB of memory. It needs no GPU and no database server.
 
-- **Vercel.** The live deployment. Vercel builds production from the GitHub
-  repository; `app.py` and `vercel.json` are the whole configuration.
+- **Vercel.** The live deployment. Vercel builds production from the
+  `production` branch of the GitHub repository; `app.py` and `vercel.json` are
+  the whole configuration.
 - **Container.** The `Dockerfile` builds a serving image that listens on
   `PORT`, 7860 by default, which suits Hugging Face Spaces.
 
 The service reads `serve/release/` by default. `RECOMMENDER_CHECKPOINT` points
 it at another checkpoint.
+
+### Releasing
+
+Work lands on `main`, where CI runs on every push and nothing deploys. The live
+site changes only when `production` moves:
+
+```bash
+git push origin main:production
+```
+
+`production` only ever moves forward to a commit already on `main`, so the two
+never diverge; git refuses the push otherwise. Release a commit that CI has
+passed on `main`.
+
+Each deployment stores its own copy of the serving bundle, about 0.9 GB with
+PyTorch, and Hobby allows 10 GB in total. Deploying on release keeps that count
+to the versions worth serving. A branch named `preview-*` can be enabled in
+`vercel.json` when a change needs a preview before release.
 
 ### Limits on a public deployment
 
@@ -576,8 +595,10 @@ refused. A refused call returns 429 with a `Retry-After` header.
 | `RECOMMENDER_RATE_LIMIT_TOTAL` | 40 | Scoring calls per window across all callers |
 | `RECOMMENDER_RATE_WINDOW` | 60 | Window length in seconds |
 
-The page scores on a button press, so one reading of a shortlist is one call.
-Ten a minute suits a person working quickly and stops a script within seconds.
+One reading of a shortlist makes two of these calls, the score and the
+comparison, whether it comes from the Score button or from opening a shared
+link. Ten a minute suits a person working quickly and stops a script within
+seconds.
 Setting both limits to zero lifts the gate.
 
 The counters live in the serving process. In a single container the limits
