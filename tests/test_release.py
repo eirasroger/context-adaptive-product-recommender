@@ -11,7 +11,6 @@ import torch
 from model import checkpoint as checkpoint_module
 from model.recommender import ModelConfig, Recommender
 from serve import release as release_module
-from serve.background import Background
 
 
 def _run(tmp_path, registry, passed: bool | None, gap: float = 0.05):
@@ -82,12 +81,27 @@ def _promote(run_dir, tmp_path, **kwargs):
     kwargs.setdefault("release_dir", tmp_path / "release")
     kwargs.setdefault("fixture_dir", tmp_path / "fixture")
     kwargs.setdefault("snapshot_root", _snapshot(tmp_path / "snapshots").parent)
-    return release_module.promote(run_dir, database=None, **kwargs)
+    kwargs.setdefault("readme", _readme(tmp_path))
+    return release_module.promote(run_dir, **kwargs)
+
+
+def _readme(tmp_path):
+    path = tmp_path / "README.md"
+    if not path.exists():
+        path.write_text(
+            f"# Title\n\n{release_module.RESULTS_START}\nold\n"
+            f"{release_module.RESULTS_END}\n\nAfter.\n",
+            encoding="utf-8",
+        )
+    return path
 
 
 def _metrics(passed: bool = True, gap: float = 0.05) -> dict:
     return {
-        "overall": {"gap_fidelity": gap},
+        "overall": {
+            "gap_fidelity": gap, "band_placement": 0.02, "top1_agreement": 0.9,
+            "tie_tolerant_tau": 0.9, "n_sets": 1234,
+        },
         "stratified": {"context": {"standard": {"gap_fidelity": gap}}},
         "behavioural": {"passed": passed, "failures": [] if passed else ["x"]},
     }
@@ -136,37 +150,13 @@ def test_a_passing_run_ships_with_its_provenance(tmp_path, registry):
     assert on_disk == manifest
 
 
-def test_background_falls_back_when_nothing_is_attached():
-    """A deployment with no database still answers, and says what it used."""
-    background = Background({}, "reference ranges")
-    assert not background.available
-    assert background.size("anything") == 0
-    assert background.rows("anything", ["gwp"]) == []
-
-
-def test_background_round_trips_through_a_file(tmp_path):
-    path = tmp_path / "background.json"
-    path.write_text(json.dumps({
-        "origin": "corpus",
-        "categories": {"concrete": [{"gwp": 0.2, "health": "h4", "wdp": None}]},
-    }), encoding="utf-8")
-
-    background = Background.from_file(path)
-    assert background.origin == "corpus"
-    assert background.size("concrete") == 1
-
-    rows = background.rows("concrete", ["gwp", "health"])
-    assert rows == [{"gwp": 0.2, "health": "h4"}]
-
-
 def test_the_released_artefacts_stay_small():
     """A checkpoint belongs in the repository. A corpus does not."""
-    from serve.background import RELEASE_DIR
-
-    if not (RELEASE_DIR / "model.pt").exists():
+    release_dir = release_module.RELEASE_DIR
+    if not (release_dir / "model.pt").exists():
         pytest.skip("nothing has been promoted yet")
 
-    total = sum(f.stat().st_size for f in RELEASE_DIR.iterdir() if f.is_file())
+    total = sum(f.stat().st_size for f in release_dir.iterdir() if f.is_file())
     assert total < release_module.SIZE_WARNING_MB * 1e6, (
         f"release is {total / 1e6:.1f} MB"
     )
@@ -411,6 +401,28 @@ def test_a_promotion_that_cannot_refresh_the_fixture_is_refused(tmp_path, regist
         _promote(run_dir, tmp_path, snapshot_root=tmp_path / "nowhere")
 
     assert not (tmp_path / "release" / "manifest.json").exists()
+
+
+def test_promoting_rewrites_the_readme_results(tmp_path, registry):
+    run_dir = _run(tmp_path, registry, passed=True, gap=0.0421)
+    readme = _readme(tmp_path)
+
+    _promote(run_dir, tmp_path, readme=readme)
+
+    text = readme.read_text(encoding="utf-8")
+    assert "| 0.042 |" in text
+    assert "1,234 test shortlists" in text
+    assert "old" not in text
+    assert text.startswith("# Title") and text.endswith("After.\n")
+
+
+def test_a_readme_without_a_results_block_is_refused(tmp_path, registry):
+    run_dir = _run(tmp_path, registry, passed=True)
+    readme = tmp_path / "README.md"
+    readme.write_text("# Title\n", encoding="utf-8")
+
+    with pytest.raises(release_module.GateFailed, match="results:start"):
+        _promote(run_dir, tmp_path, readme=readme)
 
 
 def test_the_pyproject_declares_no_dependencies():

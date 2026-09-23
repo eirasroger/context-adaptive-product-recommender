@@ -124,6 +124,12 @@ def main() -> None:
     if manifest is not None:
         print(f"  refreshed {manifest}")
 
+    from serve import release as served
+
+    if args.checkpoint.resolve().parent == served.RELEASE_DIR.resolve():
+        served.refresh_readme()
+        print(f"  refreshed {served.README.name}")
+
 
 if __name__ == "__main__":
     main()

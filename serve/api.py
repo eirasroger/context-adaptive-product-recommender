@@ -28,7 +28,6 @@ from core.encoding import AlternativeInput, encode_set
 from core.registry import Registry
 from model import checkpoint as checkpoint_module
 from serve import limits
-from serve.background import Background
 
 CHECKPOINT_ENV = "RECOMMENDER_CHECKPOINT"
 
@@ -89,7 +88,6 @@ class Service:
         self.model, self.meta, _ = checkpoint_module.load(checkpoint_path, device=device)
         self.model.eval()
         self.registry: Registry = checkpoint_module.load_registry(checkpoint_path)
-        self.background = Background.open()
 
     def score(self, request: ScoreRequest) -> ScoreResponse:
         registry = self.registry
@@ -291,7 +289,6 @@ def create_app(
             "registry_version": instance.meta.registry_version,
             "snapshot": instance.meta.snapshot_hash,
             "categories": sorted(instance.registry.categories),
-            "background": instance.background.origin,
         }
 
     @app.get("/categories")

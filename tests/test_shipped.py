@@ -77,6 +77,16 @@ def test_the_release_carries_the_baseline_the_next_promotion_needs(shipped):
     assert recorded["behavioural"]["passed"] is True
 
 
+def test_the_readme_describes_the_shipped_release(shipped):
+    text = serve_release.README.read_text(encoding="utf-8")
+    start = text.index(serve_release.RESULTS_START) + len(serve_release.RESULTS_START)
+    end = text.index(serve_release.RESULTS_END)
+    assert text[start:end].strip() == serve_release.results_section(RELEASE_DIR), (
+        "the README results table is stale; run "
+        "python -c \"from serve import release; release.refresh_readme()\""
+    )
+
+
 def test_the_shipped_checkpoint_passes_the_behavioural_suite():
 
     if not SHIPPED.exists():

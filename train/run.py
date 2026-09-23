@@ -16,7 +16,7 @@ from core import registry as registry_module
 from core.prepare import load_or_prepare
 from db import release as release_module
 from db.models import RegistryRelease
-from db.session import create_db_engine, session_scope
+from db.session import create_db_engine, db_path, session_scope
 from eval import behavioural, report as report_module
 from model import checkpoint as checkpoint_module
 from snapshot.build import SNAPSHOT_ROOT, build
@@ -90,6 +90,7 @@ def main() -> None:
     if args.batch_size is not None:
         config.optim.batch_size = args.batch_size
 
+    config.db = str(config.db or db_path())
     engine = create_db_engine(config.db)
     with session_scope(engine) as session:
         registry, registry_blob = resolve_registry(config, session)

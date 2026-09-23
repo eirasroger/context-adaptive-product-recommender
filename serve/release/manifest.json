@@ -1,6 +1,4 @@
 {
-  "background_bytes": 102048,
-  "background_rows": 256,
   "config": {
     "comparator_blocks": 2,
     "comparator_heads": 4,

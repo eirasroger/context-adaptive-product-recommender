@@ -10,12 +10,14 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
-from serve.background import BACKGROUND_FILE, DEFAULT_ROWS, RELEASE_DIR, sample_from_database
-
+RELEASE_DIR = Path(__file__).parent / "release"
 MODEL_FILE = "model.pt"
 MANIFEST_FILE = "manifest.json"
 METRICS_FILE = "metrics.json"
 FIXTURE_DIR = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "snapshot"
+README = Path(__file__).resolve().parents[1] / "README.md"
+RESULTS_START = "<!-- results:start -->"
+RESULTS_END = "<!-- results:end -->"
 MAX_STRATUM_REGRESSION = 0.001
 
 #: A checkpoint belongs in the repository. A corpus does not. If a promotion
@@ -60,6 +62,45 @@ def refresh_fixture(snapshot_dir: Path, fixture_dir: Path = FIXTURE_DIR) -> dict
     return subset(snapshot_dir, fixture_dir, folds=["test"])
 
 
+def results_section(release_dir: Path = RELEASE_DIR) -> str:
+    """The README's account of the shipped model, built from the release itself."""
+    release_dir = Path(release_dir)
+    manifest = read_manifest(release_dir) or {}
+    metrics = json.loads((release_dir / METRICS_FILE).read_text(encoding="utf-8"))
+    overall = metrics["overall"]
+    verdicts = (metrics.get("behavioural") or {}).get("summary") or {}
+    passed = sum(counts.get("pass", 0) for counts in verdicts.values())
+    total = sum(sum(counts.values()) for counts in verdicts.values())
+
+    return "\n".join([
+        f"The model in `serve/release/` comes from run `{manifest.get('run')}` and",
+        f"carries registry {manifest.get('registry_version')}. On "
+        f"{overall['n_sets']:,} test shortlists it scores:",
+        "",
+        "| Gap fidelity | Band placement | Top-1 agreement "
+        "| Tie-tolerant rank correlation | Behavioural assertions |",
+        "|---|---|---|---|---|",
+        f"| {overall['gap_fidelity']:.3f} | {overall['band_placement']:.3f} "
+        f"| {overall['top1_agreement']:.3f} | {overall['tie_tolerant_tau']:.3f} "
+        f"| {passed} of {total} pass |",
+    ])
+
+
+def refresh_readme(release_dir: Path = RELEASE_DIR, readme: Path = README) -> None:
+    """Rewrite the results block in the README from the release it describes."""
+    readme = Path(readme)
+    text = readme.read_text(encoding="utf-8")
+    start, end = text.find(RESULTS_START), text.find(RESULTS_END)
+    if start < 0 or end < start:
+        raise GateFailed(
+            f"{readme} has no {RESULTS_START} ... {RESULTS_END} block to refresh"
+        )
+    head = text[: start + len(RESULTS_START)]
+    readme.write_text(
+        f"{head}\n{results_section(release_dir)}\n{text[end:]}", encoding="utf-8"
+    )
+
+
 def regression_against_release(run_dir: Path, release_dir: Path):
     """Strata that got worse than the release this run would replace.
 
@@ -85,13 +126,12 @@ def regression_against_release(run_dir: Path, release_dir: Path):
 
 def promote(
     run_dir: Path,
-    database: str | None = None,
     release_dir: Path = RELEASE_DIR,
-    rows: int = DEFAULT_ROWS,
     notes: str = "",
     force: bool = False,
     fixture_dir: Path = FIXTURE_DIR,
     snapshot_root: Path | None = None,
+    readme: Path = README,
 ) -> dict:
     run_dir = Path(run_dir)
     checkpoint = run_dir / "model.pt"
@@ -138,15 +178,6 @@ def promote(
         if not force:
             raise
 
-    background_rows = 0
-    if database:
-        sampled = sample_from_database(database, rows)
-        (release_dir / BACKGROUND_FILE).write_text(
-            json.dumps({"origin": "corpus", "categories": sampled}, separators=(",", ":")),
-            encoding="utf-8",
-        )
-        background_rows = sum(len(v) for v in sampled.values())
-
     evaluation = _evaluation(run_dir)
 
     manifest = {
@@ -158,10 +189,6 @@ def promote(
         "split_key": meta.get("split_key"),
         "model_sha256": digest(release_dir / MODEL_FILE),
         "model_bytes": (release_dir / MODEL_FILE).stat().st_size,
-        "background_rows": background_rows,
-        "background_bytes": (release_dir / BACKGROUND_FILE).stat().st_size
-        if (release_dir / BACKGROUND_FILE).exists()
-        else 0,
         "config": described["config"],
         "evaluation": evaluation,
         "notes": notes,
@@ -169,6 +196,8 @@ def promote(
     (release_dir / MANIFEST_FILE).write_text(
         json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8"
     )
+    if (release_dir / METRICS_FILE).exists():
+        refresh_readme(release_dir, readme)
     return manifest
 
 
@@ -202,8 +231,6 @@ def read_manifest(release_dir: Path = RELEASE_DIR) -> dict | None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Promote a run to the served release.")
     parser.add_argument("run", help="a directory under runs/")
-    parser.add_argument("--db", default="data/corpus.db", help="source for the SHAP background")
-    parser.add_argument("--rows", type=int, default=DEFAULT_ROWS)
     parser.add_argument("--release-dir", default=str(RELEASE_DIR))
     parser.add_argument("--notes", default="")
     parser.add_argument(
@@ -211,29 +238,20 @@ def main() -> None:
         action="store_true",
         help="promote despite a failing or missing evaluation",
     )
-    parser.add_argument(
-        "--no-background",
-        action="store_true",
-        help="skip the background export and leave any existing file alone",
-    )
     args = parser.parse_args()
 
     manifest = promote(
         Path(args.run),
-        database=None if args.no_background else args.db,
         release_dir=Path(args.release_dir),
-        rows=args.rows,
         notes=args.notes,
         force=args.force,
     )
 
-    total = (manifest["model_bytes"] + manifest["background_bytes"]) / 1e6
+    total = manifest["model_bytes"] / 1e6
     print(f"promoted {manifest['run']}")
     print(f"  registry   {manifest['registry_version']}")
     print(f"  snapshot   {(manifest['snapshot_hash'] or '')[:12]}")
     print(f"  model      {manifest['model_bytes'] / 1e6:.2f} MB  sha256 {manifest['model_sha256'][:12]}")
-    print(f"  background {manifest['background_rows']} rows, "
-          f"{manifest['background_bytes'] / 1e6:.2f} MB")
     evaluation = manifest.get("evaluation") or {}
     passed = evaluation.get("behavioural_passed")
     if passed is not None:

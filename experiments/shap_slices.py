@@ -102,6 +102,47 @@ def _row(columns: Sequence[Column], alternative: AlternativeInput) -> np.ndarray
     )
 
 
+def sample_products(
+    database: str, category_key: str, rows: int = DEFAULT_BACKGROUND
+) -> list[dict]:
+    """Random products from the corpus, in the form `explain` takes as its background."""
+    from sqlalchemy import func, select
+
+    from db.models import IndicatorValue, Product
+    from db.session import create_db_engine, session_factory
+
+    session = session_factory(create_db_engine(database))()
+    try:
+        ids = [
+            int(product_id)
+            for (product_id,) in session.execute(
+                select(Product.id)
+                .where(Product.category_key == category_key)
+                .order_by(func.random())
+                .limit(rows)
+            ).all()
+        ]
+        grouped: dict[int, dict] = {product_id: {} for product_id in ids}
+        for product_id, key, present, value_num, level_key in session.execute(
+            select(
+                IndicatorValue.product_id,
+                IndicatorValue.indicator_key,
+                IndicatorValue.present,
+                IndicatorValue.value_num,
+                IndicatorValue.level_key,
+            ).where(IndicatorValue.product_id.in_(ids))
+        ).all():
+            if not present:
+                grouped[product_id][key] = None
+            elif level_key is not None:
+                grouped[product_id][key] = level_key
+            else:
+                grouped[product_id][key] = float(value_num)
+        return [grouped[product_id] for product_id in ids if grouped[product_id]]
+    finally:
+        session.close()
+
+
 def _background(
     columns: Sequence[Column],
     registry: Registry,

@@ -72,8 +72,9 @@ default direction: higher is better, lower is better, or neutral. For each
 category that uses the indicator, it also records a reference range (for
 example, 0.05 to 0.5 kg CO2-eq per kilogram for global warming potential in
 concrete), whether the range is linear or logarithmic, and whether the
-indicator always counts or only counts when a context asks for it. Ordered scales, such as the health
-certification levels, record the position of each level.
+indicator always counts or only counts when a context asks for it. Ordered
+scales, such as the health certification levels, record the position of each
+level.
 
 For each **context**, the registry records which indicators it pulls on, in
 which direction and how strongly. Acoustic insulation pulls density upwards
@@ -231,16 +232,19 @@ control cases. An indicator whose declared direction is only safe over part of
 its range is marked `exclude` in the registry and left out of the suite, with
 the reason recorded beside it.
 
-The model shipped under registry 0.2.1 (run `baseline-20260921T125233Z`)
-scores as follows on 8,231 test shortlists:
+<!-- results:start -->
+The model in `serve/release/` comes from run `baseline-20260921T125233Z` and
+carries registry 0.2.1. On 8,231 test shortlists it scores:
 
 | Gap fidelity | Band placement | Top-1 agreement | Tie-tolerant rank correlation | Behavioural assertions |
 |---|---|---|---|---|
 | 0.048 | 0.018 | 0.905 | 0.909 | 456 of 456 pass |
+<!-- results:end -->
 
-The full record, broken down by provenance, family and shortlist size, is in
-`serve/release/metrics.json`. CI re-scores the shipped checkpoint on every push
-and fails if the result drifts from that record.
+Promotion writes this table from the release. The full record, broken down by
+provenance, family and shortlist size, is in `serve/release/metrics.json`. CI
+re-scores the shipped checkpoint on every push and fails if the result drifts
+from that record, or if this table disagrees with it.
 
 ## From registry to deployment
 
@@ -361,11 +365,11 @@ the development dependencies:
 
 ```bash
 pip install -r requirements-dev.txt
-export RECOMMENDER_DB=data/corpus.db
 ```
 
-The variable points every command below at the same database file. These
-dependencies pin the CPU build of PyTorch. For GPU training, install a CUDA
+Every command below works on `data/corpus.db`. Set `RECOMMENDER_DB` to use
+another file, or pass `--db` to a single command. These dependencies pin the
+CPU build of PyTorch. For GPU training, install a CUDA
 build of PyTorch afterwards; training uses a CUDA device automatically when one
 is present.
 
@@ -419,7 +423,7 @@ python -m eval.run runs/<run>/model.pt --device cuda
 **5. Promote.** Copy a run into `serve/release/`:
 
 ```bash
-python -m serve.release runs/<run> --db data/corpus.db --notes "why this one"
+python -m serve.release runs/<run> --notes "why this one"
 ```
 
 Promotion writes a manifest recording the run, the registry version, the
@@ -439,8 +443,6 @@ python -m model.restamp serve/release/model.pt 0.2.1
 ```
 
 The tool refuses if anything the model reads has changed.
-
-Each command also accepts `--db` to name a database for that call alone.
 
 ## Tests
 
@@ -465,8 +467,8 @@ A deployment needs the application code, `serve/release/` and
 `requirements.txt`. That file holds the serving dependencies alone and pins the
 CPU build of PyTorch.
 
-On one CPU, a scoring call takes about 10 ms and the process holds about
-650 MB of memory. It needs no GPU and no database server.
+On one CPU, a scoring call takes about 10 ms, a comparison about 45 ms, and
+the process holds about 650 MB of memory. It needs no GPU and no database server.
 
 - **Vercel.** `app.py` and `vercel.json` are the whole configuration.
 - **Container.** The `Dockerfile` builds a serving image that listens on

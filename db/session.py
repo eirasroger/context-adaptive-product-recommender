@@ -14,7 +14,7 @@ from pathlib import Path
 from sqlalchemy import Engine, create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 
-DEFAULT_DB_PATH = Path("data/registry.db")
+DEFAULT_DB_PATH = Path("data/corpus.db")
 
 ENV_DB_PATH = "RECOMMENDER_DB"
 
