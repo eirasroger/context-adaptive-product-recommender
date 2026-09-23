@@ -246,6 +246,41 @@ provenance, family and shortlist size, is in `serve/release/metrics.json`. CI
 re-scores the shipped checkpoint on every push and fails if the result drifts
 from that record, or if this table disagrees with it.
 
+## What drives the scores
+
+`experiments/attribution.py` measures which indicators the shipped model
+relies on. For each shortlist it withholds one indicator from every
+alternative, scores the shortlist again, and records how far each score moved.
+Withholding a value is a state the model was trained on, so the measurement
+never feeds it an invented number.
+
+```bash
+python -m experiments.attribution
+```
+
+It reads the committed test fold, samples 300 shortlists labelled by a language
+model or an expert, and writes four figures with the tables behind them to
+`runs/analysis/`. Each shortlist is re-scored under every context and then for
+every stakeholder, with everything else kept as recorded.
+
+| Figure | What it shows |
+|---|---|
+| `by-context` | Each indicator's effect under each context. Colour combines importance with the learned direction; `+` and `−` mark what the registry declares. Density should flip between acoustic and thermal insulation. |
+| `by-stakeholder` | The same for each stakeholder archetype. A cost-conscious developer should lean on cost, a circular-economy advocate on circularity. |
+| `family-share` | The share of the total effect each indicator family accounts for, per context and per stakeholder. |
+| `shap-agreement` | Withholding against SHAP for 30 alternatives, as a check on the method. |
+
+The figures mask any indicator with a veto value: one value that sinks the
+preference to 0 on its own. The script finds these in the control cases, where
+every other indicator sits at its ideal. For concrete that is the health score,
+whose lowest level (hazardous substances present) scores 0 while every other
+indicator's worst value still scores above 0.4. Left in, its effect is about
+half of the total and hides everything else. Each caption names what was
+masked and why, and the CSV tables keep the masked rows.
+
+`--sets`, `--shap` and `--seed` change the sample, and `--shap 0` skips the
+slow SHAP step. The full run takes about three minutes on a CPU.
+
 ## From registry to deployment
 
 ```mermaid
@@ -277,7 +312,7 @@ model/         tokens, encoder, comparator, scoring head, loss, checkpoints
 train/         training loop and run configurations
 eval/          metrics, behavioural assertions, reports and the release gate
 serve/         the API, the comparison page, rate limits and the shipped release
-experiments/   one-off analyses, such as SHAP by data slice
+experiments/   offline analyses: what drives the scores, and SHAP
 tests/         the test suite, with its own small evaluation fixture
 ```
 

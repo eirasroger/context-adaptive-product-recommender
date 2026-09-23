@@ -1,9 +1,9 @@
-"""SHAP attribution, for the paper.
+"""SHAP attribution, run offline.
 
-This is offline analysis. It runs where four seconds a call costs nothing and
-where the aggregation across many instances is what gives the numbers meaning.
-The serving path does not import it, and the deployed bundle carries none of
-its dependencies.
+Seconds per alternative, which suits aggregate analysis over many instances.
+The serving path never imports it, and the deployed bundle carries none of its
+dependencies. `experiments.attribution` compares it with the withholding
+measure.
 
 Features are indicators, one column each, which is the granularity a specifier
 reads. Continuous indicators carry their value, ordered scales carry their level

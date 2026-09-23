@@ -8,6 +8,7 @@ alembic>=1.13
 
 
 shap>=0.46
+matplotlib>=3.8
 numba>=0.60
 llvmlite>=0.43
 scikit-learn>=1.4

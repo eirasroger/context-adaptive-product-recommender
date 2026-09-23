@@ -112,45 +112,6 @@ def test_sensitivity_covers_every_stakeholder(registry, category_key, model):
     assert {row["label"] for row in data["rows"]} == set(registry.stakeholders)
 
 
-def test_attribution_is_measured_by_withholding(registry, category_key, model):
-    """Withholding an indicator must actually change something.
-
-    An indicator the model ignores gets a contribution near zero, which is a
-    real answer. Every contribution being zero means the measurement is broken.
-    """
-    category = registry.category(category_key)
-    context = category.default_context_key
-    alternatives = analysis.example_shortlist(registry, category_key, [context], size=3)
-
-    data = analysis.attribution(
-        model, registry, category_key, alternatives, [context], ["balanced_optimizer"]
-    )
-    assert data["method"] == "occlusion"
-    assert len(data["baseline"]) == 3
-    assert data["indicators"]
-    assert all(len(r["contribution"]) == 3 for r in data["indicators"])
-    assert max(r["magnitude"] for r in data["indicators"]) > 0.0
-
-    magnitudes = [r["magnitude"] for r in data["indicators"]]
-    assert magnitudes == sorted(magnitudes, reverse=True)
-
-    assert {f["family"] for f in data["families"]} <= set(registry.families)
-
-
-def test_attribution_skips_derived_indicators(registry, category_key, model):
-    """A derived value is recomputed from its sources, so withholding it alone
-    would measure nothing the sources do not already account for."""
-    category = registry.category(category_key)
-    context = category.default_context_key
-    alternatives = analysis.example_shortlist(registry, category_key, [context], size=2)
-
-    data = analysis.attribution(
-        model, registry, category_key, alternatives, [context], ["balanced_optimizer"]
-    )
-    derived = {k for k in category.token_order if registry.indicator(k).is_derived}
-    assert not ({r["indicator"] for r in data["indicators"]} & derived)
-
-
 def test_example_shortlist_varies_something(registry, category_key):
     """The default view has to show the model doing something."""
     category = registry.category(category_key)

@@ -32,9 +32,6 @@ Indicators the registry marks as not sweepable are not asserted on at all. If a
 declared direction does not hold across the whole declared range, there is
 nothing to compare the model against, and inventing an expectation would be
 worse than admitting the gap.
-
-This tier is what makes the system credible in production rather than only in a
-paper.
 """
 
 from __future__ import annotations

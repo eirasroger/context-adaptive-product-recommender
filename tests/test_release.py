@@ -184,7 +184,7 @@ def test_serving_does_not_import_the_data_stack():
 
 
 def test_serving_never_imports_the_explanation_stack():
-    """SHAP is offline analysis for the paper and stays out of the deployment.
+    """SHAP is offline analysis and stays out of the deployment.
 
     It carries numba, llvmlite, scipy, scikit-learn and pandas behind it, about
     330 MB, which is the difference between a bundle that fits a standard
