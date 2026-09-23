@@ -1,9 +1,4 @@
-"""The training loop.
-
-Reads a snapshot, never the live database, and records the snapshot hash and the
-registry version with the checkpoint so a run can be reproduced from what it
-says about itself.
-"""
+"""The training loop."""
 
 from __future__ import annotations
 
@@ -61,7 +56,6 @@ def set_seed(seed: int) -> None:
 
 
 def loss_weights(config: TrainConfig, registry: Registry) -> LossWeights:
-    """Mix the loss terms, taking provenance weights from the registry."""
     return LossWeights(
         pointwise=config.loss.pointwise,
         pairwise=config.loss.pairwise,

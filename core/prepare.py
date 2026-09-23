@@ -1,6 +1,4 @@
-"""Turn a snapshot into arrays the training loop can index into cheaply.
-
-"""
+"""Turn a snapshot into arrays the training loop can index cheaply."""
 
 from __future__ import annotations
 
@@ -30,9 +28,7 @@ CONTEXT_CHANNEL_IDS = tuple(CHANNEL_INDEX[name] for name in CONTEXT_CHANNELS)
 
 CACHE_FILE = "prepared.pkl"
 
-#: Bumped whenever the encoding changes shape or meaning. The cache is keyed on
-#: it as well as on the data, so a fix here can never be masked by a stale file
-#: computed under the old behaviour.
+#: Bump when the encoding changes shape or meaning, so stale caches are ignored.
 CACHE_VERSION = 3
 
 
@@ -84,7 +80,7 @@ class Prepared:
         return self.token_valid.shape[1]
 
     def channels_for(self, set_index: int) -> np.ndarray:
-        """Assemble the full channel block for one set, (n_alts, n_tokens, C)."""
+        """The full channel block for one set, (n_alts, n_tokens, C)."""
         start = int(self.set_start[set_index])
         count = int(self.set_count[set_index])
         category = int(self.set_category[set_index])
@@ -100,13 +96,7 @@ class Prepared:
         return block
 
 
-# ---------------------------------------------------------------------------
-# Building
-# ---------------------------------------------------------------------------
-
-
 def prepare(registry: Registry, snapshot_dir: Path) -> Prepared:
-    """Compute the prepared arrays for a snapshot."""
     sets = pd.read_parquet(snapshot_dir / "sets.parquet")
     members = pd.read_parquet(snapshot_dir / "members.parquet")
     values = pd.read_parquet(snapshot_dir / "values.parquet")
@@ -143,7 +133,6 @@ def prepare(registry: Registry, snapshot_dir: Path) -> Prepared:
             token_family_slot[index, position] = indicator.family_slot
             token_valid[index, position] = True
 
-    # -- set bookkeeping ---------------------------------------------------
     set_order = {set_id: index for index, set_id in enumerate(sets["set_id"].tolist())}
     member_set_index = members["set_id"].map(set_order).to_numpy()
     boundaries = np.flatnonzero(np.diff(member_set_index, prepend=-1))
@@ -157,7 +146,6 @@ def prepare(registry: Registry, snapshot_dir: Path) -> Prepared:
 
     set_category = sets["category_key"].map(category_index).to_numpy()
 
-    # -- product channels --------------------------------------------------
     product_row = {
         product_id: row
         for row, product_id in enumerate(members["product_id"].tolist())
@@ -188,7 +176,6 @@ def prepare(registry: Registry, snapshot_dir: Path) -> Prepared:
             product_level_slot,
         )
 
-    # -- context combinations ---------------------------------------------
     combo_labels = (
         sets["category_key"].astype(str) + "@" + sets["context_keys"].astype(str)
     )
@@ -289,8 +276,7 @@ def _fill_category_block(
     raw[target_row, target_col] = numeric
     present[target_row, target_col] = is_present
 
-    # Ordinal and nominal values arrive as level keys; an ordinal level's
-    # declared position is the comparable scalar, a nominal one has none.
+    # An ordinal level's declared position is its scalar; a nominal level has none.
     level_slot_lookup: dict[tuple[str, str], int] = {}
     level_position: dict[tuple[str, str], float] = {}
     for indicator_key in token_index:
@@ -318,9 +304,7 @@ def _fill_category_block(
             product_level_slot[target_row[has_level], target_col[has_level]] = slots
             raw[target_row[has_level], target_col[has_level]] = positions
 
-    # Derived indicators are recomputed from their sources rather than stored,
-    # so correcting a derivation never means rewriting the corpus. A derived
-    # value exists only where every source it needs is present.
+    # A derived value exists only where every source is present.
     for indicator_key, column in token_index.items():
         indicator = registry.indicator(indicator_key)
         if not indicator.is_derived or not indicator.sources:
@@ -414,12 +398,7 @@ def _ideal_distance_column(normalised: np.ndarray, spec) -> np.ndarray | None:
 def _within_set(
     raw: np.ndarray, member_set_index: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Normalise each indicator against the other alternatives in its own set.
-
-    Needed alongside the reference channel: within-set normalisation alone
-    cannot say that a whole shortlist is poor, and reference normalisation alone
-    loses resolution when the alternatives sit close together.
-    """
+    """Normalise each indicator against the other alternatives in its own set."""
     starts = np.flatnonzero(np.diff(member_set_index, prepend=-1))
     counts = np.diff(np.append(starts, len(member_set_index)))
 
@@ -439,18 +418,8 @@ def _within_set(
     return np.where(defined, values, 0.0), defined.astype(np.float64)
 
 
-# ---------------------------------------------------------------------------
-# Caching
-# ---------------------------------------------------------------------------
-
-
 def snapshot_hash(snapshot_dir: Path) -> str:
-    """The snapshot's own content hash, from its manifest.
-
-    A real snapshot is stored in a directory named after this, but a fixture
-    kept under a fixed name is not, and keying a cache on the directory name
-    would serve the previous contents back after a rebuild.
-    """
+    """The content hash from the manifest; fixtures keep a fixed directory name."""
     import json
 
     manifest = snapshot_dir / "manifest.json"
@@ -471,11 +440,7 @@ def cache_key(registry: Registry, snapshot_dir: Path) -> str:
 
 
 def load_or_prepare(registry: Registry, snapshot_dir: Path) -> Prepared:
-    """Prepare once, reuse thereafter.
-
-    Keyed by both the snapshot and the registry hash, because the same data
-    under changed semantics is different input.
-    """
+    """Prepare once and cache, keyed on the snapshot and the registry."""
     import pickle
 
     path = snapshot_dir / f"{cache_key(registry, snapshot_dir)}-{CACHE_FILE}"

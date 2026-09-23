@@ -1,9 +1,4 @@
-"""The arrays a model scores, and the interface every scoring engine offers.
-
-Torch trains and evaluates; ONNX Runtime serves. Both read the same padded
-arrays and return the same (shortlists, alternatives) scores, so nothing that
-builds a shortlist needs to know which engine answers it.
-"""
+"""The padded arrays a model scores, shared by the Torch and ONNX engines."""
 
 from __future__ import annotations
 
@@ -28,7 +23,7 @@ MODEL_INPUTS = (
 )
 SCORES = "scores"
 
-#: What an exported model carries beside its weights, so serving needs one file.
+#: Metadata keys an exported model carries beside its weights.
 REGISTRY_BLOB = "registry_blob"
 REGISTRY_VERSION = "registry_version"
 REGISTRY_CONTENT_HASH = "registry_content_hash"

@@ -1,21 +1,4 @@
-"""SHAP attribution, run offline.
-
-Seconds per alternative, which suits aggregate analysis over many instances.
-The serving path never imports it, and the deployed bundle carries none of its
-dependencies. `experiments.attribution` compares it with the withholding
-measure.
-
-Features are indicators, one column each, which is the granularity a specifier
-reads. Continuous indicators carry their value, ordered scales carry their level
-index, and a sentinel stands for a value the product does not have, so that
-"unknown" is something SHAP can move a feature into rather than a hole in the
-matrix.
-
-The rest of the shortlist is held fixed while the target alternative's features
-are perturbed. The score is relative to the alternatives on the table, so an
-explanation has to be made in the presence of those alternatives to mean
-anything.
-"""
+"""Offline SHAP attribution per indicator, with the rest of the shortlist held fixed."""
 
 from __future__ import annotations
 
@@ -30,20 +13,16 @@ from core.registry import Registry
 from model.export import TorchScorer
 from serve.explore.analysis import score_many
 
+
 class ExplanationUnavailable(RuntimeError):
-    """Raised when the deployment was built without the explanation stack."""
+    pass
 
 
 def available() -> bool:
-    """Whether SHAP can run here.
-
-    It carries numba, llvmlite, scipy, scikit-learn and pandas behind it, which
-    is roughly 330 MB. A deployment under a size limit can leave all of that out
-    and still score, so the import is checked rather than assumed.
-    """
     return importlib.util.find_spec("shap") is not None
 
 
+#: Stands for an unknown value, so SHAP can move a feature into it.
 MISSING = -1.0
 
 DEFAULT_BACKGROUND = 60
@@ -106,7 +85,7 @@ def _row(columns: Sequence[Column], alternative: AlternativeInput) -> np.ndarray
 def sample_products(
     database: str, category_key: str, rows: int = DEFAULT_BACKGROUND
 ) -> list[dict]:
-    """Random products from the corpus, in the form `explain` takes as its background."""
+    """Random products from the corpus, in the form ``explain`` takes as its background."""
     from sqlalchemy import func, select
 
     from db.models import IndicatorValue, Product
@@ -151,12 +130,7 @@ def _background(
     samples: Sequence[dict] | None,
     size: int,
 ) -> np.ndarray:
-    """Values to perturb against.
-
-    Real products when the database is available. Otherwise a spread over each
-    indicator's declared reference range, which is a weaker baseline and is
-    reported as such.
-    """
+    """Real products to perturb against, or a spread over each declared range without them."""
     if samples:
         rows = []
         for sample in samples:

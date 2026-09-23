@@ -1,5 +1,3 @@
-"""The frontend draws everything from the registry through the API."""
-
 from __future__ import annotations
 
 import re
@@ -20,9 +18,7 @@ def _sources() -> list[Path]:
 
 
 def test_the_frontend_names_no_registry_key(registry):
-    """Keys are matched as quoted literals, which is how code would name one;
-    several are ordinary words, such as `b` and `density`. Category names are
-    distinctive enough to match anywhere."""
+    """Keys match only when quoted, since some are ordinary words."""
     keys = (
         set(registry.indicators)
         | set(registry.contexts)

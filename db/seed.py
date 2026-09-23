@@ -1,15 +1,4 @@
-"""Load the YAML seed files into the registry tables.
-
-Idempotent: running it twice updates in place rather than duplicating, so a seed
-file can be edited and reapplied. Slots are allocated on first sight of an
-entity and never reallocated, which is what lets a seed file grow without
-disturbing a trained checkpoint.
-
-Seed files are applied in filename order. The numeric prefixes exist because the
-foreign keys have an order: families before indicators, indicators before
-contexts that declare over them, contexts before the categories that nominate a
-default.
-"""
+"""Load the YAML seed files into the registry tables, in filename order, idempotently."""
 
 from __future__ import annotations
 
@@ -50,7 +39,6 @@ def _now() -> str:
 
 
 def _upsert(session: Session, model, pk: tuple | Any, **fields):
-    """Insert or update one row by primary key."""
     existing = session.get(model, pk)
     if existing is None:
         row = model(**fields)
@@ -65,11 +53,6 @@ def _upsert(session: Session, model, pk: tuple | Any, **fields):
 
 def _bool(value: Any) -> int:
     return 1 if value else 0
-
-
-# ---------------------------------------------------------------------------
-# Per-section loaders
-# ---------------------------------------------------------------------------
 
 
 def _load_families(session: Session, rows: list[dict]) -> None:
@@ -308,7 +291,6 @@ SECTION_LOADERS = (
 
 
 def apply_seed_document(session: Session, doc: dict) -> None:
-    """Apply one parsed seed document."""
     for section, loader in SECTION_LOADERS:
         if section in doc:
             loader(session, doc[section])
@@ -317,7 +299,6 @@ def apply_seed_document(session: Session, doc: dict) -> None:
 
 
 def seed(session: Session, seed_dir: Path = SEED_DIR) -> list[Path]:
-    """Apply every seed file in the directory, in filename order."""
     applied = []
     for path in sorted(seed_dir.glob("*.yaml")):
         doc = yaml.safe_load(path.read_text(encoding="utf-8"))

@@ -1,7 +1,4 @@
-# Category-independent registry entities.
-#
-# Nothing here mentions a product category, and nothing here should ever need to
-# when one is added.
+# Registry entities shared by every category.
 
 indicator_family:
   - key: environmental_impact

@@ -712,7 +712,7 @@
     }
   },
   "info": {
-    "description": "Inference API.\n\nSubmit a shortlist and a context, receive a score per alternative. The response\nalways echoes the category's declared eligibility precondition, because the\nmodel ranks options that are assumed to have already passed regulatory\nprefiltering and saying so is the difference between a recommendation and a\ncompliance claim.\n\nThe registry travels inside the served model file, so the served semantics are\nexactly the ones the weights were trained under, with no database involved.\n",
+    "description": "Inference API.\n\nSubmit a shortlist and a context, receive a score per alternative. Every\nresponse echoes the category's eligibility precondition: the model ranks\noptions assumed to have passed regulatory checks.\n",
     "title": "Context-adaptive product recommender",
     "version": "0.1.0"
   },

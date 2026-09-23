@@ -1,5 +1,3 @@
-"""The served ONNX model scores exactly as the checkpoint it came from."""
-
 from __future__ import annotations
 
 import random
@@ -78,9 +76,7 @@ def assert_same_scores(arrays, engines):
 def test_the_served_model_scores_as_the_checkpoint_does(
     registry, category_key, engines, sizes, n_contexts, n_stakeholders
 ):
-    """The export's example input has two of every dimension, so these cases
-    include shapes it never saw: one shortlist, one context, one stakeholder,
-    five alternatives. A dimension fixed during export fails here."""
+    """Shapes unlike the export example catch a dimension fixed during export."""
     rng = random.Random(len(sizes) * 100 + sum(sizes))
     arrays = random_shortlists(registry, category_key, sizes, rng, n_contexts, n_stakeholders)
     assert_same_scores(arrays, engines)

@@ -1,14 +1,4 @@
-# The first category.
-#
-# Everything in this file is a row. Adding a second category means adding
-# another file shaped exactly like this one -- a functional unit, a category,
-# the indicators it holds, the range each of those is normalised against, and
-# how its labels are weighted. No schema change, no model change, no generator.
-#
-# Reference ranges are DECLARED, not fitted from whatever data happens to be on
-# disk. That is what decouples a trained checkpoint from a particular dataset
-# file. Values outside a declared range are clipped and flagged rather than
-# silently rescaling everything else.
+# Concrete, the first category.
 
 functional_unit:
   - key: kg
@@ -42,18 +32,7 @@ category:
       llm: 0.4
       expert: 0.2
 
-    # `relevance_mode: context_declared` marks an indicator whose relevance flag
-    # depends on the active context. Everything else is always relevant.
-    #
-    # `control_mode: exclude` marks an indicator that must NOT be varied on its
-    # own in a control case. A control label asserts that the declared direction
-    # holds across the whole declared range. Where that is not true -- the
-    # relationship turns over, the sources disagree, or the question is still
-    # open -- generating one would put a claim into the training data that the
-    # registry does not actually make. Excluded indicators are therefore also
-    # left out of the behavioural gate: there is nothing to compare against, and
-    # an untested indicator should read as a known gap rather than a silent
-    # pass. Every exclusion carries its reason.
+    # control_mode: exclude keeps an indicator out of control cases and the behavioural gate.
     indicators:
       - {indicator_key: gwp, ref_low: 0.05, ref_high: 0.50}
       - {indicator_key: wdp, ref_low: 0.003, ref_high: 0.30}

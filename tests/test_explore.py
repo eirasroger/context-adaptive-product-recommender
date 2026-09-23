@@ -1,5 +1,3 @@
-"""The explorer reports what the registry declares."""
-
 from __future__ import annotations
 
 import numpy as np
@@ -62,10 +60,6 @@ def test_response_curve_reports_the_declared_direction(registry, category_key, s
 
 
 def test_response_curve_carries_the_registry_expectation(registry, category_key, scorer):
-    """The curve ships the label the registry implies beside the model output.
-
-    Without it the chart shows a shape with nothing to judge it against.
-    """
     indicator = registry.sweepable(category_key)[0]
     category = registry.category(category_key)
     data = analysis.response_curve(
@@ -119,7 +113,6 @@ def test_sensitivity_covers_every_stakeholder(registry, category_key, scorer):
 
 
 def test_example_shortlist_varies_something(registry, category_key):
-    """The default view has to show the model doing something."""
     category = registry.category(category_key)
     context = category.default_context_key
     alternatives = analysis.example_shortlist(registry, category_key, [context], size=4)
@@ -136,7 +129,6 @@ def test_example_shortlist_varies_something(registry, category_key):
 def test_scoring_one_shortlist_matches_the_serving_path(
     registry, category_key, model, scorer
 ):
-    """The explorer and the inference API must agree about a score."""
     from core.dataset import collate
     from core.encoding import encode_set
 

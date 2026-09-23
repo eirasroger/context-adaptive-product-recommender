@@ -1,15 +1,4 @@
-"""The assembled model.
-
-Three stages, in this order and with this boundary:
-
-    indicator tokens -> encoder -> alternative embeddings -> comparator -> head
-
-The encoder is the only stage that sees indicators. Everything after it works on
-alternative embeddings, which is why comparing alternatives is one operation
-regardless of what is being compared.
-
-Embedding table widths come from the registry, not from a constant in this file.
-"""
+"""The assembled model: indicator tokens, encoder, comparator, head."""
 
 from __future__ import annotations
 
@@ -28,7 +17,7 @@ from model.tokens import TokenEmbedder
 
 @dataclass
 class ModelConfig:
-    """Architecture shape. The table sizes are filled in from the registry."""
+    """Architecture shape, with table sizes taken from the registry."""
 
     dim: int = 96
     encoder_heads: int = 4
@@ -38,7 +27,6 @@ class ModelConfig:
     ffn_factor: float = 4.0
     dropout: float = 0.1
 
-    # Ablation switches, so an experiment is a config change rather than a fork.
     use_family_prior: bool = True
     use_context_residual: bool = True
 
@@ -66,8 +54,7 @@ class ModelConfig:
         return asdict(self)
 
 
-#: Embedding tables that grow when the registry grows, and the module path each
-#: one lives at. Used by the checkpoint loader.
+#: Module path of each embedding table that grows with the registry, and its size field.
 GROWABLE = {
     "tokens.family": "n_families",
     "tokens.indicator": "n_indicators",

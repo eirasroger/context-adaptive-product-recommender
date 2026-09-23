@@ -1,8 +1,4 @@
-"""Engine and session setup.
-
-A single SQLite file is the system of record, so the database can be deposited
-alongside a dataset release and reproduced without provisioning anything.
-"""
+"""SQLite engine and session setup."""
 
 from __future__ import annotations
 
@@ -20,16 +16,12 @@ ENV_DB_PATH = "RECOMMENDER_DB"
 
 
 def db_path() -> Path:
-    """Where the database lives, overridable for tests and alternate corpora."""
     return Path(os.environ.get(ENV_DB_PATH, DEFAULT_DB_PATH))
 
 
 def _apply_pragmas(dbapi_connection, _connection_record) -> None:
     cursor = dbapi_connection.cursor()
-    # Off by default in SQLite: without this, foreign key constraints silently
-    # do not exist.
-    cursor.execute("PRAGMA foreign_keys = ON")
-    # Concurrent reads while the inference API is serving.
+    cursor.execute("PRAGMA foreign_keys = ON")  # off by default in SQLite
     cursor.execute("PRAGMA journal_mode = WAL")
     cursor.execute("PRAGMA synchronous = NORMAL")
     cursor.close()
@@ -51,7 +43,7 @@ def session_factory(engine: Engine) -> sessionmaker[Session]:
 
 @contextmanager
 def session_scope(engine: Engine) -> Iterator[Session]:
-    """A transactional scope that commits on success and rolls back on error."""
+    """Commit on success, roll back on error."""
     session = session_factory(engine)()
     try:
         yield session
@@ -64,11 +56,7 @@ def session_scope(engine: Engine) -> Iterator[Session]:
 
 
 def create_all(engine: Engine) -> None:
-    """Create the schema directly, bypassing migrations.
-
-    For tests and throwaway databases only.  A real database is built by
-    Alembic, so that every schema change is a reviewable commit.
-    """
+    """Create the schema without migrations, for tests and throwaway databases."""
     from db.models import Base
 
     Base.metadata.create_all(engine)

@@ -1,14 +1,4 @@
-# Stakeholder archetypes.
-#
-# These are registry entities with learned embeddings, not one-hot positions, so
-# a ninth archetype is a new row and existing checkpoints survive it.
-#
-# `priorities` is a GENERATOR INPUT ONLY. It sets how wide a preference band a
-# control case spans for a given archetype -- a sustainability maximalist should
-# show a wider spread over an environmental indicator than a cost-driven
-# developer does. It is deliberately never fed to the model: the control labels
-# are produced from this table, so handing it to the model as a feature would
-# make the behavioural assertions circular.
+# Stakeholder archetypes. priorities feeds the control-case generator only.
 
 stakeholder:
   - key: sustainability_maximalist

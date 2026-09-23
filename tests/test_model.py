@@ -1,11 +1,3 @@
-"""The model's structural promises.
-
-These are not accuracy tests. They check the properties the architecture is
-supposed to have regardless of how well it happens to be trained -- because
-those are the properties that make adding a category cheap, and they are easy to
-break without noticing.
-"""
-
 from __future__ import annotations
 
 import inspect
@@ -51,11 +43,7 @@ def model(registry):
 
 
 def test_no_category_is_named_in_the_model_or_core_or_train():
-    """The design has leaked if a category key appears in the shared code.
-
-    Checked against the registry's own category keys rather than a hardcoded
-    word, so this keeps working when a second category is added.
-    """
+    """Checked against the registry's category keys, so it covers categories added later."""
     root = Path(__file__).resolve().parents[1]
     import yaml
 
@@ -78,11 +66,6 @@ def test_no_category_is_named_in_the_model_or_core_or_train():
 
 
 def test_the_comparator_cannot_see_an_indicator():
-    """The transferable stage takes alternative embeddings and nothing else.
-
-    This boundary is what makes comparing alternatives in one category and in
-    another literally the same operation.
-    """
     signature = inspect.signature(Comparator.forward)
     assert set(signature.parameters) == {
         "self",
@@ -98,7 +81,6 @@ def test_the_comparator_cannot_see_an_indicator():
 
 
 def test_set_size_is_not_capped(model, registry, category_key):
-    """Two alternatives and many go through the same code."""
     from ingest.generators.parametric import ideal_alternative
 
     context = registry.category(category_key).default_context_key
@@ -117,10 +99,6 @@ def test_set_size_is_not_capped(model, registry, category_key):
 
 
 def test_padding_does_not_change_a_score(model, registry, category_key):
-    """A set must score the same whatever it shares a batch with.
-
-    If padding leaked, every reported number would depend on batch composition.
-    """
     from ingest.generators.parametric import ideal_alternative
 
     context = registry.category(category_key).default_context_key
@@ -146,7 +124,6 @@ def test_padding_does_not_change_a_score(model, registry, category_key):
 
 
 def test_alternative_order_does_not_change_the_scores(model, registry, category_key):
-    """The set is a set. Permuting it must permute the scores, nothing more."""
     from ingest.generators.parametric import ideal_alternative, sweep_values
 
     category = registry.category(category_key)
@@ -175,11 +152,6 @@ def test_alternative_order_does_not_change_the_scores(model, registry, category_
 
 
 def test_a_new_indicator_starts_at_its_family_prior(registry):
-    """The identity of an unseen indicator is its family, not noise.
-
-    This is what makes the family embedding worth having: a category that
-    introduces an indicator nothing has seen does not start from scratch.
-    """
     config = ModelConfig.for_registry(registry, dim=16)
     model = Recommender(config)
     assert torch.allclose(
@@ -191,11 +163,6 @@ def test_a_new_indicator_starts_at_its_family_prior(registry):
 
 
 def test_a_checkpoint_survives_the_registry_growing(registry, tmp_path):
-    """The promise that adding a category needs no model change.
-
-    A checkpoint trained under a smaller registry must load into a model built
-    for a larger one, with every previously learned row untouched.
-    """
     torch.manual_seed(0)
     old_config = ModelConfig.for_registry(registry, dim=16, encoder_blocks=1,
                                           comparator_blocks=1)
@@ -222,8 +189,6 @@ def test_a_checkpoint_survives_the_registry_growing(registry, tmp_path):
         ),
     )
 
-    # A registry that has grown: three more indicators, one more context, one
-    # more category -- exactly what adding a category looks like.
     grown = ModelConfig(**{**old_config.to_dict()})
     grown.n_indicators += 3
     grown.n_contexts += 1
@@ -257,11 +222,7 @@ def test_a_checkpoint_refuses_to_shrink(registry):
 
 
 def test_assertion_summary_counts_every_verdict(registry, category_key):
-    """The summary must bucket verdicts it actually produces.
-
-    Counting under hand-written words that drift from the verdict constants is
-    how a reporting step throws away a finished training run.
-    """
+    """A bucket that drifts from the verdict constants breaks the report step after training."""
     from eval.behavioural import FAIL, NO_RESPONSE, PASS, Assertion, Suite
 
     suite = Suite(
@@ -276,7 +237,6 @@ def test_assertion_summary_counts_every_verdict(registry, category_key):
     counts = suite.summary()["monotonicity"]
     assert counts == {PASS: 1, FAIL: 1, NO_RESPONSE: 1}
 
-    # Only a wrong answer fails the gate.
     assert len(suite.failures) == 1
     assert len(suite.flat) == 1
     assert not suite.passed
@@ -285,12 +245,6 @@ def test_assertion_summary_counts_every_verdict(registry, category_key):
 
 
 def test_a_swap_between_near_ties_is_not_a_failure():
-    """The objective says two options a hair apart should be a hair apart.
-
-    A gate that punishes swapping them would push the model to separate things
-    the registry itself declares near-equivalent -- the exact pressure this
-    project rejects permutation losses for.
-    """
     from eval.behavioural import TIE_EPSILON, count_inversions
 
     expected = [0.20, 0.60, 0.900, 0.910]

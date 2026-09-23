@@ -1,22 +1,4 @@
-"""Saving and loading, including growing a checkpoint onto a larger registry.
-
-This is the one place where "adding a category is registry rows plus data" has
-to be made true at the level of the weights, and it has to exist from the start.
-Adding an indicator appends a slot, so a checkpoint trained when there were
-twenty-one indicators must load into a model built for twenty-four. Growing the
-tables here means that happens without editing anything in ``model/``; not
-having it would mean every new category required a code change, and the whole
-premise would quietly fail the first time it was tested.
-
-Existing rows are copied across unchanged. New rows are zero-initialised, which
-for the specific tables means a newly added indicator starts exactly at its
-family prior and a newly added context starts at "no residual" -- the most
-honest possible starting point for something nothing has been learned about.
-
-A checkpoint also carries the registry it was trained under, so the semantics
-travel with the weights and a stored model is interpretable years later without
-the database that produced it.
-"""
+"""Save and load checkpoints with their registry, growing them onto a larger one."""
 
 from __future__ import annotations
 
@@ -35,7 +17,6 @@ FORMAT_VERSION = 2
 
 @dataclass
 class CheckpointMeta:
-    """Everything needed to say what a set of weights is."""
 
     registry_version: str | None
     registry_content_hash: str | None
@@ -72,7 +53,6 @@ def save(
 
 
 def load_registry(path: Path | str) -> Registry:
-    """Recover the registry a checkpoint was trained under."""
     payload = torch.load(Path(path), map_location="cpu", weights_only=False)
     meta = payload["meta"]
     return from_blob(
@@ -88,12 +68,7 @@ def load(
     strict_sizes: bool = False,
     device: str | torch.device = "cpu",
 ) -> tuple[Recommender, CheckpointMeta, dict]:
-    """Load a checkpoint, growing its embedding tables if the registry grew.
-
-    Pass ``registry`` to load the weights into a model sized for a *newer*
-    registry than the one they were trained under. Pass nothing to rebuild the
-    model exactly as it was.
-    """
+    """Load a checkpoint, sized for ``registry`` when given, else exactly as saved."""
     payload = torch.load(Path(path), map_location=device, weights_only=False)
     saved_config = ModelConfig(**payload["config"])
     state = payload["state_dict"]
@@ -136,12 +111,7 @@ def load(
 def grow_state_dict(
     state: dict, old: ModelConfig, new: ModelConfig
 ) -> tuple[dict, dict[str, tuple[int, int]]]:
-    """Widen every embedding table that the registry has outgrown.
-
-    Shrinking is refused: a registry that lost an entity did not renumber the
-    others -- slots are never reused -- so a smaller table means something is
-    wrong upstream rather than that rows can be dropped.
-    """
+    """Widen every embedding table the registry has outgrown, with zeros for the new rows."""
     grown = dict(state)
     report: dict[str, tuple[int, int]] = {}
 
@@ -152,7 +122,7 @@ def grow_state_dict(
         old_rows = getattr(old, size_attr)
         new_rows = getattr(new, size_attr)
         if module_path == "tokens.level":
-            # Row zero of the level table stands for "no levels".
+            # Row zero of the level table stands for "no level".
             old_rows += 1
             new_rows += 1
         if new_rows == old_rows:

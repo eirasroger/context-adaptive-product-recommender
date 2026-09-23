@@ -1,5 +1,3 @@
-"""The registry holds together, and the invariants it exists to enforce hold."""
-
 from __future__ import annotations
 
 import pytest
@@ -21,11 +19,7 @@ def test_every_embedded_entity_has_a_contiguous_slot(seeded):
 
 
 def test_slots_are_stable_across_reseeding(seeded):
-    """Reapplying a seed must not renumber anything.
-
-    If it did, every trained checkpoint would silently reinterpret its own
-    weights the next time somebody ran the seeder.
-    """
+    """Renumbering would silently change what every trained checkpoint's weights mean."""
     from db.seed import seed
 
     before = {
@@ -42,7 +36,6 @@ def test_slots_are_stable_across_reseeding(seeded):
 
 
 def test_new_entity_appends_rather_than_inserts(seeded):
-    """A new indicator takes the next slot and disturbs no existing one."""
     before = {
         row.entity_key: row.slot
         for row in seeded.query(slots.EmbeddingSlot).filter_by(table_name="indicator")
@@ -63,7 +56,6 @@ def test_new_entity_appends_rather_than_inserts(seeded):
 
 
 def test_context_availability_is_derived_from_indicator_membership(registry, category_key):
-    """A context is live where its indicators are, and inert where they are not."""
     category = registry.category(category_key)
     assert category.available_contexts
 
@@ -76,11 +68,6 @@ def test_context_availability_is_derived_from_indicator_membership(registry, cat
 
 
 def test_required_declaration_makes_a_context_inert(registry, category_key):
-    """A context requiring an indicator the category lacks must not be available.
-
-    This is the mechanism a specialised requirement relies on to switch itself
-    off for categories it does not apply to.
-    """
     from core.registry import ContextSpec, DeclarationSpec, _derive_available
 
     category = registry.category(category_key)
@@ -113,11 +100,7 @@ def test_required_declaration_makes_a_context_inert(registry, category_key):
 
 
 def test_opposed_contexts_produce_opposite_directions(registry, category_key):
-    """Somewhere in the registry, two contexts must disagree about an indicator.
-
-    Not a property of any one category -- it is the thing the whole design is
-    for. If no indicator inverts, there is nothing context-adaptive to learn.
-    """
+    """Without an inversion somewhere, there is nothing context-adaptive to learn."""
     category = registry.category(category_key)
     inverted = []
     for indicator_key in category.token_order:
@@ -141,7 +124,6 @@ def test_ordinal_levels_are_ordered(registry):
 
 
 def test_nominal_indicators_require_a_written_justification(seeded):
-    """The registry refuses a nominal declaration nobody has argued for."""
     seeded.add(
         Indicator(
             key="unjustified_nominal",
@@ -160,7 +142,7 @@ def test_nominal_indicators_require_a_written_justification(seeded):
 
 
 def test_foreign_keys_are_enforced(seeded):
-    """Without the pragma these constraints would silently not exist."""
+    """SQLite ignores them without the pragma."""
     seeded.add(
         Product(
             id=10_000_001,
@@ -175,12 +157,6 @@ def test_foreign_keys_are_enforced(seeded):
 
 
 def test_excluded_indicators_are_never_swept(registry, category_key):
-    """An indicator the registry refuses to sweep must not reach the generator.
-
-    A control label asserts that the declared direction holds across the whole
-    declared range. Where the registry says it does not, generating one would
-    put a claim into the training data that the registry never made.
-    """
     from ingest.generators import parametric
 
     category = registry.category(category_key)
@@ -197,7 +173,6 @@ def test_excluded_indicators_are_never_swept(registry, category_key):
 
 
 def test_every_exclusion_carries_a_reason(registry, category_key):
-    """The reason is the point. A silent exclusion is an untested gap nobody sees."""
     category = registry.category(category_key)
     for key, member in category.members.items():
         if not member.is_sweepable:
@@ -205,7 +180,6 @@ def test_every_exclusion_carries_a_reason(registry, category_key):
 
 
 def test_a_sweepable_indicator_has_a_direction_to_sweep(registry, category_key, seeded):
-    """Sweeping an indicator nothing gives a direction would assert nothing."""
     assert validate.check(seeded) == []
 
     category = registry.category(category_key)

@@ -19,15 +19,13 @@ UPDATE_ENV = "RECOMMENDER_UPDATE_CONTRACT"
 
 @pytest.fixture(scope="module")
 def schema():
-    """The published schema. Reading it needs no checkpoint, only the routes."""
     from serve.api import create_app
 
     return TestClient(create_app(frontend=None)).get("/api/openapi.json").json()
 
 
 def test_the_published_schema_matches_the_committed_contract(schema):
-    """The frontend's types are generated from the committed contract, so this
-    is what keeps the page and the API in agreement."""
+    """The frontend's types are generated from this contract."""
     rendered = json.dumps(schema, indent=2, sort_keys=True) + "\n"
 
     if os.environ.get(UPDATE_ENV):
@@ -42,8 +40,7 @@ def test_the_published_schema_matches_the_committed_contract(schema):
 
 
 def test_every_endpoint_lives_under_api(schema):
-    """The frontend owns every path outside /api, so an endpoint elsewhere can
-    collide with a page URL."""
+    """The frontend owns every other path."""
     stray = sorted(path for path in schema["paths"] if not path.startswith("/api/"))
     assert not stray, f"endpoints outside /api: {stray}"
 

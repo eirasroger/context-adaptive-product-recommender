@@ -30,7 +30,6 @@ def _shortlist(registry, category_key, size=3):
 
 
 def test_withholding_an_indicator_moves_some_score(registry, category_key, model):
-    """Every shift being zero means the measurement is broken."""
     shifts = attribution.attribution(model, registry, _shortlist(registry, category_key))
     assert shifts
     assert all(len(delta) == 3 for delta in shifts.values())
@@ -74,8 +73,7 @@ def test_the_committed_test_fold_loads_as_shortlists(registry):
 
 
 def test_only_indicators_with_a_value_that_sinks_the_preference_to_zero_are_masked(registry):
-    """Every other indicator bottoms out well above zero in its control sweep,
-    so a mask on one of them would hide a real effect."""
+    """A mask on any other indicator would hide a real effect."""
     import pandas as pd
 
     floors = attribution.preference_floors(registry, attribution.SNAPSHOT)

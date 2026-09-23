@@ -1,5 +1,3 @@
-"""Token encoding says what the registry says."""
-
 from __future__ import annotations
 
 import numpy as np
@@ -46,11 +44,6 @@ def test_reference_normalisation_uses_the_declared_range(registry, category_key)
 
 
 def test_values_outside_the_declared_range_are_clipped_and_flagged(registry, category_key):
-    """Out-of-range data must not silently rescale everything else.
-
-    Fitting the scale to the data is what couples a checkpoint to one file; this
-    is the behaviour that replaces it.
-    """
     key, spec = _continuous(registry, category_key, lambda s: s.scale == "linear")
     beyond = spec.ref_high + (spec.ref_high - spec.ref_low)
     value, saturated = normalise_reference(beyond, spec)
@@ -72,11 +65,6 @@ def test_missing_is_distinguishable_from_zero(registry, category_key):
 
 
 def test_not_applicable_has_no_token_at_all(registry, category_key):
-    """An indicator the category does not hold produces no token.
-
-    This is the distinction a fixed-width vector cannot express, and the reason
-    an open-ended set of categories is workable.
-    """
     category = registry.category(category_key)
     held = set(category.token_order)
     unheld = [key for key in registry.indicators if key not in held]
@@ -112,11 +100,7 @@ def test_within_set_channel_is_relative_to_the_other_alternatives(registry, cate
 
 
 def test_both_value_channels_are_needed_to_tell_two_sets_apart(registry, category_key):
-    """A uniformly poor shortlist and a uniformly good one differ on v_ref.
-
-    Within-set normalisation alone would make them identical, which is exactly
-    how the best of a bad lot ends up scoring like a genuinely good option.
-    """
+    """Within-set normalisation alone makes a poor shortlist look like a good one."""
     key, spec = _continuous(registry, category_key)
     context = registry.category(category_key).default_context_key
     span = spec.ref_high - spec.ref_low

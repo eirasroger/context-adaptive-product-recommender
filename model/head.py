@@ -1,16 +1,4 @@
-"""Scoring head.
-
-The score is a relative ordering *inside a set-level quality band*. If every
-alternative on a shortlist is poor, the whole shortlist should land low rather
-than the best of a bad lot receiving a high score. So the head sees three
-things: the alternative in context, the summary of the set it sits in, and the
-conditioning. The set summary is what lets the band move; the contextualised
-alternative is what orders within it.
-
-A score of 0.6 therefore means 0.6 *in this context, against these neighbours*.
-It is not a globally fixed quantity, and the two value channels on every token
-exist to make that representable.
-"""
+"""Scoring head. The set summary places the band; the alternative orders within it."""
 
 from __future__ import annotations
 

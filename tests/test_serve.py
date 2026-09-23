@@ -1,5 +1,3 @@
-"""The API says what it assumes, and refuses what it cannot answer."""
-
 from __future__ import annotations
 
 import pytest
@@ -49,7 +47,7 @@ def test_health_reports_what_is_loaded(client):
 
 
 def test_health_names_the_deployed_commit(client, monkeypatch):
-    """The smoke test waits for this to show the commit it was triggered by."""
+    """The smoke test waits for this commit."""
     from serve.api import COMMIT_ENV
 
     monkeypatch.setenv(COMMIT_ENV, "b11d5ea3")
@@ -57,7 +55,6 @@ def test_health_names_the_deployed_commit(client, monkeypatch):
 
 
 def test_scoring_echoes_the_eligibility_precondition(client, registry, category_key):
-    """The API must never let a score be mistaken for a compliance statement."""
     response = client.post("/api/score", json=_payload(registry, category_key))
     assert response.status_code == 200
     body = response.json()
@@ -116,7 +113,6 @@ def test_a_disqualifying_level_is_surfaced(client, registry, category_key):
 
 
 def test_indicator_listing_exposes_the_definitions(client, category_key):
-    """A caller has to be able to find out what it is being asked for."""
     body = client.get(f"/api/categories/{category_key}/indicators").json()
     assert body
     for row in body:
@@ -134,11 +130,6 @@ def test_unknown_category_is_a_404(client):
 
 
 def test_the_bare_domain_reaches_the_tool(client):
-    """A visitor who types the domain should land somewhere useful.
-
-    A deployment served a JSON 404 at the root once, which reads as a broken
-    site even though every real route was working.
-    """
     response = client.get("/")
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/html")

@@ -1,5 +1,4 @@
-"""Promote a training run to the artefacts the service ships.
-"""
+"""Promote a training run to the artefacts the service ships."""
 
 from __future__ import annotations
 
@@ -21,8 +20,7 @@ RESULTS_START = "<!-- results:start -->"
 RESULTS_END = "<!-- results:end -->"
 MAX_STRATUM_REGRESSION = 0.001
 
-#: A checkpoint belongs in the repository. A corpus does not. If a promotion
-#: produces artefacts past this, something is being shipped that should not be.
+#: A larger release probably carries data along with the checkpoint.
 SIZE_WARNING_MB = 25
 
 
@@ -39,11 +37,7 @@ class GateFailed(Exception):
 
 
 def refresh_fixture(snapshot_dir: Path, fixture_dir: Path = FIXTURE_DIR) -> dict:
-    """Rewrite the evaluation fixture from the snapshot the model was scored on.
-
-    The fixture holds data, so it goes stale the moment the corpus grows, which
-    makes rebuilding it by hand a step that gets forgotten exactly once.
-    """
+    """Rewrite the evaluation fixture from the snapshot the model was scored on."""
     from snapshot.build import subset
 
     snapshot_dir = Path(snapshot_dir)
@@ -56,8 +50,6 @@ def refresh_fixture(snapshot_dir: Path, fixture_dir: Path = FIXTURE_DIR) -> dict
 
     fixture_dir = Path(fixture_dir)
     fixture_dir.mkdir(parents=True, exist_ok=True)
-    # The prepared cache is keyed on the snapshot's content hash, so a stale one
-    # is inert rather than wrong. Removing it keeps the directory honest.
     for stale in fixture_dir.glob("*-prepared.pkl"):
         stale.unlink()
     return subset(snapshot_dir, fixture_dir, folds=["test"])
@@ -88,7 +80,6 @@ def results_section(release_dir: Path = RELEASE_DIR) -> str:
 
 
 def refresh_readme(release_dir: Path = RELEASE_DIR, readme: Path = README) -> None:
-    """Rewrite the results block in the README from the release it describes."""
     readme = Path(readme)
     text = readme.read_text(encoding="utf-8")
     start, end = text.find(RESULTS_START), text.find(RESULTS_END)
@@ -103,11 +94,7 @@ def refresh_readme(release_dir: Path = RELEASE_DIR, readme: Path = README) -> No
 
 
 def regression_against_release(run_dir: Path, release_dir: Path):
-    """Strata that got worse than the release this run would replace.
-
-    The behavioural gate says the model learned the right shape. This says it
-    did not get worse at anything on the way, which an overall average hides.
-    """
+    """Gate the run against the strata of the release it would replace."""
     from eval import report as report_module
 
     baseline_path = Path(release_dir) / METRICS_FILE

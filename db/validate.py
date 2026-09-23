@@ -1,15 +1,4 @@
-"""Registry integrity checks.
-
-The database enforces what a CHECK constraint can express. These are the rules
-that span tables, which SQLite cannot enforce on its own: that every continuous
-indicator a category holds has a range to normalise against, that an ordered
-scale is actually ordered, that a category's own default context is available
-for it, and so on.
-
-Run before every release. A registry that fails these is not a registry that
-produced a bad number somewhere -- it is one that will quietly change model
-behaviour in a way nobody reviewed.
-"""
+"""Registry integrity rules that span tables, run before every release."""
 
 from __future__ import annotations
 
@@ -63,7 +52,6 @@ def _all(session: Session, model) -> list:
 
 
 def check(session: Session) -> list[Problem]:
-    """Return every rule violation found; empty means the registry is sound."""
     problems: list[Problem] = []
 
     indicators = {i.key: i for i in _all(session, Indicator)}
@@ -84,7 +72,6 @@ def check(session: Session) -> list[Problem]:
         for r in _all(session, IndicatorReferenceRange)
     }
 
-    # -- indicators ---------------------------------------------------------
     for key, indicator in indicators.items():
         if indicator.family_key not in families:
             problems.append(
@@ -147,7 +134,6 @@ def check(session: Session) -> list[Problem]:
                         )
                     )
 
-    # -- derivations --------------------------------------------------------
     derivations: dict[str, list[IndicatorDerivation]] = {}
     for row in _all(session, IndicatorDerivation):
         derivations.setdefault(row.derived_key, []).append(row)
@@ -181,7 +167,6 @@ def check(session: Session) -> list[Problem]:
                     )
                 )
 
-    # -- categories ---------------------------------------------------------
     for key, category in categories.items():
         members = memberships.get(key, {})
         if not members:
@@ -284,7 +269,6 @@ def check(session: Session) -> list[Problem]:
                 )
             )
 
-    # -- contexts -----------------------------------------------------------
     declarations: dict[str, list[ContextDeclaration]] = {}
     for row in _all(session, ContextDeclaration):
         declarations.setdefault(row.context_key, []).append(row)
@@ -327,7 +311,6 @@ def check(session: Session) -> list[Problem]:
                 Problem("override_context", f"override names unknown context {row.context_key}")
             )
 
-    # -- stakeholders -------------------------------------------------------
     for row in _all(session, StakeholderPriority):
         if row.stakeholder_key not in stakeholders:
             problems.append(
@@ -346,19 +329,13 @@ def check(session: Session) -> list[Problem]:
                 )
             )
 
-    # -- slots --------------------------------------------------------------
     problems.extend(_check_slots(session))
 
     return problems
 
 
 def _check_slots(session: Session) -> list[Problem]:
-    """Every embedded entity has a slot, and slots run contiguously from zero.
-
-    Contiguity is not merely tidiness: the embedding tables are sized from the
-    highest slot, so a gap would allocate a row of weights that nothing ever
-    trains.
-    """
+    """Every embedded entity has a slot, and slots run from zero without gaps."""
     problems: list[Problem] = []
     expected = {
         "indicator_family": {f.key for f in _all(session, IndicatorFamily)},
@@ -395,14 +372,9 @@ def _check_slots(session: Session) -> list[Problem]:
 
 
 def available_contexts(session: Session, category_key: str) -> set[str]:
-    """Which contexts are live for a category.
+    """Contexts whose declared indicators the category holds, all required ones included.
 
-    Derived, not maintained: a context is available when the category holds the
-    indicators the context points at. A declaration marked required must be
-    held, which is what makes a specialised requirement inert for categories it
-    does not apply to. An explicit override wins over the derivation, for the
-    case where a category happens to hold the right indicators but the context
-    is meaningless for it anyway.
+    The category's baseline is always available, and an override wins over both.
     """
     category = session.get(Category, category_key)
     if category is None:

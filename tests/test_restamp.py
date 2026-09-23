@@ -1,5 +1,3 @@
-"""Swapping the registry a checkpoint carries, and when that must be refused."""
-
 from __future__ import annotations
 
 import pytest
@@ -54,8 +52,7 @@ def test_a_renamed_level_reaches_the_checkpoint(checkpoint):
 
 
 def test_a_moved_normalised_position_is_refused(checkpoint):
-    """Level geometry is a model input, so swapping it would silently relabel
-    the weights rather than re-describe them."""
+    """Level positions are a model input."""
     path, blob = checkpoint
     moved = _edit(blob, "indicator_level", "normalised_position", 0.123)
 

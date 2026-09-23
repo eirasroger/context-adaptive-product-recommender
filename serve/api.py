@@ -1,13 +1,8 @@
 """Inference API.
 
-Submit a shortlist and a context, receive a score per alternative. The response
-always echoes the category's declared eligibility precondition, because the
-model ranks options that are assumed to have already passed regulatory
-prefiltering and saying so is the difference between a recommendation and a
-compliance claim.
-
-The registry travels inside the served model file, so the served semantics are
-exactly the ones the weights were trained under, with no database involved.
+Submit a shortlist and a context, receive a score per alternative. Every
+response echoes the category's eligibility precondition: the model ranks
+options assumed to have passed regulatory checks.
 """
 
 from __future__ import annotations
@@ -81,7 +76,6 @@ class ScoreResponse(BaseModel):
 
 
 class Service:
-    """Holds the served model and the registry it carries."""
 
     def __init__(self, model_path: Path):
         served = ServedModel(model_path)
@@ -178,7 +172,6 @@ class Service:
 
     @staticmethod
     def _build_inputs(registry, category, request, notes):
-        """Validate the payload against the category's declared indicators."""
         held = set(category.token_order)
         alternatives = []
         per_alternative = []
@@ -354,7 +347,7 @@ def create_app(
 
     @api.get("/{path:path}", include_in_schema=False)
     def unknown(path: str) -> None:
-        """Keeps the frontend's fallback page off /api, which the server owns."""
+        """Keeps the frontend's fallback page off /api."""
         raise HTTPException(status_code=404, detail=f"no endpoint /api/{path}")
 
     app.include_router(api)

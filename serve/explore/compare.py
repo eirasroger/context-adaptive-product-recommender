@@ -1,19 +1,7 @@
 """Why one alternative is ahead of another.
 
-The question a person actually has is never "what is this alternative worth
-against an average product". It is "why this one and not that one", which is a
-comparison between two specific things on the table.
-
-So for every indicator where the two genuinely differ, hand the leader the
-rival's value for that one indicator, leave everything else alone, and re-score.
-If the lead survives, that indicator was not decisive. If it collapses, it was.
-
-Every row is a real score from the real model. Nothing is sampled or
-approximated, and the whole set runs as one batched forward pass.
-
-The limit worth knowing: one indicator changes at a time, so a lead that rests
-on two indicators together shows no single culprit. That case is reported rather
-than papered over.
+For each indicator where the two differ, give the leader the rival's value and
+re-score. An indicator is decisive when the swap hands the rival the lead.
 """
 
 from __future__ import annotations
@@ -28,7 +16,7 @@ from core.registry import Registry
 from core.scoring import Scorer
 from serve.explore.analysis import score, score_many
 
-#: A gap change below this is noise from the model rather than an effect.
+#: Gap changes below this count as noise.
 NEGLIGIBLE = 0.002
 
 #: How many contributing indicators to name when nothing is decisive on its own.
@@ -108,7 +96,7 @@ def _summarise(rival: str, leader: str, head: dict) -> str:
 
 
 def _comparable(registry: Registry, indicator_key: str, value):
-    """A number where larger is better, so alternatives can be ranked on it."""
+    """The raw value, or an ordinal level's position, for ranking alternatives."""
     if value is None:
         return None
     indicator = registry.indicator(indicator_key)
@@ -127,17 +115,7 @@ def _wins(
     context_keys: Sequence[str],
     comparisons: Sequence[dict],
 ) -> dict[str, list[str]]:
-    """Which indicators each alternative is genuinely best on.
-
-    The counterfactuals say which indicators moved the result. The registry's
-    declared direction says who is actually best at each one. Using the
-    counterfactuals for both would report a pairwise result as though it were an
-    outright claim, and an alternative would be credited with winning on cost
-    while a cheaper one sat beside it.
-
-    An indicator the active context gives no direction to is left out. Whatever
-    the model does with it cannot be stated as better or worse.
-    """
+    """Indicators that moved the result, each credited to the alternative best on it."""
     effect: dict[str, float] = {}
     for head in comparisons:
         for group in ("decisive", "contributing", "rival_wins"):

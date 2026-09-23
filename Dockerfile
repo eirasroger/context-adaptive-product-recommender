@@ -1,11 +1,4 @@
-# Serving image.
-#
-# The portable deployment path: any container host, a VPS, or a Hugging Face
-# Docker Space. Vercel does not use this file; it builds from requirements.txt,
-# the build command in vercel.json and the top-level app.py.
-#
-# Only the serving dependencies are installed. Training and data building are
-# offline work and have no place in a request-serving image.
+# Serving image for container hosts such as a Hugging Face Space. Vercel does not use it.
 
 FROM node:24-slim AS frontend
 
@@ -22,9 +15,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
-# Hugging Face Spaces runs containers as UID 1000. Creating the user up front
-# and copying with --chown avoids a recursive chown later, which would duplicate
-# every file into a new layer.
+# Spaces run as UID 1000; copying with --chown avoids a duplicate layer from a later chown.
 RUN useradd --create-home --uid 1000 app
 USER app
 ENV HOME=/home/app \

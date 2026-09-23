@@ -1,10 +1,4 @@
-"""Caps on how much work the service will do for one caller.
-
-The window is in-process. One serving process holds one window, so the totals
-are exact for a container. A serverless host running several instances gives
-each its own, which makes the ceiling the total times the instances alive. This
-is a brake on a runaway client, and a spend cap belongs upstream of it.
-"""
+"""Per-process rate limits, per caller and in total; each serverless instance keeps its own."""
 
 from __future__ import annotations
 
@@ -23,7 +17,6 @@ MAX_ALTERNATIVES = 5
 
 
 class Window:
-    """A sliding count of recent hits against a limit."""
 
     def __init__(self, limit: int, seconds: float) -> None:
         self.limit = limit
@@ -101,7 +94,7 @@ def _env_float(name: str, fallback: float) -> float:
 
 
 def from_env() -> RateLimiter:
-    """Build the limiter from the environment. Zero on either limit lifts it."""
+    """Build the limiter from the environment; zero lifts a limit."""
     return RateLimiter(
         per_client=_env_int("RECOMMENDER_RATE_LIMIT", PER_CLIENT),
         total=_env_int("RECOMMENDER_RATE_LIMIT_TOTAL", TOTAL),
@@ -117,7 +110,6 @@ def client_key(request: Request) -> str:
 
 
 def gate(limiter: RateLimiter):
-    """A dependency that refuses a caller who is asking for too much compute."""
 
     def dependency(request: Request) -> None:
         if not limiter.enabled:

@@ -1,14 +1,4 @@
-"""Materialise the corpus into an immutable, content-hashed snapshot.
-
-Training never reads the live database. It reads one of these, and records the
-snapshot's hash and the registry version alongside the checkpoint, so a result
-can always be traced back to the exact data and the exact semantics that
-produced it. A snapshot is also fast to read repeatedly, which the database is
-not.
-
-The hash is computed over the logical rows before anything is written, so it
-depends on the data rather than on compression settings or write order.
-"""
+"""Materialise the corpus into an immutable snapshot, hashed over its rows and registry."""
 
 from __future__ import annotations
 
@@ -43,9 +33,7 @@ MEMBERS_FILE = "members.parquet"
 VALUES_FILE = "values.parquet"
 MANIFEST_FILE = "manifest.json"
 
-#: Multi-valued attachments are stored joined by this separator rather than as a
-#: nested column: a comparison set has at most a handful of stakeholders, and a
-#: flat string survives every parquet reader without ceremony.
+#: Separator for a set's stakeholder and context keys.
 JOIN = "|"
 
 
@@ -55,7 +43,7 @@ def _frame(session: Session, statement, columns: list[str]) -> pd.DataFrame:
 
 
 def _hash_frames(frames: dict[str, pd.DataFrame]) -> str:
-    """A hash over logical content, stable across writers and machines."""
+    """A hash over the rows, independent of file encoding."""
     digest = hashlib.sha256()
     for name in sorted(frames):
         frame = frames[name]
@@ -74,12 +62,7 @@ def collect(
     folds: Iterable[str] | None = None,
     sources: Iterable[str] | None = None,
 ) -> dict[str, pd.DataFrame]:
-    """Pull the corpus into three flat frames: sets, members, values.
-
-    ``sources`` exists so a run can be restricted to one ingested dataset. A
-    reproduction of a published result has to be able to exclude data generated
-    afterwards, or it is not a reproduction.
-    """
+    """Pull the corpus into three flat frames: sets, members, values."""
     category_filter = sorted(categories) if categories else None
     provenance_filter = sorted(provenances) if provenances else None
     fold_filter = sorted(folds) if folds else None
@@ -186,18 +169,7 @@ def collect(
 
 
 def _aggregate_labellers(members: pd.DataFrame) -> tuple[pd.DataFrame, int]:
-    """Collapse several independent labellings of one set into one row each.
-
-    The schema stores one label set per labeller on purpose, so expert scores
-    are not averaged away at ingest time. A snapshot, though, needs exactly one
-    target per alternative -- without this, two annotators would turn one
-    alternative into two, and the model would be trained on a set that never
-    existed.
-
-    Preference is averaged; confidence is the mean confidence scaled down by how
-    much the labellers disagreed, so a contested alternative carries less weight
-    than a unanimous one. Where only one labeller scored a set, nothing changes.
-    """
+    """Merge labellers into one row per alternative; disagreement lowers confidence."""
     keys = ["set_id", "position", "product_id", "local_key"]
     counts = members.groupby(keys, dropna=False).size()
     multi = int((counts > 1).sum())
@@ -243,14 +215,13 @@ def build(
     folds: Iterable[str] | None = None,
     sources: Iterable[str] | None = None,
 ) -> tuple[str, Path]:
-    """Build the snapshot and register it. Returns its hash and directory."""
+    """Build the snapshot and register it; return its hash and directory."""
     from core import registry as registry_module
 
     registry = registry_module.from_release(session, registry_version)
 
     frames = collect(session, split_key, categories, provenances, folds, sources)
     digest = _hash_frames({**frames, "registry": pd.DataFrame({"h": [registry.content_hash]})})
-
 
     directory = root / digest
     directory.mkdir(parents=True, exist_ok=True)
@@ -296,12 +267,7 @@ def build(
 
 
 def subset(source: Path, destination: Path, folds: Sequence[str]) -> dict:
-    """Write the named folds of an existing snapshot into another directory.
-
-    Taken from the snapshot rather than from the database, so what comes out is
-    exactly the rows a model was scored on, whatever filtering the snapshot was
-    built with.
-    """
+    """Write the named folds of an existing snapshot into another directory."""
     source, destination = Path(source), Path(destination)
     wanted = sorted(folds)
 

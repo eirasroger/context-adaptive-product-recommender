@@ -1,13 +1,4 @@
-"""Evaluate a checkpoint without retraining it.
-
-Uses the registry carried inside the checkpoint, so the assertions are made
-against the semantics the model was actually trained under rather than whatever
-the live database says today.
-
-With ``--baseline`` it compares against a previous run's metrics and reports any
-stratum that has gone backwards -- the check that stops an overall improvement
-from hiding a regression in one context, one stakeholder or one set size.
-"""
+"""Evaluate a checkpoint under the registry it carries, optionally against a baseline run."""
 
 from __future__ import annotations
 

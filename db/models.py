@@ -1,14 +1,4 @@
-"""SQLAlchemy models for the system of record.
-
-Two halves live here:
-
-* the **registry** -- indicators, categories, contexts, stakeholders and the
-  declarations that bind them.  Changing a row here changes model behaviour, so
-  registry changes are reviewed, version-bumping events.
-* the **corpus** -- products, their indicator values, comparison sets and labels.
-
-Nothing in this module names a product category.  Categories are rows.
-"""
+"""SQLAlchemy models for the registry and the corpus."""
 
 from __future__ import annotations
 
@@ -25,8 +15,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-# Deterministic constraint names, so Alembic can autogenerate against SQLite,
-# which cannot drop or alter an unnamed constraint.
+# SQLite cannot drop or alter an unnamed constraint.
 NAMING_CONVENTION = {
     "ix": "ix_%(column_0_label)s",
     "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -35,12 +24,8 @@ NAMING_CONVENTION = {
     "pk": "pk_%(table_name)s",
 }
 
+#: Category key meaning every category; SQLite would let duplicate NULL keys through.
 WILDCARD = "*"
-"""Sentinel used where a declaration applies to every category.
-
-SQLite will not enforce uniqueness over a NULL, so a category-general
-declaration stores this sentinel rather than NULL in its primary key.
-"""
 
 
 class Base(DeclarativeBase):
@@ -48,22 +33,11 @@ class Base(DeclarativeBase):
 
 
 def _strict(*args, **kwargs):
-    """Table arguments for a STRICT table, merging any extra constraints."""
     return (*args, {"sqlite_strict": True, **kwargs})
 
 
-# ---------------------------------------------------------------------------
-# Slot allocation
-# ---------------------------------------------------------------------------
-
-
 class EmbeddingSlot(Base):
-    """Append-only integer identity for every entity the model embeds.
-
-    A slot is allocated once and never reused or renumbered.  This is what lets
-    a new indicator, context or stakeholder be added as a row without shifting
-    any existing weight: the embedding table grows at the tail.
-    """
+    """Append-only embedding index for every entity the model embeds."""
 
     __tablename__ = "embedding_slot"
     __table_args__ = _strict(UniqueConstraint("table_name", "slot", name="uq_slot"))
@@ -74,19 +48,8 @@ class EmbeddingSlot(Base):
     allocated_at: Mapped[str] = mapped_column(Text, nullable=False)
 
 
-# ---------------------------------------------------------------------------
-# Registry: indicators
-# ---------------------------------------------------------------------------
-
-
 class IndicatorFamily(Base):
-    """A group of indicators that behave alike under a context.
-
-    Family is registry metadata *and* a model input: an indicator's identity
-    embedding is composed as ``family + indicator_specific``, so a
-    never-before-seen indicator starts from its family's learned prior rather
-    than from noise.
-    """
+    """A group of indicators that behave alike. A new indicator starts as its family."""
 
     __tablename__ = "indicator_family"
     __table_args__ = _strict()
@@ -101,11 +64,7 @@ class IndicatorFamily(Base):
 
 
 class Indicator(Base):
-    """A measurable property, shared across every category that declares it.
-
-    ``gwp`` is literally the same entity everywhere it appears, so a category
-    that reuses it costs zero new parameters.
-    """
+    """A measurable property, shared by every category that declares it."""
 
     __tablename__ = "indicator"
     __table_args__ = _strict(
@@ -114,10 +73,6 @@ class Indicator(Base):
             name="value_type",
         ),
         CheckConstraint("default_direction IN (-1,0,1)", name="direction"),
-        # A nominal declaration is expensive -- no direction can be declared, so
-        # the model must learn preference from labelled data alone.  Requiring a
-        # written justification is how "prefer ordinal wherever an order exists"
-        # is enforced rather than merely advised.
         CheckConstraint(
             "value_type <> 'nominal' OR nominal_justification IS NOT NULL",
             name="nominal_justified",
@@ -138,11 +93,8 @@ class Indicator(Base):
     )
     value_type: Mapped[str] = mapped_column(Text, nullable=False)
     unit: Mapped[str | None] = mapped_column(Text)
-    #: Human-readable semantics, direction and interpretation.  Required from day
-    #: one: text-initialised identity embeddings cannot be added retroactively.
     definition_text: Mapped[str] = mapped_column(Text, nullable=False)
-    #: Direction when no active context declares one.  0 means "direction is
-    #: supplied entirely by context", which is a declaration, not an omission.
+    #: Direction when no active context declares one; 0 leaves it to context.
     default_direction: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     nominal_justification: Mapped[str | None] = mapped_column(Text)
     is_derived: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -155,11 +107,7 @@ class Indicator(Base):
 
 
 class IndicatorDerivation(Base):
-    """A derived indicator as a linear combination of authored ones.
-
-    Deliberately not an expression language: coefficients only, so a derivation
-    can be reviewed by reading it and can never execute anything.
-    """
+    """A derived indicator as a linear combination of authored ones."""
 
     __tablename__ = "indicator_derivation"
     __table_args__ = _strict()
@@ -193,28 +141,16 @@ class IndicatorLevel(Base):
     level_index: Mapped[int] = mapped_column(Integer, nullable=False)
     display_name: Mapped[str] = mapped_column(Text, nullable=False)
     definition_text: Mapped[str] = mapped_column(Text, nullable=False)
-    #: Where this level sits on the declared scale.  Scale *geometry*, not
-    #: utility -- it is what the model receives, and it exists because ordered
-    #: scales are rarely equally spaced.  NULL for nominal indicators.
+    #: Position on the scale, which need not be evenly spaced. NULL for nominal indicators.
     normalised_position: Mapped[float | None] = mapped_column(REAL)
-    #: "A product at this level should never be selected."  Echoed in the API
-    #: response alongside the eligibility precondition; never a model input.
+    #: Echoed by the API; the model never sees it.
     is_disqualifying: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     indicator: Mapped[Indicator] = relationship(back_populates="levels")
 
 
-# ---------------------------------------------------------------------------
-# Registry: categories
-# ---------------------------------------------------------------------------
-
-
 class FunctionalUnit(Base):
-    """The declared basis of comparison for a category.
-
-    Never normalise everything to mass: a heavier product would score better per
-    kilogram while being worse in every way that matters.
-    """
+    """The declared basis of comparison for a category."""
 
     __tablename__ = "functional_unit"
     __table_args__ = _strict(
@@ -233,12 +169,11 @@ class FunctionalUnit(Base):
 
 
 class Category(Base):
-    """A product category: a set of registry rows, never code."""
+    """A product category."""
 
     __tablename__ = "category"
     __table_args__ = _strict(
-        # Redundant as a constraint, essential as a composite-FK parent: this is
-        # what makes the functional-unit invariant enforceable by the engine.
+        # Target of the composite foreign keys that keep one functional unit per set.
         UniqueConstraint("key", "functional_unit_key", name="uq_category_fu"),
     )
 
@@ -248,8 +183,7 @@ class Category(Base):
     functional_unit_key: Mapped[str] = mapped_column(
         Text, ForeignKey("functional_unit.key"), nullable=False
     )
-    #: What regulatory prefiltering the model assumes has already happened.
-    #: Never modelled, always stated, echoed in every API response.
+    #: The regulatory filtering the model assumes has happened; echoed by the API.
     eligibility_precondition_text: Mapped[str] = mapped_column(Text, nullable=False)
     default_context_key: Mapped[str] = mapped_column(
         Text, ForeignKey("context.key"), nullable=False
@@ -271,9 +205,7 @@ class CategoryIndicator(Base):
             name="direction_override",
         ),
         CheckConstraint("control_mode IN ('sweep','exclude')", name="control_mode"),
-        # Excluding an indicator from control generation removes it from the
-        # behavioural gate too, so the reason has to be written down rather than
-        # left as a silent gap in what is tested.
+        # An excluded indicator leaves the behavioural gate, so the reason is required.
         CheckConstraint(
             "control_mode <> 'exclude' OR control_note IS NOT NULL",
             name="exclusion_justified",
@@ -287,36 +219,19 @@ class CategoryIndicator(Base):
         Text, ForeignKey("indicator.key"), primary_key=True
     )
     is_required: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    #: ``always`` -- the relevance flag is 1 whatever the context.
-    #: ``context_declared`` -- relevant only when an active context declares over
-    #: this indicator.
+    #: ``always``, or ``context_declared``: relevant only when an active context declares it.
     relevance_mode: Mapped[str] = mapped_column(
         Text, nullable=False, default="always"
     )
     direction_override: Mapped[int | None] = mapped_column(Integer)
-    #: Whether a control case may vary this indicator on its own.
-    #:
-    #: ``sweep`` -- the declared direction holds across the whole range, so
-    #: holding everything else ideal and moving this one asserts something true.
-    #: The behavioural suite gates on it.
-    #:
-    #: ``exclude`` -- the relationship is not monotone across the range, is
-    #: disputed, or is still an open question. Generating a control label would
-    #: assert something the registry does not actually claim, so nothing is
-    #: generated and nothing is gated. An untested indicator is a known gap, not
-    #: a silent pass.
+    #: ``sweep`` when the declared direction holds across the whole range, else ``exclude``.
     control_mode: Mapped[str] = mapped_column(Text, nullable=False, default="sweep")
     control_note: Mapped[str | None] = mapped_column(Text)
     note: Mapped[str | None] = mapped_column(Text)
 
 
 class IndicatorReferenceRange(Base):
-    """The declared range an indicator is normalised against, per category.
-
-    Declared, never fitted from data.  This is what makes a checkpoint
-    independent of whichever dataset file happens to be on disk, and it is why
-    the same indicator entity can be used at two different functional units.
-    """
+    """The declared range an indicator is normalised against, per category."""
 
     __tablename__ = "indicator_reference_range"
     __table_args__ = _strict(
@@ -345,8 +260,7 @@ class IndicatorReferenceRange(Base):
     ref_low: Mapped[float] = mapped_column(REAL, nullable=False)
     ref_high: Mapped[float] = mapped_column(REAL, nullable=False)
     scale: Mapped[str] = mapped_column(Text, nullable=False, default="linear")
-    #: ``monotone`` -- more or less is simply better.
-    #: ``ideal_point`` / ``ideal_band`` -- too little and too much are both bad.
+    #: ``ideal_point`` and ``ideal_band`` penalise both too little and too much.
     shape: Mapped[str] = mapped_column(Text, nullable=False, default="monotone")
     ideal_value: Mapped[float | None] = mapped_column(REAL)
     ideal_low: Mapped[float | None] = mapped_column(REAL)
@@ -354,13 +268,8 @@ class IndicatorReferenceRange(Base):
     source_note: Mapped[str] = mapped_column(Text, nullable=False)
 
 
-# ---------------------------------------------------------------------------
-# Registry: contexts
-# ---------------------------------------------------------------------------
-
-
 class Context(Base):
-    """An application context.  Both a declaration and a learned entity."""
+    """An application context."""
 
     __tablename__ = "context"
     __table_args__ = _strict()
@@ -368,20 +277,13 @@ class Context(Base):
     key: Mapped[str] = mapped_column(Text, primary_key=True)
     display_name: Mapped[str] = mapped_column(Text, nullable=False)
     definition_text: Mapped[str] = mapped_column(Text, nullable=False)
-    #: A baseline context is always available for the categories that name it as
-    #: their default, even if it declares over nothing they hold.
+    #: Always available to the categories that name it as their default.
     is_baseline: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_active: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
 
 class ContextDeclaration(Base):
-    """``(context, indicator, direction, priority)``, category-general by default.
-
-    Because declarations name indicators rather than categories, a context's
-    availability for a category is *derived* from whether that category holds the
-    indicators the context points at.  No per-category context list is
-    maintained by hand.
-    """
+    """How a context pulls one indicator, for every category unless scoped to one."""
 
     __tablename__ = "context_declaration"
     __table_args__ = _strict(
@@ -401,22 +303,14 @@ class ContextDeclaration(Base):
     )
     direction: Mapped[int] = mapped_column(Integer, nullable=False)
     priority: Mapped[float] = mapped_column(REAL, nullable=False)
-    #: When set, the context is meaningless for a category that lacks this
-    #: indicator, so the context is inert there.
+    #: The context is unavailable to a category that lacks this indicator.
     is_required: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     ideal_value: Mapped[float | None] = mapped_column(REAL)
     note: Mapped[str | None] = mapped_column(Text)
 
 
 class CategoryContextOverride(Base):
-    """Escape hatch for a context that derivation makes available but that is
-    semantically wrong for a category.
-
-    Derivation covers the mechanical case (the indicator is simply absent).  It
-    cannot cover the case where a category happens to hold the right indicators
-    but the context means nothing for it.  Those are few, so an explicit,
-    justified row is the honest answer.
-    """
+    """A justified exception to the derived context availability for one category."""
 
     __tablename__ = "category_context_override"
     __table_args__ = _strict(
@@ -434,16 +328,8 @@ class CategoryContextOverride(Base):
     justification: Mapped[str] = mapped_column(Text, nullable=False)
 
 
-# ---------------------------------------------------------------------------
-# Registry: stakeholders
-# ---------------------------------------------------------------------------
-
-
 class Stakeholder(Base):
-    """A decision-maker archetype, with a learned embedding rather than a one-hot.
-
-    A ninth archetype is a new row; existing checkpoints survive it.
-    """
+    """A decision-maker archetype with a learned embedding."""
 
     __tablename__ = "stakeholder"
     __table_args__ = _strict()
@@ -451,17 +337,15 @@ class Stakeholder(Base):
     key: Mapped[str] = mapped_column(Text, primary_key=True)
     display_name: Mapped[str] = mapped_column(Text, nullable=False)
     definition_text: Mapped[str] = mapped_column(Text, nullable=False)
-    #: For archetypes that stop applying outside their domain.  Recorded from day
-    #: one, unused by the model.
+    #: For archetypes that stop applying outside their domain. Unused by the model.
     domain_scope_text: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
 
 class StakeholderPriority(Base):
-    """How much a stakeholder cares about a family or a single indicator.
+    """How much a stakeholder cares about a family or an indicator.
 
-    Generator input only, never a model input: the control labels are produced
-    from this table, so feeding it to the model as a feature would make the
+    Read by the control-case generator only; as a model input it would make the
     behavioural suite circular.
     """
 
@@ -477,11 +361,6 @@ class StakeholderPriority(Base):
     target_kind: Mapped[str] = mapped_column(Text, primary_key=True)
     target_key: Mapped[str] = mapped_column(Text, primary_key=True)
     priority: Mapped[float] = mapped_column(REAL, nullable=False)
-
-
-# ---------------------------------------------------------------------------
-# Registry: provenance and releases
-# ---------------------------------------------------------------------------
 
 
 class Provenance(Base):
@@ -511,12 +390,7 @@ class CategoryProvenanceWeight(Base):
 
 
 class RegistryRelease(Base):
-    """A frozen, hashed serialisation of the whole registry.
-
-    Registry rows stay mutable; a release pins them.  A checkpoint records the
-    release version and the snapshot hash, which together make a training run
-    reproducible.
-    """
+    """A frozen, hashed serialisation of the whole registry."""
 
     __tablename__ = "registry_release"
     __table_args__ = _strict()
@@ -524,17 +398,10 @@ class RegistryRelease(Base):
     version: Mapped[str] = mapped_column(Text, primary_key=True)
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
     content_hash: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
-    #: JSON, ``{table_name: max_slot}`` -- how wide the embedding tables were.
+    #: JSON, ``{table_name: max_slot}``.
     max_slots: Mapped[str] = mapped_column(Text, nullable=False)
-    #: The full canonical mirror, so any checkpoint's registry is recoverable
-    #: from the database alone.
     yaml_blob: Mapped[str] = mapped_column(Text, nullable=False)
     notes: Mapped[str] = mapped_column(Text, nullable=False)
-
-
-# ---------------------------------------------------------------------------
-# Corpus
-# ---------------------------------------------------------------------------
 
 
 class DataSource(Base):
@@ -553,7 +420,7 @@ class DataSource(Base):
 
 
 class Product(Base):
-    """One alternative.  Values hang off the product, not off set membership."""
+    """One alternative, with its values stored against it."""
 
     __tablename__ = "product"
     __table_args__ = _strict(
@@ -573,15 +440,7 @@ class Product(Base):
 
 
 class IndicatorValue(Base):
-    """One row per ``(alternative, indicator)``.
-
-    ``present`` is an explicit column, so "applicable to this category but
-    missing for this product" is a stored fact rather than something inferred
-    from a type check at load time.
-
-    Relevance is deliberately *not* stored here: it is a function of the active
-    context, that is of the query, not of the product.
-    """
+    """One row per ``(alternative, indicator)``; ``present = 0`` records a missing value."""
 
     __tablename__ = "indicator_value"
     __table_args__ = _strict(
@@ -628,7 +487,6 @@ class ComparisonSet(Base):
     source_key: Mapped[str] = mapped_column(
         Text, ForeignKey("data_source.key"), nullable=False
     )
-    #: A real column, never a string prefix on an identifier.
     provenance_key: Mapped[str] = mapped_column(
         Text, ForeignKey("provenance.key"), nullable=False
     )
@@ -640,10 +498,7 @@ class ComparisonSet(Base):
 class ComparisonSetMember(Base):
     """An alternative's place in a comparison set.
 
-    The two composite foreign keys are the whole mechanism behind the
-    functional-unit invariant: a member row must name one category that matches
-    both its set and its product, so a product from a category with a different
-    functional unit cannot be inserted at all.
+    The composite foreign keys force the set and the product to share a category.
     """
 
     __tablename__ = "comparison_set_member"
@@ -669,7 +524,7 @@ class ComparisonSetMember(Base):
 
 
 class ComparisonSetStakeholder(Base):
-    """Many-to-many: a decision can be made under several archetypes at once."""
+    """A decision can be made under several stakeholders at once."""
 
     __tablename__ = "comparison_set_stakeholder"
     __table_args__ = _strict()
@@ -683,7 +538,7 @@ class ComparisonSetStakeholder(Base):
 
 
 class ComparisonSetContext(Base):
-    """Many-to-many: a decision can sit in several contexts at once."""
+    """A decision can sit in several contexts at once."""
 
     __tablename__ = "comparison_set_context"
     __table_args__ = _strict()
@@ -697,12 +552,7 @@ class ComparisonSetContext(Base):
 
 
 class LabelSet(Base):
-    """One labelling pass over one comparison set.
-
-    Separate from the labels themselves so that several independent labellers
-    can score the same set without being averaged at ingest time, and so that
-    what the scores *mean* is recorded rather than assumed.
-    """
+    """One labeller's pass over one comparison set."""
 
     __tablename__ = "label_set"
     __table_args__ = _strict(
@@ -726,10 +576,7 @@ class LabelSet(Base):
         Text, ForeignKey("provenance.key"), nullable=False
     )
     labeller_key: Mapped[str | None] = mapped_column(Text)
-    #: ``absolute_reference`` -- the score is a function of a declared range.
-    #: ``within_set_relative`` -- the score is suitability within this set only.
-    #: Recording which is which keeps two different meanings from being averaged
-    #: together silently.
+    #: ``absolute_reference`` or ``within_set_relative``: what a score is measured against.
     scale_semantics: Mapped[str] = mapped_column(Text, nullable=False)
     method_note: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
@@ -758,11 +605,7 @@ class Label(Base):
 
 
 class DatasetSplit(Base):
-    """A stored train/validation/test assignment.
-
-    Splits are recorded rather than re-randomised per run, so a rerun on a grown
-    corpus stays comparable with the run before it.
-    """
+    """A stored train/validation/test assignment, so reruns stay comparable."""
 
     __tablename__ = "dataset_split"
     __table_args__ = _strict(
@@ -777,10 +620,7 @@ class DatasetSplit(Base):
 
 
 class Snapshot(Base):
-    """An immutable, content-hashed materialisation of the corpus.
-
-    Training never reads the live database; it reads one of these.
-    """
+    """An immutable, content-hashed export of the corpus that training reads."""
 
     __tablename__ = "snapshot"
     __table_args__ = _strict()

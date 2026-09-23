@@ -1,11 +1,4 @@
-"""End to end: generate, write, snapshot, prepare, encode, train a few steps.
-
-The important test here is that the two encoding paths agree. ``core.encoding``
-is the readable definition and the one serving uses; ``core.prepare`` is the
-vectorised version the training loop uses. If they drift, the model would be
-trained on one thing and served another, and nothing else in the suite would
-notice.
-"""
+"""End to end: generate, write, snapshot, prepare, encode, train a few steps."""
 
 from __future__ import annotations
 
@@ -65,7 +58,7 @@ def test_snapshot_round_trips_every_case(corpus):
 
 
 def test_the_two_encoding_paths_agree(corpus):
-    """The vectorised preparation must reproduce the readable encoder exactly."""
+    """Training reads core.prepare and serving reads core.encoding."""
     registry, prepared, _ = corpus
 
     external_to_case = {}
@@ -99,11 +92,7 @@ def test_the_two_encoding_paths_agree(corpus):
 
 
 def _alternatives_from_prepared(registry, prepared, index):
-    """Rebuild the raw alternatives a prepared set came from.
-
-    Reads them back out of the database-free arrays by inverting the
-    normalisation, so the comparison is genuinely against an independent path.
-    """
+    """Rebuild the raw alternatives a prepared set came from, by inverting the normalisation."""
     from core.encoding import AlternativeInput, CHANNEL_INDEX
 
     category_key = prepared.category_keys[int(prepared.set_category[index])]
@@ -163,7 +152,6 @@ def _stakeholder_keys(registry, prepared, index):
 
 
 def test_generated_labels_follow_the_declared_direction(corpus):
-    """The generator's own output must agree with the registry it read."""
     registry, _, cases = corpus
     for case in cases:
         order = np.argsort(case.quality)
@@ -175,12 +163,6 @@ def test_generated_labels_follow_the_declared_direction(corpus):
 
 
 def test_band_width_varies_by_stakeholder(registry, category_key):
-    """The response to an indicator must depend on who is asking.
-
-    Holding everything else ideal, a stakeholder who prioritises an indicator's
-    family should spread further over it than one who does not. A generator that
-    gives everyone the same spread is asserting that priorities do not matter.
-    """
     from ingest.generators.parametric import band_width
 
     widths = {}
@@ -241,12 +223,6 @@ def test_a_few_training_steps_reduce_the_loss(corpus):
 
 
 def test_several_labellers_collapse_to_one_row_per_alternative():
-    """Two annotators must not turn one alternative into two.
-
-    The schema keeps their scores apart on purpose; the snapshot is where they
-    have to become a single target, and disagreement has to cost confidence
-    rather than vanish.
-    """
     import pandas as pd
 
     from snapshot.build import _aggregate_labellers

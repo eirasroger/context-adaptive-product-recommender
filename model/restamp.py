@@ -1,11 +1,4 @@
-"""Replace the registry a checkpoint carries, without retraining.
-
-A checkpoint stores the registry blob it was trained under, so a change to a
-display name or a definition never reaches a deployed model on its own. Such a
-change touches nothing the model reads. This tool swaps the blob in place and
-refuses whenever any other column moved, so the weights keep meaning what they
-meant.
-"""
+"""Replace the registry a checkpoint carries, without retraining, when only prose changed."""
 
 from __future__ import annotations
 
@@ -17,8 +10,7 @@ import yaml
 
 from core.registry import from_blob
 
-#: Columns a restamp is allowed to change. Everything here is prose or a
-#: declaration the API echoes; none of it reaches the model or a label.
+#: Columns a restamp may change: prose and API-only declarations the model never reads.
 PROSE_COLUMNS = frozenset(
     {
         "display_name",
@@ -83,7 +75,7 @@ def restamp(
 
 
 def refresh_manifest(checkpoint: Path, version: str, content_hash: str) -> Path | None:
-    """Re-stamp the served release manifest sitting beside a checkpoint."""
+    """Restamp the release manifest beside a checkpoint."""
     import json
 
     from serve import release

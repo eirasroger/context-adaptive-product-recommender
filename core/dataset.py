@@ -1,13 +1,4 @@
-"""Dataset and collation.
-
-A batch is a ragged thing: comparison sets hold different numbers of
-alternatives, categories hold different numbers of indicator tokens, and a
-decision can be made under several stakeholders and several contexts at once.
-Everything is padded to the batch maximum and carries its own mask. Nothing is
-capped at a fixed set size -- attention handles variable sets natively, and a
-catalogue category could present far more alternatives than the corpus does
-today.
-"""
+"""Dataset and collation of ragged comparison sets into padded, masked batches."""
 
 from __future__ import annotations
 

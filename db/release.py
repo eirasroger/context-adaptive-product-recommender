@@ -1,17 +1,4 @@
-"""Freeze the registry into a hashed, diffable release.
-
-Two things come out of a release:
-
-* a **content hash** over a canonical serialisation, recorded with every
-  checkpoint so a training run can be traced back to the exact semantics it was
-  trained under;
-* a **YAML mirror** written into the repository, so that a change to a direction
-  sign or a reference range shows up as a reviewable diff rather than as an
-  invisible row update.
-
-The database remains the system of record. The mirror is an export, never an
-input.
-"""
+"""Freeze the registry into a hashed release and write its YAML mirror for review."""
 
 from __future__ import annotations
 
@@ -49,9 +36,7 @@ from db.session import create_db_engine, session_scope
 
 MIRROR_DIR = Path("registry")
 
-#: Every registry table, with the columns and sort order that make the export
-#: canonical. Two databases with the same semantics must serialise identically,
-#: or the content hash means nothing.
+#: Every registry table with its exported columns and sort order.
 EXPORT_SPEC: tuple[tuple[str, Any, tuple[str, ...], tuple[str, ...]], ...] = (
     (
         "indicator_family",
@@ -216,7 +201,7 @@ EXPORT_SPEC: tuple[tuple[str, Any, tuple[str, ...], tuple[str, ...]], ...] = (
 
 
 def export(session: Session) -> dict[str, list[dict]]:
-    """Serialise the registry into a canonical, order-stable structure."""
+    """Serialise the registry in a canonical order, so equal registries hash equally."""
     document: dict[str, list[dict]] = {}
     for name, model, columns, order in EXPORT_SPEC:
         rows = list(session.execute(select(model)).scalars())
@@ -235,13 +220,11 @@ def canonical_yaml(document: dict[str, list[dict]]) -> str:
 
 
 def content_hash(document: dict[str, list[dict]]) -> str:
-    """Hash over a JSON rendering, which is stricter about types than YAML."""
     payload = json.dumps(document, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def write_mirror(document: dict[str, list[dict]], mirror_dir: Path = MIRROR_DIR) -> list[Path]:
-    """Write one YAML file per registry table, for review."""
     mirror_dir.mkdir(parents=True, exist_ok=True)
     written = []
     for name, rows in document.items():
@@ -257,7 +240,7 @@ def create_release(
     notes: str,
     mirror_dir: Path = MIRROR_DIR,
 ) -> tuple[str, list[Path]]:
-    """Validate, freeze and record a release. Returns its hash and mirror files."""
+    """Validate, freeze and record a release; return its hash and mirror files."""
     from db.models import RegistryRelease
 
     validate.require_valid(session)

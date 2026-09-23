@@ -193,8 +193,7 @@ table.plain td.num { font-family: var(--mono); font-variant-numeric: tabular-num
 .msg.error { color: var(--neg); }
 [hidden] { display: none !important; }
 
-/* The grid is inherently wide, so on a narrow screen it scrolls sideways
-   with the indicator names pinned. Everything else stacks. */
+/* Narrow screens: the grid scrolls sideways with names pinned; the rest stacks. */
 @media (max-width: 760px) {
   .wrap { padding: 16px 12px 64px; }
   h1 { font-size: 17px; }

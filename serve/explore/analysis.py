@@ -1,8 +1,4 @@
-"""Analyses behind the explorer.
-
-Every analysis is generated from the registry, so a new category becomes
-explorable as soon as its rows exist.
-"""
+"""Analyses behind the explorer, generated from the registry."""
 
 from __future__ import annotations
 
@@ -43,12 +39,7 @@ def score_many(
     target: int,
     chunk: int = 256,
 ) -> np.ndarray:
-    """Score many shortlists at once, returning one alternative's score from each.
-
-    SHAP asks for hundreds of variants of the same comparison. Encoding them
-    one at a time and running one forward pass each is the difference between
-    seconds and tens of seconds, and nothing about the model requires it.
-    """
+    """Score many shortlists in batches, returning the ``target`` alternative's score from each."""
     out = np.zeros(len(shortlists), dtype=np.float64)
     for start in range(0, len(shortlists), chunk):
         window = shortlists[start : start + chunk]
@@ -78,11 +69,7 @@ def response_curve(
     stakeholder_keys: Sequence[str],
     steps: int = DEFAULT_STEPS,
 ) -> dict:
-    """How the score moves as one indicator moves, everything else held ideal.
-
-    One curve per stakeholder, so the spread between curves shows how much the
-    archetype changes the model's sensitivity to that indicator.
-    """
+    """How the score moves with one indicator, everything else ideal, one curve per stakeholder."""
     category = registry.category(category_key)
     indicator = registry.indicator(indicator_key)
     values = parametric.sweep_values(registry, category_key, indicator_key, steps)
@@ -224,12 +211,7 @@ def example_shortlist(
     context_keys: Sequence[str],
     size: int = 4,
 ) -> list[AlternativeInput]:
-    """A spread of alternatives to explore when the caller supplies none.
-
-    Built by sweeping the indicator the active context weighs most heavily, so
-    the default view shows the model doing something rather than scoring four
-    identical products.
-    """
+    """A sweep over the indicator the context weighs most, for when the caller supplies none."""
     candidates = parametric.varied_indicators(
         registry, category_key, list(context_keys)
     )

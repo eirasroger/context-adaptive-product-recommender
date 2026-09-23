@@ -1,26 +1,4 @@
-"""One control generator, driven entirely by the registry.
-
-A control case holds every indicator at its ideal value, varies exactly one, and
-maps that one to a preference score through a declared relationship. The
-predecessor needed a near-duplicate script per indicator; here the indicator,
-its direction, its range, its value type and its context-dependence all come
-from registry rows, so a new category needs data and rows, never a new
-generator.
-
-Two things are fixed here that the per-indicator scripts got wrong:
-
-* **The preference band is stakeholder-conditional.** Holding everything else
-  ideal and equal, the varied indicator is the only signal, so the *direction*
-  of the label is sound -- but the old generators gave every archetype the same
-  spread. Someone who prioritises environmental impact should show a wider
-  response to an environmental indicator than someone driven by cost. The
-  registry's stakeholder priorities set the width.
-* **The band floor moves with the set.** A shortlist where every option is poor
-  lands low as a whole, rather than the best of a bad lot scoring near the top.
-
-The output of this module doubles as the behavioural test suite, because the
-mapping it applies is known exactly.
-"""
+"""Control cases from the registry: every indicator ideal but one, which is swept and labelled."""
 
 from __future__ import annotations
 
@@ -31,35 +9,27 @@ from typing import Iterable, Sequence
 from core.encoding import AlternativeInput
 from core.registry import Registry
 
-#: How far the preference band can spread, from the least to the most
-#: responsive archetype. A stakeholder with no stated interest in an indicator
-#: still responds to it -- just far less.
+#: Preference band width for the least and the most interested stakeholder.
 MIN_BAND = 0.12
 MAX_BAND = 0.55
 
-#: Where the band sits when the whole set is excellent, and when it is poor.
+#: Band ceiling when the best alternative is ideal.
 TOP_ANCHOR = 1.0
 
 
 @dataclass(frozen=True)
 class ProbeCase:
-    """One generated comparison set with its known-correct labels."""
+    """One generated comparison set with its labels."""
 
     category_key: str
     indicator_key: str
     context_keys: tuple[str, ...]
     stakeholder_key: str
     alternatives: tuple[AlternativeInput, ...]
-    #: The varied indicator's raw value per alternative, in the same order.
     varied: tuple[float | str, ...]
-    #: Quality of each alternative on the varied indicator, 0 worst to 1 best.
+    #: 0 worst to 1 best on the varied indicator
     quality: tuple[float, ...]
     prefs: tuple[float, ...]
-
-
-# ---------------------------------------------------------------------------
-# Ideal values
-# ---------------------------------------------------------------------------
 
 
 def ideal_for(
@@ -68,14 +38,7 @@ def ideal_for(
     indicator_key: str,
     context_keys: Sequence[str],
 ) -> float | str | None:
-    """The best value an indicator can take, according to the registry alone.
-
-    Derived from the declared direction and range: where more is better the
-    ideal is the top of the range, where less is better it is the bottom, and
-    where the indicator is non-monotone it is the declared ideal. An indicator
-    the registry gives no direction for and no context pulls on has no ideal,
-    and is held at the middle of its range.
-    """
+    """The best value an indicator can take under the declared direction and range."""
     indicator = registry.indicator(indicator_key)
     member = registry.category(category_key).members.get(indicator_key)
     if member is None:
@@ -129,7 +92,7 @@ def ideal_alternative(
             continue
         indicator = registry.indicator(indicator_key)
         if indicator.is_derived:
-            continue  # recomputed from its sources at encode time
+            continue
         best = ideal_for(registry, category_key, indicator_key, context_keys)
         if best is None:
             continue
@@ -146,11 +109,6 @@ def ideal_alternative(
     return AlternativeInput(key="ideal", values=values, levels=levels)
 
 
-# ---------------------------------------------------------------------------
-# Quality and labels
-# ---------------------------------------------------------------------------
-
-
 def quality_of(
     registry: Registry,
     category_key: str,
@@ -158,7 +116,7 @@ def quality_of(
     value: float | str,
     context_keys: Sequence[str],
 ) -> float:
-    """How good a value is on this indicator, from 0 (worst) to 1 (best)."""
+    """How good a value is on this indicator, 0 worst to 1 best."""
     indicator = registry.indicator(indicator_key)
     direction, _ = registry.resolve_direction(category_key, indicator_key, context_keys)
 
@@ -192,13 +150,7 @@ def quality_of(
 def band_width(
     registry: Registry, stakeholder_key: str, indicator_key: str
 ) -> float:
-    """How wide a preference band this archetype spreads over this indicator.
-
-    A stakeholder's declared priority for the indicator itself wins; failing
-    that, its priority for the indicator's family. This is the whole fix for a
-    generator that previously gave every archetype the same response to
-    everything.
-    """
+    """Band width from the stakeholder's priority for the indicator, else for its family."""
     stakeholder = registry.stakeholders[stakeholder_key]
     indicator = registry.indicator(indicator_key)
 
@@ -212,12 +164,7 @@ def band_width(
 def labels_for(
     qualities: Sequence[float], width: float
 ) -> tuple[float, ...]:
-    """Map qualities to preference scores inside a set-level band.
-
-    The band's ceiling is pulled down by how good the *best* option in the set
-    is, so a shortlist of uniformly poor options lands low as a whole. Within
-    the band, spacing follows quality.
-    """
+    """Map qualities into a band that sits lower when the best quality is lower."""
     if not qualities:
         return ()
     best = max(qualities)
@@ -229,11 +176,6 @@ def labels_for(
         round(min(1.0, max(0.0, floor + span * (q / best_quality))), 4)
         for q in qualities
     )
-
-
-# ---------------------------------------------------------------------------
-# Case generation
-# ---------------------------------------------------------------------------
 
 
 def sweep_values(
@@ -305,17 +247,7 @@ def make_case(
 def varied_indicators(
     registry: Registry, category_key: str, context_keys: Sequence[str]
 ) -> list[str]:
-    """Indicators worth varying: those the registry gives a direction to here
-    **and** declares safe to sweep.
-
-    Two separate filters, for two separate reasons. An indicator with no
-    direction under the active context carries no declared expectation, so
-    sweeping it would assert nothing. An indicator marked ``control_mode:
-    exclude`` has a direction that does not hold across its whole range -- it
-    turns over, the sources disagree, or the question is open -- so sweeping it
-    would assert something the registry does not actually claim, and would put
-    that claim into the training data as if it were ground truth.
-    """
+    """Sweepable, relevant indicators with a declared direction under these contexts."""
     category = registry.category(category_key)
     out = []
     for indicator_key in category.token_order:

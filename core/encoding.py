@@ -1,20 +1,4 @@
-"""Turn a comparison set into indicator tokens.
-
-One token per indicator the category holds. A token carries who it is (an
-identity embedding composed from its family and itself) and what it says about
-this alternative (its value against the declared reference range, its value
-against the other alternatives in the set, whether it is present, whether it is
-relevant here, and which way the active context pulls it).
-
-Two properties fall out of this representation and both matter:
-
-* Adding an indicator adds a token, never a column, so no existing weight
-  changes meaning. There is no feature vector to reorder.
-* "Not applicable to this category" (no token at all) is distinguishable from
-  "applicable but missing for this product" (a token with present = 0). A
-  fixed-width vector cannot express that difference, and it is the difference
-  that makes an open-ended set of categories workable.
-"""
+"""Encode a comparison set as one token per indicator the category holds."""
 
 from __future__ import annotations
 
@@ -26,8 +10,7 @@ import numpy as np
 
 from core.registry import RangeSpec, Registry
 
-#: Numeric channels on every token, in order. Named so that an ablation can
-#: switch one off by name instead of by index.
+#: Numeric channels on every token, in order.
 CHANNELS: tuple[str, ...] = (
     "v_ref",           # value against the declared reference range
     "v_ref_saturated", # 1 when the raw value fell outside that range
@@ -50,12 +33,7 @@ NO_LEVEL = -1
 
 @dataclass(frozen=True, slots=True)
 class AlternativeInput:
-    """One alternative's raw values, keyed by indicator.
-
-    ``values`` holds numbers for continuous and boolean indicators; ``levels``
-    holds level keys for ordinal and nominal ones. An indicator absent from both
-    is missing, which is a different statement from a value of zero.
-    """
+    """One alternative's raw values. An indicator absent from both maps is missing."""
 
     key: str
     values: Mapping[str, float] = None
@@ -92,19 +70,8 @@ class EncodedSet:
         return self.channels.shape[1]
 
 
-# ---------------------------------------------------------------------------
-# Normalisation
-# ---------------------------------------------------------------------------
-
-
 def normalise_reference(value: float, spec: RangeSpec) -> tuple[float, bool]:
-    """Map a raw value into the unit interval using the declared range.
-
-    Returns the normalised value and whether the raw value fell outside the
-    range. Out-of-range values are clipped rather than allowed to rescale
-    everything else, and the fact that clipping happened is reported to the
-    model on its own channel instead of being hidden.
-    """
+    """Map a raw value into [0, 1] by the declared range, and say whether it was clipped."""
     low, high = spec.ref_low, spec.ref_high
     if spec.scale == "log":
         if value <= 0.0:
@@ -117,12 +84,7 @@ def normalise_reference(value: float, spec: RangeSpec) -> tuple[float, bool]:
 
 
 def _ideal_distance(normalised: float, spec: RangeSpec) -> float | None:
-    """Normalised distance to the declared ideal, for non-monotone indicators.
-
-    Some indicators are bad in both directions -- too little and too much are
-    each a problem -- and a signed direction cannot express that. An ideal point
-    or band can.
-    """
+    """Normalised distance to the declared ideal point or band."""
     if spec.shape == "monotone":
         return None
     if spec.shape == "ideal_point":
@@ -152,8 +114,7 @@ def _scalar_value(
             return None, None
         level = indicator.level(level_key)
         if indicator.value_type == "nominal":
-            # Nominal levels have no order, so there is no scalar to compare;
-            # the identity of the level is carried by its embedding instead.
+            # Nominal levels have no order; the level embedding carries them.
             return None, level_key
         return level.normalised_position, level_key
     value = alternative.values.get(indicator_key)
@@ -163,12 +124,7 @@ def _scalar_value(
 def apply_derivations(
     registry: Registry, category_key: str, alternative: AlternativeInput
 ) -> AlternativeInput:
-    """Fill in derived indicators from their declared sources.
-
-    Derived values are recomputed here rather than stored, so a derivation can
-    be corrected in the registry without rewriting the corpus. A derived value
-    is present only when every source it needs is present.
-    """
+    """Fill in derived indicators; each is present only when all its sources are."""
     category = registry.category(category_key)
     values = dict(alternative.values)
     for indicator_key in category.token_order:
@@ -190,11 +146,6 @@ def apply_derivations(
     return AlternativeInput(key=alternative.key, values=values, levels=alternative.levels)
 
 
-# ---------------------------------------------------------------------------
-# Encoding
-# ---------------------------------------------------------------------------
-
-
 def encode_set(
     registry: Registry,
     category_key: str,
@@ -203,7 +154,6 @@ def encode_set(
     stakeholder_keys: Sequence[str],
     derive: bool = True,
 ) -> EncodedSet:
-    """Encode one comparison set into tokens."""
     category = registry.category(category_key)
     token_keys = category.token_order
     n_alts = len(alternatives)
@@ -298,13 +248,7 @@ def encode_set(
 def _fill_within_set(
     channels: np.ndarray, token_index: int, scalars: Sequence[float | None]
 ) -> None:
-    """Normalise an indicator against the other alternatives in the set.
-
-    Both value channels are needed. Within-set normalisation alone destroys the
-    information that an entire shortlist is poor -- the best of a bad lot would
-    look excellent. Reference normalisation alone loses resolution when the
-    alternatives are clustered closely together.
-    """
+    """Normalise an indicator against the other alternatives in the set."""
     present = [value for value in scalars if value is not None]
     if len(present) < 2:
         return

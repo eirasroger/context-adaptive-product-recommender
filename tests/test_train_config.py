@@ -1,5 +1,3 @@
-"""Which registry a training run trains under."""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -18,11 +16,7 @@ CONFIG_DIR = Path(__file__).resolve().parents[1] / "train" / "configs"
 
 @pytest.fixture
 def released(tmp_path):
-    """Its own database with two releases, the second cut after the first.
-
-    Built from scratch rather than from the shared seeded session, because
-    cutting a release and editing a row would leak into every other test.
-    """
+    """Its own database with two releases, kept apart from the shared seeded session."""
     from db.models import Stakeholder
     from db.seed import seed
     from db.session import create_all, create_db_engine
@@ -34,8 +28,7 @@ def released(tmp_path):
     session.flush()
 
     release_module.create_release(session, "9.0.0", "", mirror_dir=tmp_path / "m0")
-    # The content hash is unique, so the second release has to say something
-    # different from the first.
+    # Release content hashes are unique.
     session.get(Stakeholder, "balanced_optimizer").display_name = "Renamed"
     session.flush()
     release_module.create_release(session, "9.0.1", "", mirror_dir=tmp_path / "m1")
@@ -62,7 +55,6 @@ def test_a_config_without_a_version_follows_the_newest_release(released):
 
 
 def test_a_pinned_config_gets_the_release_it_names(released):
-    """Pinning is how an old run is reproduced, so it has to keep working."""
     config = TrainConfig(registry_version="9.0.0")
 
     registry, _ = resolve_registry(config, released)
@@ -78,8 +70,6 @@ def test_a_pin_nobody_released_is_refused(released):
 
 
 def test_the_shipped_configs_pin_nothing():
-    """A checked-in config is for retraining, so it names no version and cannot
-    fall behind the registry."""
     for path in sorted(CONFIG_DIR.glob("*.yaml")):
         config = yaml.safe_load(path.read_text(encoding="utf-8"))
         assert "registry_version" not in config, (

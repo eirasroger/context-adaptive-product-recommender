@@ -37,11 +37,6 @@ def shipped():
 
 
 def test_the_registry_mirror_is_an_export_of_the_seeds(document):
-    """The mirror is an export, never an input.
-
-    Editing it by hand would put a reviewed diff in front of someone that the
-    database never agreed to.
-    """
     mirror: dict[str, list[dict]] = {}
     for path in sorted(MIRROR_DIR.glob("*.yaml")):
         mirror.update(yaml.safe_load(path.read_text(encoding="utf-8")))
@@ -54,8 +49,7 @@ def test_the_registry_mirror_is_an_export_of_the_seeds(document):
 
 
 def test_the_shipped_checkpoint_carries_the_seeded_registry(shipped, document):
-    """Serving reads the blob inside the checkpoint, so a seed edit reaches a
-    deployment only once it has been released and stamped in."""
+    """A seed edit reaches serving only once released and stamped into the checkpoint."""
     assert shipped["registry_blob"] == db_release.canonical_yaml(document), (
         f"the shipped checkpoint is stamped with an older registry; {RELEASE_STEPS}"
     )

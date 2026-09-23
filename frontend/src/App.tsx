@@ -23,7 +23,7 @@ const note = (text: string): Status => ({ text, error: false });
 const failure = (text: string): Status => ({ text, error: true });
 const messageOf = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
-// Safari refuses more than 100 history updates in 30 seconds, and typing makes one per key.
+// Safari allows 100 history updates per 30 seconds, and typing makes one per key.
 const URL_UPDATE_DELAY_MS = 400;
 
 export function App() {

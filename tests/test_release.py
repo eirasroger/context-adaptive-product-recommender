@@ -1,5 +1,3 @@
-
-
 from __future__ import annotations
 
 import json
@@ -15,9 +13,7 @@ from serve import release as release_module
 
 @pytest.fixture(autouse=True)
 def quick_export(request, monkeypatch):
-    """Promotion exports the served model, which takes seconds of tracing. These
-    tests are about gates, metrics and the README, so a stand-in writes the file;
-    the export itself is covered in test_export.py."""
+    """Stands in for the ONNX export, which takes seconds and is covered by test_export.py."""
     if request.node.get_closest_marker("real_export"):
         return
     from model import export as export_module
@@ -59,8 +55,7 @@ def _run(tmp_path, registry, passed: bool | None, gap: float = 0.05):
 
 
 def _root() -> Path:
-    """The repository root. A subprocess inherits the working directory, which
-    is wherever pytest was invoked from, so it has to be told."""
+    """The repository root, for subprocesses that would inherit pytest's working directory."""
     return Path(__file__).resolve().parents[1]
 
 
@@ -124,11 +119,6 @@ def _metrics(passed: bool = True, gap: float = 0.05) -> dict:
 
 
 def test_a_failing_run_is_refused(tmp_path, registry):
-    """The gate has to bite at the point where a model becomes deployable.
-
-    Somewhere to record that a build failed is worth nothing if the failing
-    build ships anyway.
-    """
     run_dir = _run(tmp_path, registry, passed=False)
     with pytest.raises(release_module.GateFailed, match="behavioural gate"):
         _promote(run_dir, tmp_path)
@@ -142,7 +132,6 @@ def test_an_unevaluated_run_is_refused(tmp_path, registry):
 
 
 def test_forcing_records_that_it_was_forced(tmp_path, registry):
-    """Shipping a failing model stays possible and stays on the record."""
     run_dir = _run(tmp_path, registry, passed=False)
     manifest = _promote(
         run_dir, tmp_path, force=True, notes="known bad, for a reproduction",
@@ -186,7 +175,6 @@ def test_a_promotion_ships_the_served_model_exported_from_its_checkpoint(tmp_pat
 
 
 def test_the_released_artefacts_stay_small():
-    """A checkpoint belongs in the repository. A corpus does not."""
     release_dir = release_module.RELEASE_DIR
     if not (release_dir / "model.pt").exists():
         pytest.skip("nothing has been promoted yet")
@@ -198,11 +186,7 @@ def test_the_released_artefacts_stay_small():
 
 
 def test_serving_does_not_import_the_data_stack():
-    """The serving bundle has a size limit, and these are not needed to score.
-
-    pandas, pyarrow and SQLAlchemy belong to building data and training. Letting
-    them back into the import path silently adds about 175 MB to a deployment.
-    """
+    """pandas, pyarrow and SQLAlchemy would add about 175 MB to a size-limited deployment."""
     import subprocess
     import sys
 
@@ -223,8 +207,7 @@ def _modules_serving_imports() -> set[str]:
     import subprocess
     import sys
 
-    # app.py builds the deployed app, which needs a frontend build; the imports
-    # are the same without one.
+    # Same imports as app.py, without needing a frontend build.
     result = subprocess.run(
         [sys.executable, "-c",
          "import functools, sys, serve.api;"
@@ -238,19 +221,13 @@ def _modules_serving_imports() -> set[str]:
 
 
 def test_serving_never_imports_the_explanation_stack():
-    """SHAP is offline analysis and stays out of the deployment.
-
-    It carries numba, llvmlite, scipy, scikit-learn and pandas behind it, about
-    330 MB, which is the difference between a bundle that fits a standard
-    function limit and one that does not.
-    """
+    """SHAP and its dependencies would add about 330 MB."""
     found = _modules_serving_imports() & {"shap", "numba", "llvmlite", "sklearn", "scipy"}
     assert not found, f"serving imports {sorted(found)}"
 
 
 def test_serving_never_imports_torch():
-    """Serving runs the exported model through ONNX Runtime. Torch was 702 MB of
-    an 815 MB deployment, and each deployment stores its own copy."""
+    """Torch was 702 MB of an 815 MB deployment."""
     found = _modules_serving_imports() & {"torch", "onnx", "onnxscript"}
     assert not found, f"serving imports {sorted(found)}"
 
@@ -277,11 +254,7 @@ def test_heavy_packages_are_absent_from_serving_requirements():
 
 
 def test_serving_requirements_cover_what_serving_imports():
-    """Every third-party module the serving path imports has to be installed.
-
-    PyYAML went missing from this list once and the deployment would have
-    crashed on import, after a successful build.
-    """
+    """A missing requirement passes the build and crashes on import."""
     declared = _requirement_names(_root() / "requirements.txt")
 
     required = {
@@ -298,14 +271,7 @@ def test_serving_requirements_cover_what_serving_imports():
 
 
 def test_every_third_party_import_is_declared():
-    """Nothing may be imported that the requirements files do not ask for.
-
-    A package installed for an unrelated reason makes a missing requirement
-    invisible on the machine that wrote the code, and the build that finds it is
-    the one on a clean checkout. This is the direct-import half of that; an
-    optional dependency of a declared package, such as the test client's HTTP
-    library, still surfaces only on a clean install.
-    """
+    """A package installed for another reason hides a missing requirement until a clean build."""
     import ast
     import re
     import sys
@@ -323,9 +289,6 @@ def test_every_third_party_import_is_declared():
     declared = set()
     for name in ("requirements.txt", "requirements-dev.txt"):
         for line in (root / name).read_text(encoding="utf-8").splitlines():
-            # A comment naming a package is not a declaration of it, and the
-            # first version of this test read the whole file as one string and
-            # so could not tell the difference.
             requirement = line.split("#")[0].strip()
             if not requirement or requirement.startswith("-"):
                 continue
@@ -367,8 +330,7 @@ def _released(release_dir, gap: float):
 
 
 def test_a_promotion_ships_the_metrics_it_was_gated_on(tmp_path, registry):
-    """Without them the next promotion has nothing to compare against, and the
-    regression gate silently becomes a no-op."""
+    """Without them the next promotion's regression gate compares against nothing."""
     run_dir = _run(tmp_path, registry, passed=True)
     release_dir = tmp_path / "release"
 
@@ -420,11 +382,6 @@ def test_a_regression_can_be_forced_and_says_so(tmp_path, registry):
 
 
 def test_promoting_refreshes_the_evaluation_fixture(tmp_path, registry):
-    """The fixture holds data, so it is stale the moment the corpus grows.
-
-    Rebuilding it by hand is a step that gets forgotten once and then reports a
-    model that is not the one deployed.
-    """
     import pandas as pd
 
     run_dir = _run(tmp_path, registry, passed=True)
@@ -486,12 +443,7 @@ def test_a_readme_without_a_results_block_is_refused(tmp_path, registry):
 
 
 def test_the_pyproject_declares_no_dependencies():
-    """It is tool configuration, and requirements.txt is what deploys.
-
-    A [project] or [build-system] table would give Vercel's builder a second,
-    thinner answer about what to install, and the first sign would be a
-    deployment that built cleanly and crashed on import.
-    """
+    """A [project] table would give Vercel's builder a second list of what to install."""
     import tomllib
 
     root = _root()

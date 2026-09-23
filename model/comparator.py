@@ -1,15 +1,4 @@
-"""Attention across alternatives.
-
-This is the transferable part of the network. It receives alternative
-embeddings and a conditioning vector and nothing else -- **it never sees an
-indicator**. That boundary is what makes comparing three alternatives in one
-category and three in another literally the same operation, and it is what makes
-the claim of transfer between categories mechanically checkable rather than
-merely asserted.
-
-Set size is not capped. Attention handles variable sets natively, so a shortlist
-of two and a catalogue of fifty go through the same code.
-"""
+"""Attention across alternatives. It sees alternative embeddings and conditioning only."""
 
 from __future__ import annotations
 
@@ -45,7 +34,6 @@ class Comparator(nn.Module):
         mask: torch.Tensor,          # (B, A) bool, True where real
         conditioning: torch.Tensor,  # (B, D)
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Return contextualised alternatives and the set-level summary."""
         batch, alts, dim = alternatives.shape
 
         broadcast = conditioning.unsqueeze(1).expand(batch, alts, dim)
@@ -56,8 +44,7 @@ class Comparator(nn.Module):
             x = block(x, padding)
         x = self.norm(x)
 
-        # Padded positions must not leak into the set summary, or a batch with
-        # ragged set sizes would score differently depending on its neighbours.
+        # Padding would otherwise make a score depend on the other sets in the batch.
         weights = mask.unsqueeze(-1).to(x.dtype)
         summary = (x * weights).sum(dim=1) / weights.sum(dim=1).clamp(min=1.0)
         return x * weights, summary

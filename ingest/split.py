@@ -1,14 +1,4 @@
-"""Assign comparison sets to train, validation and test folds.
-
-Assignment is a deterministic function of the set's own identifier and the name
-of the split, so it is stable: adding data next month leaves every existing
-assignment exactly where it was, and a set never drifts across the boundary
-between one run and the next. That matters more than it sounds -- reshuffling on
-every run makes two results incomparable without anyone noticing.
-
-Stratified by category and provenance, so each fold keeps the same mixture of
-control, model-labelled and expert-labelled cases as the corpus as a whole.
-"""
+"""Assign comparison sets to folds by hash, stratified by category and provenance."""
 
 from __future__ import annotations
 
@@ -39,7 +29,6 @@ def assign(
     test_fraction: float = 0.15,
     replace: bool = False,
 ) -> dict[str, int]:
-    """Write fold assignments for every comparison set."""
     if val_fraction + test_fraction >= 1.0:
         raise ValueError("validation and test fractions must leave room for training")
 
@@ -62,9 +51,7 @@ def assign(
         )
     ).all()
 
-    # Stratify by ranking within each stratum rather than thresholding the hash
-    # directly: for a small stratum -- expert cases, say -- raw thresholding can
-    # easily leave a fold empty.
+    # Ranking within a stratum keeps a small stratum from leaving a fold empty.
     strata: dict[tuple[str, str], list[tuple[float, int]]] = defaultdict(list)
     for set_id, external_id, category_key, provenance_key in rows:
         strata[(category_key, provenance_key)].append(

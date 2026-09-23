@@ -1,9 +1,4 @@
-"""Run a training job end to end.
-
-Builds the snapshot if one was not named, trains, evaluates on the held-out
-fold, runs the behavioural suite, and writes everything into one run directory:
-the config, the epoch history, the metrics, the assertions and the checkpoint.
-"""
+"""Train, evaluate and gate one run, writing everything into its run directory."""
 
 from __future__ import annotations
 
@@ -25,13 +20,7 @@ from train.trainer import EpochRecord, train, write_history
 
 
 def resolve_registry(config: TrainConfig, session):
-    """The release the config names, or the newest one when it names none.
-
-    A config that pins reproduces an old run. A config that leaves it out
-    follows the registry, which is what a config meant to be retrained wants.
-    Either way the resolved version is written back, so the run directory and
-    the checkpoint record which one it actually was.
-    """
+    """The release the config names, or the newest one, written back into the config."""
     if config.registry_version is None:
         release = release_module.latest_release(session)
         if release is None:
@@ -112,9 +101,7 @@ def main() -> None:
     model, history = train(config, registry, prepared, on_epoch=log)
     write_history(run_dir / "history.json", history)
 
-    # Persist the weights before anything that merely describes them. Evaluation
-    # and the behavioural suite are reporting steps; a fault in one of them must
-    # not be able to discard a finished training run.
+    # Saved before evaluation, so a fault there cannot lose the trained weights.
     checkpoint_path = checkpoint_module.save(
         run_dir / "model.pt",
         model,
@@ -144,8 +131,6 @@ def main() -> None:
             "passed": suite.passed,
             "summary": suite.summary(),
             "failures": [str(a) for a in suite.failures],
-            # Reported, never gated: an indicator the model does not respond to
-            # is a gap in what the data covers, not a wrong answer.
             "no_response": [str(a) for a in suite.flat],
         }
 
@@ -156,7 +141,6 @@ def main() -> None:
         report_module.render(results, config.name), encoding="utf-8"
     )
 
-    # Rewrite with the metrics attached, now that they exist.
     checkpoint_module.save(
         run_dir / "model.pt",
         model,

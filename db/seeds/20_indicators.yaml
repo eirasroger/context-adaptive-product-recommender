@@ -1,17 +1,7 @@
-# Indicators are shared, cross-category entities.
-#
-# An indicator declared here is the same entity wherever it is used, so a
-# category that reuses it costs zero new parameters. The definition text is the
-# semantic record -- it is what a reviewer reads to decide whether a direction
-# is right, and it is the initialisation source for identity embeddings, so it
-# is required rather than optional.
-#
-# `default_direction` is the direction when no active context declares one.
-# A value of 0 means direction is supplied entirely by context, which is a
-# declaration in its own right, not an omission.
+# Indicators, shared across categories. A default_direction of 0 leaves direction to context.
 
 indicator:
-  # --- environmental impact -------------------------------------------------
+  # Environmental impact
   - key: gwp
     display_name: Global warming potential
     family_key: environmental_impact
@@ -59,7 +49,7 @@ indicator:
       it is less diagnostic than its components but is frequently the only
       ecosystem figure available.
 
-  # --- circularity ----------------------------------------------------------
+  # Circularity
   - key: circ_orig
     display_name: Circular origin
     family_key: circularity
@@ -116,7 +106,7 @@ indicator:
       the other end-of-life routes because it implies a handling and liability
       burden rather than merely a lost material.
 
-  # --- cost -----------------------------------------------------------------
+  # Cost
   - key: cost_product
     display_name: Product cost
     family_key: cost
@@ -166,7 +156,7 @@ indicator:
       so that a decision-maker who cares specifically about maintenance can be
       distinguished from one who only cares about the total.
 
-  # --- health and safety ----------------------------------------------------
+  # Health and safety
   - key: health
     display_name: Product health score
     family_key: health_safety
@@ -240,7 +230,7 @@ indicator:
           Platinum achievement level: the whole product assessed, meeting the
           additional Platinum requirements on top of Gold.
 
-  # --- technical performance ------------------------------------------------
+  # Technical performance
   - key: compressive_strength
     display_name: Compressive strength
     family_key: performance

@@ -1,18 +1,7 @@
 """Adapter for the published concrete corpus.
 
-The corpus is not regenerated natively. Reproducing the published results under
-the general architecture is the experiment that establishes the architecture is
-sound, and regenerating the data would forfeit it. So this adapter converts the
-released files into the universal schema verbatim, and every judgement it makes
-about the source format lives here rather than leaking into anything downstream.
-
-Three translations happen at this boundary and nowhere else:
-
-* provenance stops being a prefix on an identifier string and becomes a column;
-* the health score stops being an integer on a scale treated as continuous and
-  becomes an ordinal level;
-* the cost object stops being summed into a single number and becomes three
-  values, with the total derived from them on demand.
+Every assumption about the source format lives here: provenance from identifier
+prefixes, health as an ordinal level, and cost as three separate values.
 """
 
 from __future__ import annotations
@@ -45,36 +34,24 @@ ADAPTER_VERSION = "concrete_v1.1"
 CATEGORY_KEY = "concrete"
 SOURCE_KEY = "concrete_doi_data3164_v1"
 
-#: Source field name -> registry indicator key. Only the renamed ones appear;
-#: anything not listed keeps its name.
+#: Source fields whose registry key differs.
 FIELD_RENAMES = {"SCM_content": "scm_content"}
 
-#: The source nests costs under one object.
 COST_FIELDS = {"c_p": "cost_product", "c_w": "cost_labour", "c_m": "cost_maintenance"}
 
-#: Indicators the source carries as a plain number but the registry declares as
-#: an ordered scale. The value is the prefix of the level key.
+#: Numeric source fields stored as ordinal levels, with their level key prefix.
 ORDINAL_FIELDS = {"health": "h"}
 
-#: Fields on an alternative that are identifiers or containers, not indicators.
 NON_INDICATOR_FIELDS = {"id_prod", "c"}
 
 CHUNK = 5_000
 
-#: What to do when the source labels the same alternative twice with different
-#: scores. Refusing is the default because a duplicate means the labelling of
-#: that set is not trustworthy, and quietly keeping whichever row happened to be
-#: read last is how a corrupt label becomes a training target.
+#: What to do when the source labels one alternative twice with different scores.
 DUPLICATE_POLICIES = ("fail", "first", "drop_set")
 
 
 class IngestError(Exception):
     pass
-
-
-# ---------------------------------------------------------------------------
-# Source reading
-# ---------------------------------------------------------------------------
 
 
 def file_hash(*paths: Path) -> str:
@@ -88,11 +65,7 @@ def file_hash(*paths: Path) -> str:
 
 
 def classify_provenance(external_id: str) -> tuple[str, str | None]:
-    """Recover provenance and generator from the source's identifier scheme.
-
-    This is the one place that reads meaning out of an identifier string. Past
-    this function, provenance is a column.
-    """
+    """Recover provenance and generator from the source's identifier scheme."""
     text = str(external_id)
     if text.startswith("control_"):
         remainder = text[len("control_") :]
@@ -104,11 +77,7 @@ def classify_provenance(external_id: str) -> tuple[str, str | None]:
 
 
 def _normalise(text: str) -> str:
-    """Fold the cosmetic differences between a source label and a display name.
-
-    Ampersands, hyphens and stray punctuation differ between the source prose
-    and the registry; the words do not.
-    """
+    """Fold case, ampersands, hyphens and stray punctuation, so labels match display names."""
     folded = str(text).strip().lower().replace("&", "and").replace("-", " ")
     return " ".join(folded.strip(" .,;:").split())
 
@@ -118,11 +87,7 @@ def _display_name_map(session: Session, model) -> dict[str, str]:
 
 
 def _match_prose(prose: str, lookup: dict[str, str], kind: str) -> str:
-    """Match a source's prose label against a registry display name.
-
-    The source records stakeholders as a full sentence whose opening clause is
-    the archetype name; contexts are recorded as the bare name.
-    """
+    """Match a source label to a display name, by its whole text or the clause before a colon."""
     text = str(prose).strip()
     head = text.split(":", 1)[0]
     for candidate in (_normalise(head), _normalise(text)):
@@ -131,19 +96,10 @@ def _match_prose(prose: str, lookup: dict[str, str], kind: str) -> str:
     raise IngestError(f"no registry {kind} matches {prose!r}")
 
 
-# ---------------------------------------------------------------------------
-# Value extraction
-# ---------------------------------------------------------------------------
-
-
 def extract_values(
     alternative: dict, known_indicators: set[str]
 ) -> tuple[dict[str, float], dict[str, str], list[str]]:
-    """Split one source alternative into numeric values and ordinal levels.
-
-    A null in the source means unknown, and stays unknown: it is never imputed.
-    A zero is a real value and is kept.
-    """
+    """Split one source alternative into numeric values and ordinal levels; nulls stay unknown."""
     values: dict[str, float] = {}
     levels: dict[str, str] = {}
     unknown: list[str] = []
@@ -170,11 +126,6 @@ def extract_values(
             values[key] = float(raw)
 
     return values, levels, unknown
-
-
-# ---------------------------------------------------------------------------
-# Ingest
-# ---------------------------------------------------------------------------
 
 
 def ingest(
@@ -314,10 +265,6 @@ def ingest(
                     "comparison_set_id": set_id,
                     "provenance_key": provenance,
                     "labeller_key": _labeller(provenance, generator),
-                    # Control labels are a declared function of a declared
-                    # range; the assessment brief asked for suitability within
-                    # the set. Those are different statements, so which one a
-                    # score is gets recorded rather than assumed.
                     "scale_semantics": (
                         "absolute_reference"
                         if provenance == "control"
@@ -353,8 +300,7 @@ def ingest(
                 }
             )
 
-            # A row for every indicator the category holds, so that "applicable
-            # but missing" is stored rather than inferred from an absent row.
+            # One row per indicator the category holds, so a missing value is stored.
             for indicator_key in sorted(membership):
                 if indicator_key in numeric:
                     values.append(
@@ -434,7 +380,7 @@ def ingest(
 
 
 def _index_labels(rows: list[dict]) -> tuple[dict[str, dict], set[str]]:
-    """Index labels by alternative, reporting any alternative labelled twice."""
+    """Index labels by alternative, keeping the first; report any scored twice differently."""
     indexed: dict[str, dict] = {}
     duplicated: set[str] = set()
     for row in rows:
@@ -442,7 +388,7 @@ def _index_labels(rows: list[dict]) -> tuple[dict[str, dict], set[str]]:
         if key in indexed:
             if indexed[key].get("pref") != row.get("pref"):
                 duplicated.add(key)
-            continue  # first occurrence wins
+            continue
         indexed[key] = row
     return indexed, duplicated
 
@@ -451,10 +397,6 @@ def _labeller(provenance: str, generator: str | None) -> str:
     if provenance == "control":
         return f"generator:{generator}"
     if provenance == "expert":
-        # The published corpus is already aggregated across annotators. The
-        # schema holds one label set per annotator, so per-annotator scores can
-        # be ingested later without a migration -- but what is on offer today is
-        # the aggregate, and it says so.
         return "published_aggregate"
     return "llm_published"
 

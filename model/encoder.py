@@ -1,16 +1,4 @@
-"""Attention within an alternative, over its indicator tokens.
-
-This is the only part of the network that sees indicators at all. It reduces a
-variable-length bag of indicator tokens to one fixed-width alternative
-embedding, conditioned on who is asking and what for.
-
-Conditioning enters here rather than being concatenated to every token: the
-pooling query is built from the category, the active stakeholders and the active
-contexts, so the same tokens can be summarised differently depending on what the
-question is. The declared direction channel already tells each token which way
-its context pulls; the learned context residual is what carries the effects
-nobody wrote down.
-"""
+"""Attention within an alternative, pooling its indicator tokens with a conditioned query."""
 
 from __future__ import annotations
 
@@ -46,14 +34,7 @@ class AttentionBlock(nn.Module):
 
 
 class Conditioning(nn.Module):
-    """Pool the category, stakeholders and contexts into one vector.
-
-    Stakeholders and contexts are sets, not single choices -- a decision can be
-    made under several archetypes at once, and can sit in more than one context
-    -- so they are mean-pooled over whatever is active. Each is an embedding
-    looked up by slot, so adding a ninth archetype or a fifth context appends a
-    row and leaves every existing one alone.
-    """
+    """Pool the category and the mean of the active stakeholders and contexts into one vector."""
 
     def __init__(
         self,
@@ -66,9 +47,7 @@ class Conditioning(nn.Module):
         super().__init__()
         self.category = nn.Embedding(n_categories, dim)
         self.stakeholder = nn.Embedding(n_stakeholders, dim)
-        # The context residual starts at zero: with no evidence, a context is
-        # exactly what its declarations say it is, and the residual only earns
-        # its weight from effects the declarations miss.
+        # Zero, so an untrained context is exactly its declarations.
         self.context = nn.Embedding(n_contexts, dim)
         nn.init.zeros_(self.context.weight)
         nn.init.normal_(self.category.weight, std=0.02)
@@ -142,8 +121,6 @@ class AlternativeEncoder(nn.Module):
             flat = block(flat, padding)
         flat = self.norm(flat)
 
-        # Attention pooling against a conditioned query: which indicators matter
-        # for this alternative depends on who is asking and what for.
         query = self.query(conditioning)                       # (B, D)
         query = query.unsqueeze(1).expand(batch, alts, dim)
         query = query.reshape(batch * alts, 1, dim)

@@ -1,8 +1,4 @@
-"""Endpoints behind the comparison tool.
-
-Data is served as JSON and the page separately, so the same endpoints feed a
-browser, a notebook and a figure script.
-"""
+"""Endpoints behind the comparison page."""
 
 from __future__ import annotations
 

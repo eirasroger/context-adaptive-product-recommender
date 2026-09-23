@@ -1,14 +1,11 @@
-# Serving. This is the file a deployment installs.
-#
-# The model runs through ONNX Runtime. Torch trains and exports, so it lives in
-# requirements-dev.txt.
+# Serving dependencies, installed by every deployment.
 onnxruntime>=1.30
 numpy>=2
 
-# app.frontend(), which serves the page, arrived in FastAPI 0.138.
+# app.frontend() arrived in FastAPI 0.138.
 fastapi>=0.138
 uvicorn>=0.29
 pydantic>=2.6
 
-# The registry travels inside serve/release/model.onnx as YAML.
+# The served model carries its registry as YAML.
 PyYAML>=6.0

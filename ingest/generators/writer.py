@@ -1,9 +1,4 @@
-"""Persist generated control cases into the corpus.
-
-Generated cases go through exactly the same tables as ingested ones. There is no
-separate path for synthetic data, which is what makes provenance a genuine
-column rather than a label attached to a parallel pipeline.
-"""
+"""Write generated control cases into the same corpus tables as ingested data."""
 
 from __future__ import annotations
 
@@ -60,7 +55,7 @@ def write_cases(
     source_key: str = GENERATED_SOURCE,
     prefix: str = "gen",
 ) -> dict[str, int]:
-    """Write generated cases and their labels. Returns row counts."""
+    """Write generated cases and their labels; return row counts."""
     ensure_source(session, source_key)
     now = datetime.now(timezone.utc).isoformat()
 
@@ -81,8 +76,6 @@ def write_cases(
                 "category_key": case.category_key,
                 "source_key": source_key,
                 "provenance_key": "control",
-                # The varied indicator is the generator identity: one parametric
-                # generator, told which indicator to sweep.
                 "generator_key": case.indicator_key,
                 "external_id": external_id,
                 "created_at": now,
@@ -99,9 +92,6 @@ def write_cases(
                 "comparison_set_id": set_id,
                 "provenance_key": "control",
                 "labeller_key": f"parametric:{case.indicator_key}",
-                # A control label is a declared function of a declared range, so
-                # it means something on its own rather than only relative to the
-                # set it appears in.
                 "scale_semantics": "absolute_reference",
                 "method_note": (
                     f"All indicators ideal except {case.indicator_key}; band width "
@@ -133,7 +123,6 @@ def write_cases(
             )
             for indicator_key in category.token_order:
                 if registry.indicator(indicator_key).is_derived:
-                    # Recomputed from its sources when encoding, never stored.
                     continue
                 if indicator_key in alternative.values:
                     values.append(

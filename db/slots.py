@@ -1,15 +1,4 @@
-"""Append-only slot allocation.
-
-Every registry entity the model embeds owns an integer slot.  Slots are handed
-out in insertion order and never reused, so adding an indicator, a context or a
-stakeholder appends a row to an embedding table instead of shifting the meaning
-of the existing ones.  This is what makes "a new category is registry rows plus
-data" true at the level of the weights, not just at the level of the schema.
-
-Retiring an entity sets ``is_active = 0`` on its own table and leaves the slot
-burned.  Reusing a slot would silently hand one entity's learned behaviour to a
-different one.
-"""
+"""Append-only embedding slots: allocated once, never reused, burned on retirement."""
 
 from __future__ import annotations
 
@@ -20,7 +9,6 @@ from sqlalchemy.orm import Session
 
 from db.models import EmbeddingSlot
 
-#: The registry tables whose rows the model embeds.
 SLOTTED_TABLES = (
     "indicator_family",
     "indicator",
@@ -60,7 +48,6 @@ def allocate(session: Session, table_name: str, entity_key: str) -> int:
 
 
 def slot_of(session: Session, table_name: str, entity_key: str) -> int:
-    """Look up an existing slot, refusing to invent one."""
     row = session.get(EmbeddingSlot, (table_name, entity_key))
     if row is None:
         raise LookupError(f"no slot allocated for {table_name}.{entity_key}")
@@ -68,11 +55,7 @@ def slot_of(session: Session, table_name: str, entity_key: str) -> int:
 
 
 def max_slots(session: Session) -> dict[str, int]:
-    """Highest allocated slot per table, recorded with every registry release.
-
-    A checkpoint uses this to know how wide its embedding tables were, so a
-    later, larger registry can be loaded into it without guesswork.
-    """
+    """Highest allocated slot per table."""
     rows = session.execute(
         select(EmbeddingSlot.table_name, func.max(EmbeddingSlot.slot)).group_by(
             EmbeddingSlot.table_name
@@ -82,5 +65,4 @@ def max_slots(session: Session) -> dict[str, int]:
 
 
 def table_sizes(session: Session) -> dict[str, int]:
-    """Number of embedding rows required per table (highest slot plus one)."""
     return {table: highest + 1 for table, highest in max_slots(session).items()}

@@ -1,6 +1,3 @@
-"""The loss weights one decision as one decision, and one provenance as one
-provenance."""
-
 from __future__ import annotations
 
 import pytest
@@ -30,16 +27,7 @@ def _uniform(n, category="c", source="control"):
     return (source,) * n, (category,) * n
 
 
-# ---------------------------------------------------------------------------
-# Per-set behaviour
-# ---------------------------------------------------------------------------
-
-
 def test_pairwise_term_weights_sets_equally_regardless_of_size():
-    """A five-alternative decision has ten pairs and a two-alternative one has
-    one. Averaging within a set before combining across sets is what stops the
-    larger decision counting ten times as much.
-    """
     width = 5
     mask = _mask([2, 5], width)
 
@@ -69,7 +57,6 @@ def test_padding_never_forms_a_pair():
 
     scores = torch.zeros(1, width)
     scores[0, :2] = torch.tensor([0.8, 0.2])
-    # Absurd values in the padded slots must not matter.
     scores[0, 2:] = 99.0
 
     provenance, categories = _uniform(1)
@@ -80,8 +67,7 @@ def test_padding_never_forms_a_pair():
 def test_confidence_scales_the_pointwise_term():
     width = 2
     mask = _mask([2], width)
-    # Deliberately asymmetric: the two alternatives are wrong by different
-    # amounts, so reweighting them has somewhere to move the loss to.
+    # Unequal errors, so reweighting has somewhere to move the loss.
     pref = torch.tensor([[0.9, 0.4]])
     scores = torch.tensor([[0.5, 0.5]])
     provenance, categories = _uniform(1)
@@ -92,9 +78,7 @@ def test_confidence_scales_the_pointwise_term():
     unsure = pointwise_loss(
         scores, pref, torch.full((1, 2), 0.1), mask, provenance, categories, FLAT
     )
-    # Weights are renormalised within a set, so uniform confidence cannot change
-    # the result; what matters is that a low-confidence label does not dominate
-    # a confident one beside it.
+    # Confidence is renormalised within a set, so only a mix changes the loss.
     assert float(confident) == pytest.approx(float(unsure), abs=1e-6)
 
     mixed = pointwise_loss(
@@ -115,11 +99,6 @@ def test_unlabelled_alternatives_are_skipped():
     assert float(loss) == pytest.approx(0.0, abs=1e-6)
 
 
-# ---------------------------------------------------------------------------
-# Provenance weighting
-# ---------------------------------------------------------------------------
-
-
 def _degrade(scores, row):
     """Make one set's prediction clearly wrong, leaving the rest alone."""
     worse = scores.clone()
@@ -128,13 +107,7 @@ def _degrade(scores, row):
 
 
 def test_provenance_weights_apply_to_group_means_not_to_sets():
-    """A handful of expert cases must outweigh a corpus of generated ones.
-
-    Weighting each *set* by 0.2 would make an expert judgement count for less
-    than a control case, which is backwards. Weighting the *group* by 0.2 gives
-    the expert cases a fifth of the gradient however few of them there are --
-    which is the entire reason for collecting them.
-    """
+    """Per-set weighting would make an expert case count for less than a control case."""
     n_control = 60
     n = n_control + 1
     weights = LossWeights(
@@ -160,17 +133,10 @@ def test_provenance_weights_apply_to_group_means_not_to_sets():
         )
     )
 
-    # One expert set should move the loss far more than one control set, in
-    # proportion to how outnumbered it is.
     assert expert - base > (control - base) * 10
 
 
 def test_group_weighting_renormalises_over_what_the_batch_contains():
-    """A batch with no expert cases must not produce a smaller gradient.
-
-    It should simply be decided by the provenances it does have, rather than
-    silently losing the missing group's share of the weight.
-    """
     weights = LossWeights(
         provenance={"c": {"control": 0.4, "llm": 0.4, "expert": 0.2}}
     )
@@ -188,7 +154,6 @@ def test_group_weighting_renormalises_over_what_the_batch_contains():
 
 
 def test_categories_are_averaged_not_summed():
-    """Adding a category must not inflate the loss."""
     weights = LossWeights(
         provenance={
             "a": {"control": 1.0},
@@ -216,11 +181,6 @@ def test_provenance_weights_come_from_the_registry(registry, category_key):
         assert weights.weight_for(category_key, provenance) == pytest.approx(value)
 
 
-# ---------------------------------------------------------------------------
-# Composite
-# ---------------------------------------------------------------------------
-
-
 def test_composite_reports_its_terms_separately():
     width = 3
     mask = _mask([3], width)
@@ -239,11 +199,6 @@ def test_composite_reports_its_terms_separately():
 
 
 def test_reported_provenance_losses_are_unweighted():
-    """The per-provenance numbers say how well each source is fitted.
-
-    Mixing the weighting into them would make the report answer a different
-    question from the one it appears to answer.
-    """
     weights = LossWeights(
         provenance={"c": {"control": 0.4, "expert": 0.2}}
     )
@@ -261,8 +216,4 @@ def test_reported_provenance_losses_are_unweighted():
 
 
 def test_permutation_loss_is_off_by_default():
-    """It separates near-ties, which is the opposite of the objective here.
-
-    Implemented so the ablation can be run, never mixed in unless asked for.
-    """
     assert LossWeights().listwise == 0.0

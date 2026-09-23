@@ -1,23 +1,4 @@
-"""Evaluation metrics.
-
-The two gating metrics answer the two questions the score semantics raise:
-
-* **Gap fidelity** -- are the differences between alternatives right? This is
-  the primary gate, because the difference between two options is what a
-  specifier actually acts on.
-* **Band placement** -- does the whole shortlist land at the right height? A
-  model that orders a poor shortlist perfectly but places it near the top has
-  failed at something that matters.
-
-Two more are reported and never gated:
-
-* **Top-1 agreement** -- the operational quantity, since a specifier picks one
-  product. Reported rather than gated because it is coarse and jumpy.
-* **Tie-tolerant rank correlation** -- with near-ties excused. Plain rank
-  correlation must not gate a build: two options genuinely at 0.87 and 0.88 will
-  sometimes swap, and that is not an error. Treating it as one would push the
-  model to separate things that are not separable.
-"""
+"""Evaluation metrics. Gap fidelity and band placement gate a release; the rest are reported."""
 
 from __future__ import annotations
 
@@ -93,11 +74,6 @@ def _grouped(predictions: Predictions) -> dict[int, tuple[np.ndarray, np.ndarray
     }
 
 
-# ---------------------------------------------------------------------------
-# Metrics
-# ---------------------------------------------------------------------------
-
-
 def gap_fidelity(predictions: Predictions) -> float:
     """Mean absolute error of within-set score differences. Lower is better."""
     errors = []
@@ -133,7 +109,7 @@ def top1_agreement(predictions: Predictions) -> float:
         if len(predicted) < 2:
             continue
         total += 1
-        # A tie among the true best counts as agreement with any of them.
+        # Picking any of several tied best alternatives counts as agreement.
         best = actual.max()
         if actual[int(np.argmax(predicted))] >= best - 1e-9:
             hits += 1
@@ -141,7 +117,7 @@ def top1_agreement(predictions: Predictions) -> float:
 
 
 def tie_tolerant_tau(predictions: Predictions, epsilon: float = TIE_EPSILON) -> float:
-    """Rank correlation counting near-equal pairs as ties rather than errors."""
+    """Rank correlation that skips pairs whose labels are within ``epsilon``."""
     concordant = discordant = 0
     for predicted, actual in _grouped(predictions).values():
         if len(predicted) < 2:
@@ -193,21 +169,11 @@ def compute(predictions: Predictions) -> MetricSet:
     )
 
 
-# ---------------------------------------------------------------------------
-# Stratification
-# ---------------------------------------------------------------------------
-
-
 STRATA = ("category", "provenance", "context", "stakeholder", "set_size")
 
 
 def strata_of(prepared: Prepared, set_index: int, kind: str) -> tuple[str, ...]:
-    """The stratum labels a comparison set belongs to.
-
-    A set can belong to several at once -- two stakeholders, two contexts -- and
-    is counted under each, because the question a stratified report answers is
-    "does this cell degrade", not "which single bucket does this belong in".
-    """
+    """The stratum labels of a comparison set; a set with two contexts counts under both."""
     if kind == "category":
         return (prepared.category_keys[int(prepared.set_category[set_index])],)
     if kind == "provenance":
@@ -258,7 +224,6 @@ def stratified(
 
 
 def _slot_names(registry) -> dict[str, str]:
-    """Human-readable labels for slot-addressed strata."""
     names = {}
     for key, context in registry.contexts.items():
         names[f"context_slot={context.slot}"] = key
@@ -270,12 +235,7 @@ def _slot_names(registry) -> dict[str, str]:
 def family_breakdown(
     predictions: Predictions, prepared: Prepared, registry
 ) -> dict[str, dict[str, float]]:
-    """Per-indicator-family error, for control cases whose varied indicator is known.
-
-    This is the diagnostic that will matter when a category is added: it says
-    whether the new category is failing on performance specifically, rather than
-    failing in general.
-    """
+    """Metrics per indicator family, over control cases whose varied indicator is known."""
     rows_by_family: dict[str, list[int]] = defaultdict(list)
     for row, index in enumerate(predictions.set_index):
         generator = prepared.set_generator[int(index)]

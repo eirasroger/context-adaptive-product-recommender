@@ -1,11 +1,4 @@
-"""Assemble and render an evaluation report.
-
-Also holds the release gate: a build is acceptable when the primary metrics are
-within threshold, every behavioural assertion passes, and no stratum has
-degraded against the previous release beyond tolerance. Thresholds are left
-unset until the model has been validated -- an invented number that everything
-passes is worse than no gate at all, because it looks like one.
-"""
+"""Evaluation report rendering and the release gate."""
 
 from __future__ import annotations
 
@@ -48,22 +41,13 @@ def evaluate_all(
     }
 
 
-# ---------------------------------------------------------------------------
-# Gating
-# ---------------------------------------------------------------------------
-
-
 @dataclass
 class Thresholds:
-    """What a build must clear to be releasable.
-
-    Left as None until the model is validated. A threshold nobody has justified
-    is a gate that always opens.
-    """
+    """What a build must clear to be releasable. None leaves a metric ungated."""
 
     max_gap_fidelity: float | None = None
     max_band_placement: float | None = None
-    #: How much worse any single stratum may get against the previous release.
+    #: How much worse any stratum may get against the previous release.
     max_stratum_regression: float | None = None
     require_behavioural: bool = True
 
@@ -125,10 +109,6 @@ def gate(
 
     return GateResult(passed=not reasons, reasons=reasons)
 
-
-# ---------------------------------------------------------------------------
-# Rendering
-# ---------------------------------------------------------------------------
 
 HEADERS = (
     ("n_sets", "sets"),

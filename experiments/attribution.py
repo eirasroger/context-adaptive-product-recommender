@@ -1,10 +1,4 @@
-"""Which indicators drive the shipped model's scores, measured by withholding them.
-
-    python -m experiments.attribution
-
-Reads the committed test fold, so it runs from a clean checkout. Writes figures
-and the tables behind them to experiments/figures/, which the README shows.
-"""
+"""Which indicators drive the shipped model's scores, measured by withholding them."""
 
 from __future__ import annotations
 
@@ -61,11 +55,6 @@ class Effect:
         return self.importance * self.direction
 
 
-# ---------------------------------------------------------------------------
-# Measurement
-# ---------------------------------------------------------------------------
-
-
 def _item(registry: Registry, shortlist: Shortlist) -> dict:
     encoded = encode_set(
         registry,
@@ -115,8 +104,7 @@ def withhold(alternative: AlternativeInput, indicator_key: str) -> AlternativeIn
 
 
 def supplied_indicators(registry: Registry, shortlist: Shortlist) -> list[str]:
-    """Indicators some alternative has a value for. Derived ones are recomputed
-    from their sources, so withholding one alone measures nothing."""
+    """Indicators some alternative has a value for, excluding derived ones."""
     return [
         key
         for key in registry.category(shortlist.category_key).token_order
@@ -128,11 +116,7 @@ def supplied_indicators(registry: Registry, shortlist: Shortlist) -> list[str]:
 def attribute_many(
     model, registry: Registry, shortlists: Sequence[Shortlist], device: str = "cpu"
 ) -> list[dict[str, np.ndarray]]:
-    """Per shortlist and indicator, how far knowing it moves each alternative's score.
-
-    The indicator is withheld from every alternative at once and the shortlist
-    scored again. A positive shift means knowing the value raised the score.
-    """
+    """Per shortlist and indicator, the score shift from withholding it from every alternative."""
     variants: list[Shortlist] = []
     plan: list[list[str]] = []
     for shortlist in shortlists:
@@ -189,8 +173,7 @@ def summarise(
     shortlists: Sequence[Shortlist],
     attributions: Sequence[dict[str, np.ndarray]],
 ) -> list[Effect]:
-    """Importance is the mean absolute shift. Direction is the rank correlation
-    between an indicator's value and its shift: +1 means higher values helped."""
+    """Importance is the mean absolute shift; direction, the rank correlation of value and shift."""
     pooled: dict[str, tuple[list[float], list[float]]] = {}
     for shortlist, shifts in zip(shortlists, attributions):
         for key, delta in shifts.items():
@@ -221,8 +204,7 @@ def effects_by(
     conditions: Sequence[str],
     device: str = "cpu",
 ) -> list[Effect]:
-    """Re-run every shortlist with `field` set to each condition in turn,
-    keeping everything else as recorded."""
+    """Re-score every shortlist with ``field`` set to each condition in turn."""
     effects: list[Effect] = []
     for condition in conditions:
         varied = [replace(s, **{field: (condition,)}) for s in shortlists]
@@ -230,11 +212,6 @@ def effects_by(
             summarise(registry, condition, varied, attribute_many(model, registry, varied, device))
         )
     return effects
-
-
-# ---------------------------------------------------------------------------
-# Data
-# ---------------------------------------------------------------------------
 
 
 def load_shortlists(
@@ -277,12 +254,7 @@ def load_shortlists(
 def preference_floors(
     registry: Registry, snapshot_dir: Path, threshold: float = FLOOR
 ) -> dict[str, str]:
-    """Indicators where a single value sinks the preference to zero, with that value.
-
-    Read from the control cases, where every other indicator is held at its
-    ideal, so a near-zero label can only come from the swept indicator. Such an
-    indicator acts as a veto, and its withholding effect dwarfs every other.
-    """
+    """Indicators where one value sinks a control case's preference to zero, with that value."""
     import pandas as pd
 
     sets = pd.read_parquet(snapshot_dir / "sets.parquet")
@@ -323,10 +295,6 @@ def shap_samples(shortlists: Sequence[Shortlist], size: int = 60) -> list[dict]:
     ]
     return random.Random(0).sample(rows, min(size, len(rows)))
 
-
-# ---------------------------------------------------------------------------
-# Figures
-# ---------------------------------------------------------------------------
 
 SURFACE = "#fcfcfb"
 INK = "#0b0b0b"
@@ -510,8 +478,7 @@ def family_shares(
 def agreement(
     registry: Registry, pairs: Sequence[dict], masked: dict[str, str], title: str, path: Path
 ) -> dict[str, float]:
-    """Scatter of the two measures over the unmasked indicators. Both
-    correlations are returned, with and without the masked ones."""
+    """Plot withholding against SHAP and return their rank correlation."""
     plt = _style()
 
     x = np.array([p["withholding"] for p in pairs])
@@ -542,11 +509,6 @@ def agreement(
     return rho
 
 
-# ---------------------------------------------------------------------------
-# Run
-# ---------------------------------------------------------------------------
-
-
 def _write_csv(path: Path, rows: Sequence[dict]) -> None:
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
@@ -570,8 +532,7 @@ def _effect_rows(registry: Registry, effects: Sequence[Effect]) -> list[dict]:
 
 
 def family_table(checkpoint: Path) -> dict[str, Family]:
-    """Family names and order, which the checkpoint's registry blob carries and
-    the loaded Registry reduces to slots."""
+    """Family names and order, read from the checkpoint's registry blob."""
     import yaml
 
     payload = torch.load(checkpoint, map_location="cpu", weights_only=False)

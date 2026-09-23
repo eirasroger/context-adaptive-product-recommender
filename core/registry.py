@@ -1,13 +1,4 @@
-"""An immutable, in-memory view of the registry.
-
-Everything downstream -- encoding, training, evaluation, serving -- reads the
-registry through this object and never through the database directly. It can be
-built from a live database or rehydrated from a release's frozen serialisation,
-which is what lets a checkpoint reconstruct the exact semantics it was trained
-under even after the live registry has moved on.
-
-No category is named here. A category is a key that indexes into rows.
-"""
+"""Immutable in-memory registry, built from the live database or a frozen release."""
 
 from __future__ import annotations
 
@@ -21,11 +12,6 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
 WILDCARD = "*"
-
-
-# ---------------------------------------------------------------------------
-# Specification objects
-# ---------------------------------------------------------------------------
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,11 +52,7 @@ class IndicatorSpec:
 
 @dataclass(frozen=True, slots=True)
 class RangeSpec:
-    """The declared interval an indicator is normalised against.
-
-    Declared, never fitted, which is what decouples a checkpoint from whichever
-    dataset file happens to be on disk.
-    """
+    """The declared interval an indicator is normalised against."""
 
     ref_low: float
     ref_high: float
@@ -87,8 +69,7 @@ class MembershipSpec:
     relevance_mode: str
     direction_override: int | None
     reference_range: RangeSpec | None
-    #: ``sweep`` or ``exclude`` -- whether a control case may vary this
-    #: indicator alone, and therefore whether the behavioural suite gates on it.
+    #: ``sweep`` lets control cases vary this indicator alone; ``exclude`` keeps it off the gate.
     control_mode: str = "sweep"
     control_note: str | None = None
 
@@ -130,7 +111,7 @@ class StakeholderSpec:
     display_name: str
     definition_text: str
     domain_scope_text: str | None
-    #: generator input only, never a model input
+    #: read by the control-case generator only
     family_priorities: Mapping[str, float]
     indicator_priorities: Mapping[str, float]
 
@@ -147,15 +128,8 @@ class CategorySpec:
     members: Mapping[str, MembershipSpec]
     provenance_weights: Mapping[str, float]
     available_contexts: frozenset[str]
-    #: Indicator keys in slot order. Stable because slots are append-only, so a
-    #: later indicator is appended rather than inserted, and a token's position
-    #: never shifts under an existing checkpoint.
+    #: indicator keys in slot order, stable because slots are append-only
     token_order: tuple[str, ...]
-
-
-# ---------------------------------------------------------------------------
-# The registry
-# ---------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -169,8 +143,6 @@ class Registry:
     categories: Mapping[str, CategorySpec]
     table_sizes: Mapping[str, int]
     provenances: tuple[str, ...] = ()
-
-    # -- lookups -----------------------------------------------------------
 
     def category(self, key: str) -> CategorySpec:
         try:
@@ -192,23 +164,13 @@ class Registry:
             for level in indicator.levels
         }
 
-    # -- resolution --------------------------------------------------------
-
     def resolve_direction(
         self,
         category_key: str,
         indicator_key: str,
         active_contexts: Iterable[str],
     ) -> tuple[float, float]:
-        """The signed direction and priority for an indicator under a context.
-
-        Resolution order: a context declaration scoped to this category, then a
-        category-general declaration, then the category's own override, then the
-        indicator's default. With several contexts active the signed directions
-        are combined in proportion to their priorities and clipped, because two
-        requirements can genuinely pull the same indicator opposite ways and the
-        result should be the net pull rather than whichever was checked last.
-        """
+        """Signed direction and priority; opposing contexts net out by priority."""
         category = self.category(category_key)
         weighted = 0.0
         total_priority = 0.0
@@ -240,11 +202,6 @@ class Registry:
         indicator_key: str,
         active_contexts: Iterable[str],
     ) -> bool:
-        """Whether an indicator counts for this query.
-
-        Relevance is a property of the question being asked, not of the product,
-        which is why it is computed here rather than stored against a value.
-        """
         member = self.category(category_key).members.get(indicator_key)
         if member is None:
             return False
@@ -288,11 +245,6 @@ class Registry:
         return None
 
 
-# ---------------------------------------------------------------------------
-# Construction
-# ---------------------------------------------------------------------------
-
-
 def _slot_map(rows: Iterable) -> dict[str, dict[str, int]]:
     out: dict[str, dict[str, int]] = {}
     for row in rows:
@@ -305,11 +257,6 @@ def from_document(
     version: str | None = None,
     content_hash: str | None = None,
 ) -> Registry:
-    """Build a registry from an exported document.
-
-    This is the path a checkpoint takes: the release blob is stored with the
-    trained weights, so the semantics travel with the model.
-    """
     slot_tables = _slot_map(document.get("embedding_slot", []))
     families = {row["key"]: slot_tables["indicator_family"][row["key"]] for row in document["indicator_family"]}
 
@@ -492,7 +439,7 @@ def _derive_available(
     default_context_key: str,
     overrides: Mapping[str, bool],
 ) -> set[str]:
-    """Which contexts are live for a category -- derived, not maintained."""
+    """Contexts a category holds the indicators for, plus its baseline and overrides."""
     available: set[str] = set()
     for key, context in contexts.items():
         if key in overrides:
@@ -516,7 +463,7 @@ def _derive_available(
 
 
 def from_session(session: Session, version: str | None = None) -> Registry:
-    """Build from the live database, validating first."""
+    """Build from the live database after validating it."""
     from db import release as release_module
     from db import validate
 

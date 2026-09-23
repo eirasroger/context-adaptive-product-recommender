@@ -1,9 +1,4 @@
-"""Training configuration.
-
-Configuration is data, not constants in a module: a run is defined by a YAML
-file that is committed alongside its result, so "what produced this number" has
-an answer that does not involve reading a diff of somebody's editor session.
-"""
+"""Training configuration, loaded from YAML and saved with each run."""
 
 from __future__ import annotations
 
@@ -25,8 +20,7 @@ class OptimConfig:
     patience: int = 6
     min_delta: float = 1e-5
     seed: int = 0
-    #: Staging batches in pinned memory only helps when there is a device to
-    #: copy them to; on CPU it is pure overhead, so it follows the device.
+    #: applies on CUDA only
     pin_memory: bool = True
     num_workers: int = 0
 
@@ -55,8 +49,7 @@ class ArchConfig:
 class TrainConfig:
     name: str = "default"
     db: str | None = None
-    #: Pin a release to reproduce an old run. Left out, the newest release is
-    #: resolved at run time and written back, so a config cannot go stale.
+    #: None follows the newest release, resolved at run time and recorded with the run.
     registry_version: str | None = None
     snapshot: str | None = None
     split_key: str = "default"

@@ -1,20 +1,5 @@
-# Application contexts.
-#
-# A context is both a declaration and a learned entity. The declarations below
-# carry cheap, uncontroversial domain knowledge -- which indicators a
-# requirement reaches into, and in which direction. How much that requirement
-# outweighs sustainability, cost and stakeholder priority is left to the model.
-#
-# Declarations name INDICATORS, not categories. That is what makes a context's
-# availability for a category derived rather than maintained: a context is live
-# for a category when that category holds the indicators the context points at,
-# and inert when it does not. Set `is_required` on a declaration when the
-# context is meaningless without that particular indicator -- that is the switch
-# that makes a requirement automatically inert outside the categories it applies
-# to.
-#
-# `category_key` defaults to the wildcard, meaning every category. Giving it a
-# real category key overrides the general row for that category alone.
+# Application contexts. A context is available to a category that holds the indicators it declares.
+# category_key defaults to every category; is_required makes the context need that indicator.
 
 context:
   - key: standard_structural

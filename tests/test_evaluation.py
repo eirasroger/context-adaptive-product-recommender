@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import json
@@ -67,7 +66,6 @@ def test_the_shipped_model_reproduces_its_recorded_metrics(scored, baseline):
 
 
 def test_no_stratum_drifts_from_what_was_recorded(scored, baseline):
-    """An overall average hides one context or one stakeholder moving."""
     for kind, cells in baseline["stratified"].items():
         assert set(scored["stratified"][kind]) == set(cells), kind
         for label, cell in cells.items():

@@ -1,14 +1,6 @@
-"""Deployment entry point.
+"""Deployment entry point. Vercel routes every request to the top-level ``app`` in ``app.py``.
 
-Vercel's Python runtime looks for a top-level `app` in a file named `app.py`,
-`index.py`, `server.py`, `main.py` or `asgi.py` at the project root, and routes
-every request to it. Keeping the name and the variable is the whole
-configuration; no rewrite rules are involved, and adding any would replace the
-request path before the application sees it.
-
-The served model is serve/release/model.onnx, which carries its registry, so no
-database is involved at request time. The build command in vercel.json builds the frontend into frontend/dist
-before this module is imported, and create_app fails if the build is missing.
+A rewrite rule in vercel.json would change the request path before the app sees it.
 """
 
 from __future__ import annotations

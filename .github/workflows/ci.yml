@@ -1,5 +1,3 @@
-
-
 name: CI
 
 on:
@@ -32,8 +30,7 @@ jobs:
       - name: Lint
         run: python -m pyflakes core db eval ingest model serve snapshot tests train app.py
 
-      # One unimportable module would otherwise abort collection and hide the
-      # result of every other test. The run still fails.
+      # One unimportable module still fails the run without hiding every other result.
       - name: Test
         run: python -m pytest tests -q --continue-on-collection-errors
 

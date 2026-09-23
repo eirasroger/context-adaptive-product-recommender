@@ -1,38 +1,4 @@
-"""Behavioural assertions: the hard gate.
-
-Metrics tell you how close the model is on average. These tell you whether it
-learned the right thing at all, and they are pass or fail rather than a number
-to watch drift.
-
-Every assertion is generated from the registry, so they cover whatever the
-registry currently declares. Add an indicator and it gets swept; add a context
-and the sign-flip checks extend to it. Nothing here is written per category.
-
-Three kinds:
-
-* **Monotonicity** -- holding everything else ideal, does the score move the way
-  the registry says this indicator should? Counted as inverted pairs over the
-  pairs the labels actually separate, with a small budget. A swap between two
-  points the registry declares near-equivalent is acceptable, and so is one
-  local wobble in a long sweep. A pattern of inversions is what this catches.
-* **Sign flip** -- when two contexts declare opposite directions over the same
-  indicator, does the response actually invert? This is the sharpest available
-  evidence that the model learned context rather than memorised a direction.
-* **Disqualification** -- does a level the registry marks as never-selectable
-  actually score below the alternatives around it?
-
-Each assertion returns one of three verdicts, not two. **Only a wrong answer
-fails the gate.** An indicator the model barely responds to is reported
-separately as ``no_response``, because that is a coverage problem rather than a
-correctness one -- almost always it means nothing in the training data ever
-varied that indicator on its own -- and folding it into the failures would hide
-one problem inside another that needs a completely different fix.
-
-Indicators the registry marks as not sweepable are not asserted on at all. If a
-declared direction does not hold across the whole declared range, there is
-nothing to compare the model against, and inventing an expectation would be
-worse than admitting the gap.
-"""
+"""The behavioural gate: assertions generated from the registry."""
 
 from __future__ import annotations
 
@@ -51,34 +17,15 @@ from ingest.generators import parametric
 
 DEFAULT_STEPS = 9
 
-#: Share of decisive pairs that may come out in the wrong order.
-#:
-#: Expressed as a rate so it scales with sweep length. At the default nine
-#: steps a sweep has about thirty-six decisive pairs, so this allows a single
-#: inverted pair and fails on two. One inversion is a local wobble somewhere in
-#: the middle of a range. Two or more says the relationship itself came out
-#: wrong, which is what this tier exists to catch.
+#: Share of decisive pairs allowed in the wrong order: one of about 36 at nine steps.
 MAX_INVERSION_RATE = 0.05
 
-#: How far the score must actually move across a sweep before the *direction* of
-#: the response means anything at all. Below this the model is not saying
-#: anything about the indicator, and rank correlation would turn numerical noise
-#: into a confident verdict either way.
+#: Score range a sweep must span before its direction is judged.
 MIN_RESPONSE = 0.01
 
-#: Label difference below which two points on a sweep count as tied.
-#:
-#: The registry can declare two levels as nearly equivalent -- adjacent
-#: certification tiers, say -- and where it does, the generated labels for them
-#: differ by less than the model can meaningfully resolve. Demanding a strict
-#: ordering there would contradict the objective: two alternatives that really
-#: are a hair apart should be represented as a hair apart, and a swap between
-#: them is not an error. The tolerance therefore follows the declared geometry
-#: -- declare two levels as close, and the gate stops requiring them to be
-#: separated.
+#: Label gap below which two sweep points count as tied, such as near-equivalent levels.
 TIE_EPSILON = 0.03
 
-#: The three things an assertion can conclude.
 PASS = "pass"
 FAIL = "fail"
 NO_RESPONSE = "no_response"
@@ -86,14 +33,7 @@ NO_RESPONSE = "no_response"
 
 @dataclass
 class Assertion:
-    """One statement about the model's behaviour, with three possible verdicts.
-
-    ``no_response`` is deliberately not a failure. It says the model barely
-    moves when this indicator moves, which is a different problem from moving
-    the wrong way -- usually it means nothing in the training data ever isolated
-    the indicator. Reporting it as a failure would hide a coverage gap inside a
-    correctness signal, and the two need different fixes.
-    """
+    """One statement about the model. ``no_response`` marks a coverage gap and passes."""
 
     kind: str
     category: str
@@ -151,32 +91,21 @@ class Suite:
 
     @property
     def flat(self) -> list[Assertion]:
-        """Assertions that could not be judged because the model did not move."""
+        """Assertions the model did not move enough to judge."""
         return [a for a in self.assertions if a.verdict == NO_RESPONSE]
 
     @property
     def passed(self) -> bool:
-        """Only a wrong answer fails the gate. An unanswered one is reported."""
+        """Only a wrong answer fails the gate."""
         return not self.failures
 
     def summary(self) -> dict[str, dict[str, int]]:
-        """Count assertions per kind, keyed by the verdict constants themselves.
-
-        Keyed on ``PASS``/``FAIL``/``NO_RESPONSE`` rather than on hand-written
-        words, so a verdict can never be counted under a bucket that does not
-        exist.
-        """
         counts: dict[str, dict[str, int]] = defaultdict(
             lambda: {PASS: 0, FAIL: 0, NO_RESPONSE: 0}
         )
         for assertion in self.assertions:
             counts[assertion.kind][assertion.verdict] += 1
         return dict(counts)
-
-
-# ---------------------------------------------------------------------------
-# Running probes through the model
-# ---------------------------------------------------------------------------
 
 
 @torch.no_grad()
@@ -186,7 +115,7 @@ def score_case(
     case: parametric.ProbeCase,
     device: str | torch.device = "cpu",
 ) -> np.ndarray:
-    """Score one generated case, using the same encoder serving uses."""
+    """Score one generated case through the serving encoder."""
     encoded = encode_set(
         registry,
         case.category_key,
@@ -218,18 +147,7 @@ def count_inversions(
     observed: Sequence[float],
     epsilon: float = TIE_EPSILON,
 ) -> tuple[int, int]:
-    """Count pairs that came out in the wrong order, over the pairs that count.
-
-    Returns the number of inverted pairs and the number of decisive ones. A pair
-    whose expected values sit within ``epsilon`` of each other is skipped: the
-    registry declared those two points near-equivalent, so either order is
-    acceptable and requiring one would push the model to separate things that
-    belong together.
-
-    Counting pairs keeps the verdict legible. "Two of thirty-six pairs inverted"
-    says what happened; a correlation coefficient has to be decoded first, and
-    its scale shifts with the length of the sweep.
-    """
+    """Inverted and decisive pair counts; pairs expected within ``epsilon`` are skipped."""
     expected = np.asarray(expected, dtype=float)
     observed = np.asarray(observed, dtype=float)
     if len(expected) < 2:
@@ -247,11 +165,6 @@ def count_inversions(
     return int(disagree.sum()), int(decisive.sum())
 
 
-# ---------------------------------------------------------------------------
-# The assertions
-# ---------------------------------------------------------------------------
-
-
 def monotonicity_assertions(
     model,
     registry: Registry,
@@ -261,14 +174,7 @@ def monotonicity_assertions(
     threshold: float = MAX_INVERSION_RATE,
     device: str | torch.device = "cpu",
 ) -> list[Assertion]:
-    """Sweep each indicator the registry declares safe to sweep, and check the
-    response follows the declared direction.
-
-    ``parametric.varied_indicators`` already drops indicators the registry marks
-    as not sweepable, so an indicator whose direction does not hold across its
-    range is never asserted on. That is the point: there would be nothing to
-    compare the model against.
-    """
+    """Sweep each sweepable indicator and check the score follows its declared direction."""
     out: list[Assertion] = []
     category = registry.category(category_key)
 
@@ -289,8 +195,7 @@ def monotonicity_assertions(
             )
             scores = score_case(model, registry, case, device)
 
-            # Establish that the model moved before judging which way it moved.
-            # Rank correlation over a flat response is noise wearing a verdict.
+            # A flat response has no direction to judge.
             response = float(np.max(scores) - np.min(scores))
             inversions, decisive = count_inversions(case.prefs, scores)
 
@@ -328,11 +233,7 @@ def sign_flip_assertions(
     steps: int = DEFAULT_STEPS,
     device: str | torch.device = "cpu",
 ) -> list[Assertion]:
-    """Find indicators two contexts pull opposite ways, and check they invert.
-
-    The pairs are discovered from the declarations rather than listed, so this
-    grows with the registry.
-    """
+    """Find indicators two contexts pull opposite ways, and check the response inverts."""
     out: list[Assertion] = []
     category = registry.category(category_key)
     contexts = sorted(category.available_contexts)
@@ -343,10 +244,7 @@ def sign_flip_assertions(
         if not category.members[indicator_key].is_sweepable:
             continue
 
-        # Both contexts must actually *declare* over the indicator. Setting a
-        # declared direction against an indicator's undeclared default is not a
-        # context inversion: the second context says nothing about it, so there
-        # is no claim to test and no reason to expect a response.
+        # Only declared directions count; an indicator's default makes no claim about a context.
         directions: dict[str, float] = {}
         for context_key in contexts:
             declaration = (
@@ -379,9 +277,7 @@ def sign_flip_assertions(
                     stakeholder_key,
                 )
                 scores = score_case(model, registry, case, device)
-                # Slope of the response against the raw value, not against
-                # quality: quality already has the direction folded in, which
-                # would make the flip untestable.
+                # Against the raw value: quality already folds in the direction.
                 responses.append(float(scores[-1] - scores[0]))
 
             magnitude = min(abs(responses[0]), abs(responses[1]))

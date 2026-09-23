@@ -1,5 +1,3 @@
-"""A public deployment refuses to burn unbounded compute for one caller."""
-
 from __future__ import annotations
 
 import pytest

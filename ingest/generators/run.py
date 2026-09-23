@@ -1,16 +1,4 @@
-"""Generate control cases from the registry and write them to the corpus.
-
-Used to fill coverage gaps. An indicator that nothing in the corpus ever varies
-on its own gives the model no isolated signal for it, so the model learns to
-ignore it -- which the behavioural suite reports as no measurable response.
-Generating cases for it is the fix, and it needs no new code per indicator
-because the sweep comes from the registry.
-
-Only indicators the registry declares sweepable are eligible. One whose declared
-direction does not hold across its whole range is refused rather than quietly
-skipped: asking for it means the caller believes something the registry denies,
-and that is worth an error rather than a silent omission.
-"""
+"""Generate control cases from the registry and write them to the corpus."""
 
 from __future__ import annotations
 
@@ -27,18 +15,15 @@ from db.session import create_db_engine, session_scope
 from ingest.generators import parametric
 from ingest.generators.writer import GENERATED_SOURCE, write_cases
 
-#: Matches the shape of decisions in the published corpus: a shortlist is a
-#: handful of options, not a catalogue.
 DEFAULT_MIN_ALTS = 2
 DEFAULT_MAX_ALTS = 5
 
-#: Wobble applied to the indicators being held at their ideal, so the model
-#: cannot learn "everything is exactly ideal" as a shortcut for the label.
+#: Noise on the indicators held at their ideal, so exact ideals are no shortcut to the label.
 DEFAULT_JITTER = 0.04
 
 
 def existing_coverage(session: Session, category_key: str) -> Counter:
-    """How many control sets exist per generator key for a category."""
+    """Control sets per generator key for a category."""
     rows = session.execute(
         select(ComparisonSet.generator_key, func.count())
         .where(
@@ -52,13 +37,7 @@ def existing_coverage(session: Session, category_key: str) -> Counter:
 
 
 def uncovered(registry: Registry, session: Session, category_key: str) -> list[str]:
-    """Sweepable indicators no control set currently varies on its own.
-
-    Matched on the generator key. A dataset ingested from outside may label its
-    generators with names of its own that do not correspond to indicator keys,
-    in which case an indicator can look uncovered when it is not -- so the
-    resolved list is always printed before anything is generated.
-    """
+    """Sweepable indicators that no control set's generator key names."""
     covered = set(existing_coverage(session, category_key))
     return [key for key in registry.sweepable(category_key) if key not in covered]
 
@@ -70,12 +49,7 @@ def sample_values(
     n_alternatives: int,
     rng: random.Random,
 ) -> list:
-    """Values for one case: spread across the declared range, order shuffled.
-
-    Anchoring the extremes guarantees the case actually spans the range rather
-    than clustering by chance, which is what makes the relationship learnable
-    from a handful of alternatives.
-    """
+    """Values for one case, anchored at both ends of the declared range, in shuffled order."""
     indicator = registry.indicator(indicator_key)
     if indicator.is_scale:
         levels = [level.key for level in indicator.levels]
@@ -93,8 +67,6 @@ def sample_values(
     values = [low, high][:n_alternatives]
     while len(values) < n_alternatives:
         values.append(low + span * rng.random())
-    # Nudge the anchors inward a little so every case is not identical at the
-    # endpoints.
     values = [
         min(high, max(low, value + rng.uniform(-0.02, 0.02) * span))
         for value in values
@@ -120,8 +92,6 @@ def generate(
 
     cases: list[parametric.ProbeCase] = []
     for indicator_key in indicators:
-        # Only contexts under which this indicator is both relevant and
-        # directed; elsewhere the sweep would assert nothing.
         usable = [
             context_key
             for context_key in sorted(category.available_contexts)

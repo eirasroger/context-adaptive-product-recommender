@@ -1,8 +1,7 @@
 
 -r requirements.txt
 
-# The CPU wheel is pinned explicitly. Without the index URL, pip resolves to the
-# CUDA build, which is roughly 4.4 GB and useless without a GPU.
+# Without this index, pip resolves to the 4.4 GB CUDA build.
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.11.0+cpu
 
