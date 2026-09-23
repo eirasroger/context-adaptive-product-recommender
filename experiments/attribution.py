@@ -3,7 +3,7 @@
     python -m experiments.attribution
 
 Reads the committed test fold, so it runs from a clean checkout. Writes figures
-and the tables behind them to runs/analysis/.
+and the tables behind them to experiments/figures/, which the README shows.
 """
 
 from __future__ import annotations
@@ -23,9 +23,11 @@ from core.dataset import collate
 from core.encoding import AlternativeInput, encode_set
 from core.registry import Registry
 
-SNAPSHOT = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "snapshot"
-CHECKPOINT = Path(__file__).resolve().parents[1] / "serve" / "release" / "model.pt"
-OUTPUT = Path("runs") / "analysis"
+ROOT = Path(__file__).resolve().parents[1]
+SNAPSHOT = ROOT / "tests" / "fixtures" / "snapshot"
+CHECKPOINT = ROOT / "serve" / "release" / "model.pt"
+OUTPUT = ROOT / "experiments" / "figures"
+SUMMARY = "summary.json"
 FLOOR = 0.05
 
 
@@ -580,6 +582,11 @@ def family_table(checkpoint: Path) -> dict[str, Family]:
     }
 
 
+def _relative(path: Path) -> str:
+    path = Path(path).resolve()
+    return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else str(path)
+
+
 def run(
     checkpoint: Path = CHECKPOINT,
     snapshot_dir: Path = SNAPSHOT,
@@ -590,6 +597,7 @@ def run(
     device: str = "cpu",
 ) -> dict:
     from model import checkpoint as checkpoint_module
+    from serve.release import digest
 
     model, meta, _ = checkpoint_module.load(checkpoint, device=device)
     registry = checkpoint_module.load_registry(checkpoint)
@@ -600,9 +608,10 @@ def run(
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     report: dict = {
-        "checkpoint": str(checkpoint),
+        "checkpoint": _relative(checkpoint),
+        "model_sha256": digest(Path(checkpoint)),
         "registry_version": meta.registry_version,
-        "snapshot": str(snapshot_dir),
+        "snapshot": _relative(snapshot_dir),
         "seed": seed,
         "masked": masked,
         "categories": {},
@@ -665,7 +674,7 @@ def run(
             )
         report["categories"][category_key] = summary
 
-    (out / "summary.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    (out / SUMMARY).write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report
 
 

@@ -5,6 +5,8 @@ decision. You give it two to five candidate products, the application they are
 for, and whose priorities count. It returns a score between 0 and 1 for each
 candidate.
 
+**Live at <https://context-adaptive-product-recommende.vercel.app>.**
+
 Concrete is the first product category. The design goal is that further
 categories, such as facade systems, foundations or taps, are added as data in a
 registry, with the model code left untouched.
@@ -252,34 +254,49 @@ from that record, or if this table disagrees with it.
 relies on. For each shortlist it withholds one indicator from every
 alternative, scores the shortlist again, and records how far each score moved.
 Withholding a value is a state the model was trained on, so the measurement
-never feeds it an invented number.
-
-```bash
-python -m experiments.attribution
-```
-
-It reads the committed test fold, samples 300 shortlists labelled by a language
-model or an expert, and writes four figures with the tables behind them to
-`runs/analysis/`. Each shortlist is re-scored under every context and then for
-every stakeholder, with everything else kept as recorded.
-
-| Figure | What it shows |
-|---|---|
-| `by-context` | Each indicator's effect under each context. Colour combines importance with the learned direction; `+` and `−` mark what the registry declares. Density should flip between acoustic and thermal insulation. |
-| `by-stakeholder` | The same for each stakeholder archetype. A cost-conscious developer should lean on cost, a circular-economy advocate on circularity. |
-| `family-share` | The share of the total effect each indicator family accounts for, per context and per stakeholder. |
-| `shap-agreement` | Withholding against SHAP for 30 alternatives, as a check on the method. |
+never feeds it an invented number. The figures below come from 300 test
+shortlists labelled by a language model or an expert, each re-scored under
+every context and then for every stakeholder, with everything else kept as
+recorded.
 
 The figures mask any indicator with a veto value: one value that sinks the
 preference to 0 on its own. The script finds these in the control cases, where
 every other indicator sits at its ideal. For concrete that is the health score,
 whose lowest level (hazardous substances present) scores 0 while every other
-indicator's worst value still scores above 0.4. Left in, its effect is about
-half of the total and hides everything else. Each caption names what was
-masked and why, and the CSV tables keep the masked rows.
+indicator's worst value still scores above 0.4. Left in, it accounts for about
+half the total effect and hides everything else. The tables beside the figures
+keep the masked rows.
 
-`--sets`, `--shap` and `--seed` change the sample, and `--shap 0` skips the
-slow SHAP step. The full run takes about three minutes on a CPU.
+**By context.** Colour combines how much an indicator matters with the
+direction the model learned; `+` and `−` mark the direction the registry
+declares. Density should raise the score for acoustic insulation and lower it
+for thermal insulation.
+
+![Indicator effects by context](experiments/figures/concrete-by-context.png)
+
+**By stakeholder.** Each archetype should lean on the families it prioritises.
+
+![Indicator effects by stakeholder](experiments/figures/concrete-by-stakeholder.png)
+
+**Share per family.** The same effects summed per indicator family.
+
+![Share of the effect per family](experiments/figures/concrete-family-share.png)
+
+**Against SHAP.** A check on the method: withholding and SHAP should rank the
+same indicators as important.
+
+![Withholding compared with SHAP](experiments/figures/concrete-shap-agreement.png)
+
+To regenerate the figures and their tables in `experiments/figures/`:
+
+```bash
+python -m experiments.attribution
+```
+
+The full run takes about three minutes on a CPU; `--shap 0` skips the SHAP
+step. `summary.json` records the checkpoint the figures describe, and a test
+fails when that differs from the shipped model, so the figures are rerun after
+every promotion or restamp.
 
 ## From registry to deployment
 
@@ -319,25 +336,14 @@ tests/         the test suite, with its own small evaluation fixture
 No category name may appear in `model/`, `core/` or `train/`. A test enforces
 this.
 
-## Quick start
+## Using the service
 
-The shipped model runs from a fresh clone with the serving dependencies alone:
-
-```bash
-pip install -r requirements.txt
-uvicorn serve.api:app
-```
-
-Open <http://127.0.0.1:8000/> for the comparison page. Scoring is rate limited
-by default; set `RECOMMENDER_RATE_LIMIT=0` and `RECOMMENDER_RATE_LIMIT_TOTAL=0`
-to lift the limit for local work.
-
-A scoring request looks like this:
+The comparison page is at
+<https://context-adaptive-product-recommende.vercel.app>. The API is served
+from the same address. A scoring request looks like this:
 
 ```bash
-curl -X POST http://127.0.0.1:8000/score \
-  -H "Content-Type: application/json" \
-  -d '{
+curl -X POST https://context-adaptive-product-recommende.vercel.app/score   -H "Content-Type: application/json"   -d '{
     "category": "concrete",
     "context": ["acoustic_insulation"],
     "stakeholders": ["cost_conscious_developer"],
@@ -352,6 +358,8 @@ Each result carries a score, a rank, the indicators left unknown and any
 disqualifying levels. The response also echoes the functional unit, the
 registry version, the model's snapshot hash and the eligibility assumption.
 Indicator keys, units and ranges come from `GET /categories/concrete/indicators`.
+The routes that run the model accept 10 calls a minute per caller; see
+[Limits](#limits-on-a-public-deployment).
 
 ## The comparison page
 
@@ -392,6 +400,17 @@ declares. Every figure comes from the real model; nothing is sampled.
 The last three produce the data behind figures and have no page of their own.
 The committed OpenAPI schema lives in `tests/contracts/openapi.json`, and a test
 fails when the live schema differs from it.
+
+## Running locally
+
+The shipped model runs from a fresh clone with the serving dependencies alone:
+
+```bash
+pip install -r requirements.txt
+RECOMMENDER_RATE_LIMIT=0 RECOMMENDER_RATE_LIMIT_TOTAL=0 uvicorn serve.api:app
+```
+
+The page is then at <http://127.0.0.1:8000/>, with the rate limit lifted.
 
 ## Rebuilding from source
 
@@ -505,7 +524,8 @@ CPU build of PyTorch.
 On one CPU, a scoring call takes about 10 ms, a comparison about 45 ms, and
 the process holds about 650 MB of memory. It needs no GPU and no database server.
 
-- **Vercel.** `app.py` and `vercel.json` are the whole configuration.
+- **Vercel.** The live deployment. Vercel builds production from the GitHub
+  repository; `app.py` and `vercel.json` are the whole configuration.
 - **Container.** The `Dockerfile` builds a serving image that listens on
   `PORT`, 7860 by default, which suits Hugging Face Spaces.
 
