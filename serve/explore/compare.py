@@ -25,6 +25,7 @@ import numpy as np
 
 from core.encoding import AlternativeInput
 from core.registry import Registry
+from core.scoring import Scorer
 from serve.explore.analysis import score, score_many
 
 #: A gap change below this is noise from the model rather than an effect.
@@ -174,19 +175,18 @@ def _wins(
 
 
 def compare(
-    model,
+    scorer: Scorer,
     registry: Registry,
     category_key: str,
     alternatives: Sequence[AlternativeInput],
     context_keys: Sequence[str],
     stakeholder_keys: Sequence[str],
-    device: str = "cpu",
 ) -> dict:
     if len(alternatives) < 2:
         raise ValueError("a comparison needs at least two alternatives")
 
     scores = score(
-        model, registry, category_key, alternatives, context_keys, stakeholder_keys, device
+        scorer, registry, category_key, alternatives, context_keys, stakeholder_keys
     )
     lead = int(np.argmax(scores))
     leader = alternatives[lead]
@@ -215,12 +215,12 @@ def compare(
                 variants.append(shortlist)
 
             lead_after = score_many(
-                model, registry, category_key, variants, context_keys,
-                stakeholder_keys, lead, device,
+                scorer, registry, category_key, variants, context_keys,
+                stakeholder_keys, lead,
             )
             rival_after = score_many(
-                model, registry, category_key, variants, context_keys,
-                stakeholder_keys, index, device,
+                scorer, registry, category_key, variants, context_keys,
+                stakeholder_keys, index,
             )
 
             for key, new_gap in zip(differing, lead_after - rival_after):

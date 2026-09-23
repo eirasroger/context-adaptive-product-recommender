@@ -6,8 +6,8 @@ model ranks options that are assumed to have already passed regulatory
 prefiltering and saying so is the difference between a recommendation and a
 compliance claim.
 
-The registry comes from the checkpoint, not from the live database, so the
-served semantics are exactly the ones the weights were trained under.
+The registry travels inside the served model file, so the served semantics are
+exactly the ones the weights were trained under, with no database involved.
 """
 
 from __future__ import annotations
@@ -18,18 +18,17 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import torch
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
-from core.dataset import collate
-from core.encoding import AlternativeInput, encode_set
+from core.encoding import AlternativeInput
 from core.registry import Registry
-from model import checkpoint as checkpoint_module
-from serve import limits
+from serve import limits, release
+from serve.engine import ServedModel
+from serve.explore import analysis
 
-CHECKPOINT_ENV = "RECOMMENDER_CHECKPOINT"
+MODEL_ENV = "RECOMMENDER_MODEL"
 
 
 class AlternativePayload(BaseModel):
@@ -81,13 +80,14 @@ class ScoreResponse(BaseModel):
 
 
 class Service:
-    """Holds the loaded model and its registry."""
+    """Holds the served model and the registry it carries."""
 
-    def __init__(self, checkpoint_path: Path, device: str = "cpu"):
-        self.device = device
-        self.model, self.meta, _ = checkpoint_module.load(checkpoint_path, device=device)
-        self.model.eval()
-        self.registry: Registry = checkpoint_module.load_registry(checkpoint_path)
+    def __init__(self, model_path: Path):
+        served = ServedModel(model_path)
+        self.scorer = served.scorer
+        self.registry: Registry = served.registry
+        self.registry_version = served.registry_version
+        self.snapshot_hash = served.snapshot_hash
 
     def score(self, request: ScoreRequest) -> ScoreResponse:
         registry = self.registry
@@ -133,35 +133,14 @@ class Service:
         alternatives, per_alternative = self._build_inputs(
             registry, category, request, notes
         )
-
-        encoded = encode_set(
+        scores = analysis.score(
+            self.scorer,
             registry,
             request.category,
             alternatives,
             contexts,
             request.stakeholders,
         )
-        n = len(alternatives)
-        batch = collate(
-            [
-                {
-                    "index": 0,
-                    "channels": encoded.channels,
-                    "level_slots": encoded.level_slots,
-                    "indicator_slots": encoded.indicator_slots[0],
-                    "family_slots": encoded.family_slots[0],
-                    "category_slot": encoded.category_slot,
-                    "category_key": request.category,
-                    "stakeholder_slots": encoded.stakeholder_slots,
-                    "context_slots": encoded.context_slots,
-                    "pref": np.full(n, np.nan, dtype=np.float32),
-                    "conf": np.full(n, np.nan, dtype=np.float32),
-                    "provenance": "control",
-                }
-            ]
-        )
-        with torch.no_grad():
-            scores = self.model(batch.to(self.device))[0, :n].cpu().numpy()
 
         order = np.argsort(-scores)
         rank_of = {int(index): rank + 1 for rank, index in enumerate(order)}
@@ -190,8 +169,8 @@ class Service:
             eligibility_precondition=category.eligibility_precondition_text,
             contexts=list(contexts),
             stakeholders=list(request.stakeholders),
-            registry_version=self.meta.registry_version,
-            model_snapshot=self.meta.snapshot_hash,
+            registry_version=self.registry_version,
+            model_snapshot=self.snapshot_hash,
             results=results,
             notes=notes,
         )
@@ -245,26 +224,23 @@ class Service:
         return alternatives, per_alternative
 
 
-DEFAULT_CHECKPOINT = Path(__file__).parent / "release" / "model.pt"
+DEFAULT_MODEL = release.RELEASE_DIR / release.SERVED_MODEL_FILE
 FRONTEND = Path(__file__).resolve().parents[1] / "frontend" / "dist"
 
 
 def create_app(
-    checkpoint_path: Path | str | None = None,
-    device: str = "cpu",
+    model_path: Path | str | None = None,
     frontend: Path | None = FRONTEND,
 ) -> FastAPI:
     """The API under /api, and the frontend build at every other path."""
-    path = Path(
-        checkpoint_path or os.environ.get(CHECKPOINT_ENV) or DEFAULT_CHECKPOINT
-    )
+    path = Path(model_path or os.environ.get(MODEL_ENV) or DEFAULT_MODEL)
     service: dict[str, Service] = {}
     limiter = limits.from_env()
     metered = Depends(limits.gate(limiter))
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
-        service["instance"] = Service(path, device)
+        service["instance"] = Service(path)
         yield
         service.clear()
 
@@ -294,8 +270,8 @@ def create_app(
         instance = _service()
         return {
             "status": "ok",
-            "registry_version": instance.meta.registry_version,
-            "snapshot": instance.meta.snapshot_hash,
+            "registry_version": instance.registry_version,
+            "snapshot": instance.snapshot_hash,
             "categories": sorted(instance.registry.categories),
         }
 
@@ -372,7 +348,7 @@ def create_app(
 
     from serve.explore.api import build_router
 
-    api.include_router(build_router(_service, device=device, metered=metered))
+    api.include_router(build_router(_service, metered=metered))
 
     @api.get("/{path:path}", include_in_schema=False)
     def unknown(path: str) -> None:

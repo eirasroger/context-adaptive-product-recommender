@@ -3,43 +3,10 @@
 from __future__ import annotations
 
 import pytest
-import torch
 
 pytest.importorskip("fastapi")
 
 from fastapi.testclient import TestClient  # noqa: E402
-
-from model import checkpoint as checkpoint_module  # noqa: E402
-from model.recommender import ModelConfig, Recommender  # noqa: E402
-
-
-@pytest.fixture(scope="module")
-def checkpoint(registry, seeded, tmp_path_factory):
-    from db import release as release_module
-
-    document = release_module.export(seeded)
-    blob = release_module.canonical_yaml(document)
-
-    torch.manual_seed(0)
-    model = Recommender(
-        ModelConfig.for_registry(registry, dim=32, encoder_blocks=1, comparator_blocks=1)
-    )
-    path = tmp_path_factory.mktemp("serve") / "model.pt"
-    checkpoint_module.save(
-        path,
-        model,
-        registry,
-        blob,
-        checkpoint_module.CheckpointMeta(
-            registry_version="test",
-            registry_content_hash=registry.content_hash,
-            snapshot_hash="deadbeef",
-            split_key="default",
-            created_at=checkpoint_module.now(),
-            metrics={},
-        ),
-    )
-    return path
 
 
 @pytest.fixture(scope="module")
@@ -51,10 +18,10 @@ def frontend(tmp_path_factory):
 
 
 @pytest.fixture(scope="module")
-def client(checkpoint, frontend):
+def client(served, frontend):
     from serve.api import create_app
 
-    with TestClient(create_app(checkpoint, frontend=frontend)) as client:
+    with TestClient(create_app(served, frontend=frontend)) as client:
         yield client
 
 
@@ -169,11 +136,11 @@ def test_the_bare_domain_reaches_the_tool(client):
     assert response.headers["content-type"].startswith("text/html")
 
 
-def test_a_missing_frontend_build_fails_at_startup(checkpoint, tmp_path):
+def test_a_missing_frontend_build_fails_at_startup(served, tmp_path):
     from serve.api import create_app
 
     with pytest.raises(RuntimeError):
-        create_app(checkpoint, frontend=tmp_path / "dist")
+        create_app(served, frontend=tmp_path / "dist")
 
 
 def test_the_page_endpoints_answer_in_their_declared_shape(client, registry, category_key):
@@ -204,7 +171,7 @@ def test_the_former_page_address_still_reaches_the_tool(client):
         assert response.headers["content-type"].startswith("text/html")
 
 
-def test_a_caller_past_the_rate_limit_is_refused(checkpoint, registry, category_key, monkeypatch):
+def test_a_caller_past_the_rate_limit_is_refused(served, registry, category_key, monkeypatch):
     from serve.api import create_app
 
     monkeypatch.setenv("RECOMMENDER_RATE_LIMIT", "2")
@@ -212,7 +179,7 @@ def test_a_caller_past_the_rate_limit_is_refused(checkpoint, registry, category_
     payload = _payload(registry, category_key)
     headers = {"x-forwarded-for": "198.51.100.4"}
 
-    with TestClient(create_app(checkpoint, frontend=None)) as limited:
+    with TestClient(create_app(served, frontend=None)) as limited:
         assert limited.post("/api/score", json=payload, headers=headers).status_code == 200
         assert limited.post("/api/score", json=payload, headers=headers).status_code == 200
         refused = limited.post("/api/score", json=payload, headers=headers)
@@ -221,14 +188,14 @@ def test_a_caller_past_the_rate_limit_is_refused(checkpoint, registry, category_
     assert int(refused.headers["retry-after"]) >= 1
 
 
-def test_the_rate_limit_is_per_caller(checkpoint, registry, category_key, monkeypatch):
+def test_the_rate_limit_is_per_caller(served, registry, category_key, monkeypatch):
     from serve.api import create_app
 
     monkeypatch.setenv("RECOMMENDER_RATE_LIMIT", "1")
     monkeypatch.setenv("RECOMMENDER_RATE_LIMIT_TOTAL", "0")
     payload = _payload(registry, category_key)
 
-    with TestClient(create_app(checkpoint, frontend=None)) as limited:
+    with TestClient(create_app(served, frontend=None)) as limited:
         first = {"x-forwarded-for": "198.51.100.4"}
         assert limited.post("/api/score", json=payload, headers=first).status_code == 200
         assert limited.post("/api/score", json=payload, headers=first).status_code == 429
@@ -237,7 +204,7 @@ def test_the_rate_limit_is_per_caller(checkpoint, registry, category_key, monkey
 
 
 def test_the_page_stays_reachable_when_scoring_is_rate_limited(
-    checkpoint, registry, category_key, monkeypatch
+    served, registry, category_key, monkeypatch
 ):
     from serve.api import create_app
 
@@ -246,7 +213,7 @@ def test_the_page_stays_reachable_when_scoring_is_rate_limited(
     payload = _payload(registry, category_key)
     headers = {"x-forwarded-for": "198.51.100.4"}
 
-    with TestClient(create_app(checkpoint, frontend=None)) as limited:
+    with TestClient(create_app(served, frontend=None)) as limited:
         limited.post("/api/score", json=payload, headers=headers)
         assert limited.post("/api/score", json=payload, headers=headers).status_code == 429
         assert limited.get("/api/health", headers=headers).status_code == 200

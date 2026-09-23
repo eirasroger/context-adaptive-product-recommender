@@ -3,3 +3,6 @@
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+markers = [
+    "real_export: run the real ONNX export where the release tests otherwise use a stand-in",
+]

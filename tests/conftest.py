@@ -43,3 +43,43 @@ def category_key(registry):
     which category happens to be seeded first.
     """
     return sorted(registry.categories)[0]
+
+
+@pytest.fixture(scope="session")
+def checkpoint(registry, seeded, tmp_path_factory):
+    """A small untrained model saved with the seeded registry."""
+    import torch
+
+    from db import release as release_module
+    from model import checkpoint as checkpoint_module
+    from model.recommender import ModelConfig, Recommender
+
+    blob = release_module.canonical_yaml(release_module.export(seeded))
+    torch.manual_seed(0)
+    model = Recommender(
+        ModelConfig.for_registry(registry, dim=32, encoder_blocks=1, comparator_blocks=1)
+    )
+    path = tmp_path_factory.mktemp("checkpoint") / "model.pt"
+    checkpoint_module.save(
+        path,
+        model,
+        registry,
+        blob,
+        checkpoint_module.CheckpointMeta(
+            registry_version="test",
+            registry_content_hash=registry.content_hash,
+            snapshot_hash="deadbeef",
+            split_key="default",
+            created_at=checkpoint_module.now(),
+            metrics={},
+        ),
+    )
+    return path
+
+
+@pytest.fixture(scope="session")
+def served(checkpoint):
+    """That model exported to the ONNX file the service runs."""
+    from model.export import export
+
+    return export(checkpoint, checkpoint.with_name("model.onnx"))

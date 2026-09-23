@@ -27,6 +27,7 @@ import numpy as np
 
 from core.encoding import AlternativeInput
 from core.registry import Registry
+from model.export import TorchScorer
 from serve.explore.analysis import score_many
 
 class ExplanationUnavailable(RuntimeError):
@@ -205,6 +206,7 @@ def explain(
     columns = columns_for(registry, category_key)
     others = list(alternatives)
     subject = others[target]
+    scorer = TorchScorer(model, device)
 
     def predict(matrix: np.ndarray) -> np.ndarray:
         shortlists = []
@@ -218,14 +220,13 @@ def explain(
             shortlists.append(shortlist)
 
         return score_many(
-            model,
+            scorer,
             registry,
             category_key,
             shortlists,
             context_keys,
             stakeholder_keys,
             target,
-            device,
         )
 
     background = _background(

@@ -11,7 +11,7 @@
     "app.py": {
       "memory": 2048,
       "maxDuration": 300,
-      "excludeFiles": "{data/**,runs/**,docs/**,tests/**,registry/**,db/migrations/**,experiments/**,contracts/**,frontend/node_modules/**,frontend/src/**,**/*.db,**/*.parquet,**/__pycache__/**}"
+      "excludeFiles": "{data/**,runs/**,docs/**,tests/**,registry/**,db/migrations/**,experiments/**,contracts/**,serve/release/model.pt,frontend/node_modules/**,frontend/src/**,**/*.db,**/*.parquet,**/__pycache__/**}"
     }
   }
 }

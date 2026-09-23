@@ -102,9 +102,7 @@ class ShortlistRequest(BaseModel):
     )
 
 
-def build_router(
-    service_getter, device: str = "cpu", metered: Any | None = None
-) -> APIRouter:
+def build_router(service_getter, metered: Any | None = None) -> APIRouter:
     router = APIRouter(prefix="/explore", tags=["explore"])
     if metered is None:
         metered = Depends(limits.gate(limits.from_env()))
@@ -208,8 +206,8 @@ def build_router(
             )
 
         return {
-            "registry_version": service.meta.registry_version,
-            "snapshot": service.meta.snapshot_hash,
+            "registry_version": service.registry_version,
+            "snapshot": service.snapshot_hash,
             "categories": categories,
             "stakeholders": [
                 {
@@ -231,8 +229,8 @@ def build_router(
                 status_code=400, detail="a comparison needs at least two alternatives"
             )
         return compare_module.compare(
-            service.model, registry, request.category, alternatives,
-            contexts, stakeholders, device,
+            service.scorer, registry, request.category, alternatives,
+            contexts, stakeholders,
         )
 
     @router.get("/response", dependencies=costly)
@@ -273,28 +271,27 @@ def build_router(
             )
 
         return analysis.response_curve(
-            service.model,
+            service.scorer,
             registry,
             category,
             indicator,
             contexts,
             chosen,
             steps=max(3, min(steps, 61)),
-            device=device,
         )
 
     @router.post("/context-sensitivity", dependencies=costly)
     def context_sensitivity(request: ShortlistRequest) -> dict[str, Any]:
         service, registry, _, stakeholders, alternatives = _resolve(request)
         return analysis.context_sensitivity(
-            service.model, registry, request.category, alternatives, stakeholders, device
+            service.scorer, registry, request.category, alternatives, stakeholders
         )
 
     @router.post("/stakeholder-sensitivity", dependencies=costly)
     def stakeholder_sensitivity(request: ShortlistRequest) -> dict[str, Any]:
         service, registry, contexts, _, alternatives = _resolve(request)
         return analysis.stakeholder_sensitivity(
-            service.model, registry, request.category, alternatives, contexts, device
+            service.scorer, registry, request.category, alternatives, contexts
         )
 
     return router

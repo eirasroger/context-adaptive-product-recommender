@@ -13,6 +13,22 @@ from model.recommender import ModelConfig, Recommender
 from serve import release as release_module
 
 
+@pytest.fixture(autouse=True)
+def quick_export(request, monkeypatch):
+    """Promotion exports the served model, which takes seconds of tracing. These
+    tests are about gates, metrics and the README, so a stand-in writes the file;
+    the export itself is covered in test_export.py."""
+    if request.node.get_closest_marker("real_export"):
+        return
+    from model import export as export_module
+
+    def stand_in(checkpoint, out):
+        Path(out).write_bytes(b"stand-in")
+        return Path(out)
+
+    monkeypatch.setattr(export_module, "export", stand_in)
+
+
 def _run(tmp_path, registry, passed: bool | None, gap: float = 0.05):
     run_dir = tmp_path / "run"
     run_dir.mkdir()
@@ -150,6 +166,25 @@ def test_a_passing_run_ships_with_its_provenance(tmp_path, registry):
     assert on_disk == manifest
 
 
+@pytest.mark.real_export
+def test_a_promotion_ships_the_served_model_exported_from_its_checkpoint(tmp_path, registry):
+    import onnxruntime
+
+    from core import scoring
+
+    run_dir = _run(tmp_path, registry, passed=True)
+    release_dir = tmp_path / "release"
+    _promote(run_dir, tmp_path, release_dir=release_dir)
+
+    served = release_dir / release_module.SERVED_MODEL_FILE
+    carried = (
+        onnxruntime.InferenceSession(str(served), providers=["CPUExecutionProvider"])
+        .get_modelmeta()
+        .custom_metadata_map
+    )
+    assert carried[scoring.SOURCE_SHA256] == release_module.digest(release_dir / "model.pt")
+
+
 def test_the_released_artefacts_stay_small():
     """A checkpoint belongs in the repository. A corpus does not."""
     release_dir = release_module.RELEASE_DIR
@@ -183,13 +218,8 @@ def test_serving_does_not_import_the_data_stack():
     assert result.stdout.strip() == "", f"serving imports {result.stdout.strip()}"
 
 
-def test_serving_never_imports_the_explanation_stack():
-    """SHAP is offline analysis and stays out of the deployment.
-
-    It carries numba, llvmlite, scipy, scikit-learn and pandas behind it, about
-    330 MB, which is the difference between a bundle that fits a standard
-    function limit and one that does not.
-    """
+def _modules_serving_imports() -> set[str]:
+    """Top-level modules loaded by importing the deployed app, in a fresh process."""
     import subprocess
     import sys
 
@@ -200,23 +230,50 @@ def test_serving_never_imports_the_explanation_stack():
          "import functools, sys, serve.api;"
          "serve.api.create_app = functools.partial(serve.api.create_app, frontend=None);"
          "import app;"
-         "heavy = {'shap', 'numba', 'llvmlite', 'sklearn', 'scipy'};"
-         "found = sorted(m for m in sys.modules if m.split('.')[0] in heavy);"
-         "print(','.join(found))"],
+         "print(','.join(sorted({m.split('.')[0] for m in sys.modules})))"],
         capture_output=True, text=True, timeout=180, cwd=_root(),
     )
     assert result.returncode == 0, result.stderr
-    assert result.stdout.strip() == "", f"serving imports {result.stdout.strip()}"
+    return set(result.stdout.strip().split(","))
 
 
-def test_the_explanation_stack_is_absent_from_serving_requirements():
-    root = _root()
-    serving = (root / "requirements.txt").read_text(encoding="utf-8").lower()
-    for package in ("shap", "numba", "llvmlite", "scikit-learn", "scipy"):
-        assert package not in serving, f"{package} is in the serving requirements"
+def test_serving_never_imports_the_explanation_stack():
+    """SHAP is offline analysis and stays out of the deployment.
 
-    development = (root / "requirements-dev.txt").read_text(encoding="utf-8").lower()
-    assert "shap" in development
+    It carries numba, llvmlite, scipy, scikit-learn and pandas behind it, about
+    330 MB, which is the difference between a bundle that fits a standard
+    function limit and one that does not.
+    """
+    found = _modules_serving_imports() & {"shap", "numba", "llvmlite", "sklearn", "scipy"}
+    assert not found, f"serving imports {sorted(found)}"
+
+
+def test_serving_never_imports_torch():
+    """Serving runs the exported model through ONNX Runtime. Torch was 702 MB of
+    an 815 MB deployment, and each deployment stores its own copy."""
+    found = _modules_serving_imports() & {"torch", "onnx", "onnxscript"}
+    assert not found, f"serving imports {sorted(found)}"
+
+
+def _requirement_names(path: Path) -> set[str]:
+    """Package names a requirements file asks for, ignoring comments and options."""
+    import re
+
+    names = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.split("#", 1)[0].strip()
+        if line and not line.startswith("-"):
+            names.add(re.split(r"[<>=!~\[; ]", line, maxsplit=1)[0].lower())
+    return names
+
+
+def test_heavy_packages_are_absent_from_serving_requirements():
+    serving = _requirement_names(_root() / "requirements.txt")
+    heavy = {"shap", "numba", "llvmlite", "scikit-learn", "scipy", "torch", "onnx", "onnxscript"}
+    assert not serving & heavy, f"serving requires {sorted(serving & heavy)}"
+
+    development = _requirement_names(_root() / "requirements-dev.txt")
+    assert {"shap", "torch", "onnx", "onnxscript"} <= development
 
 
 def test_serving_requirements_cover_what_serving_imports():
@@ -225,18 +282,17 @@ def test_serving_requirements_cover_what_serving_imports():
     PyYAML went missing from this list once and the deployment would have
     crashed on import, after a successful build.
     """
-    root = _root()
-    text = (root / "requirements.txt").read_text(encoding="utf-8").lower()
+    declared = _requirement_names(_root() / "requirements.txt")
 
     required = {
-        "torch": "torch",
+        "onnxruntime": "onnxruntime",
         "numpy": "numpy",
         "fastapi": "fastapi",
         "pydantic": "pydantic",
         "yaml": "pyyaml",
     }
     missing = [
-        module for module, package in required.items() if package not in text
+        module for module, package in required.items() if package not in declared
     ]
     assert not missing, f"requirements.txt is missing {missing}"
 

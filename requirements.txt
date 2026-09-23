@@ -1,15 +1,14 @@
 # Serving. This is the file a deployment installs.
 #
-# The CPU wheel is pinned explicitly. Without the index URL, pip resolves to the
-# CUDA build, which is roughly 4.4 GB and useless without a GPU.
---extra-index-url https://download.pytorch.org/whl/cpu
-
-torch==2.11.0+cpu
+# The model runs through ONNX Runtime. Torch trains and exports, so it lives in
+# requirements-dev.txt.
+onnxruntime>=1.30
 numpy>=2
 
-fastapi>=0.110
+# app.frontend(), which serves the page, arrived in FastAPI 0.138.
+fastapi>=0.138
 uvicorn>=0.29
 pydantic>=2.6
 
-# The registry travels inside the checkpoint as YAML, so serving reads it.
+# The registry travels inside serve/release/model.onnx as YAML.
 PyYAML>=6.0

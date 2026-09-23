@@ -8,6 +8,7 @@ import torch
 
 from core.encoding import AlternativeInput
 from ingest.generators import parametric
+from model.export import TorchScorer
 from model.recommender import ModelConfig, Recommender
 from serve.explore import analysis
 
@@ -20,6 +21,11 @@ def model(registry):
             registry, dim=32, encoder_blocks=1, comparator_blocks=1, dropout=0.0
         )
     ).eval()
+
+
+@pytest.fixture(scope="module")
+def scorer(model):
+    return TorchScorer(model)
 
 
 def _opposed(registry, category_key):
@@ -37,15 +43,15 @@ def _opposed(registry, category_key):
     pytest.skip("no indicator inverts between contexts")
 
 
-def test_response_curve_reports_the_declared_direction(registry, category_key, model):
+def test_response_curve_reports_the_declared_direction(registry, category_key, scorer):
     indicator, positive, negative = _opposed(registry, category_key)
 
     up = analysis.response_curve(
-        model, registry, category_key, indicator, [positive],
+        scorer, registry, category_key, indicator, [positive],
         sorted(registry.stakeholders)[:2], steps=7,
     )
     down = analysis.response_curve(
-        model, registry, category_key, indicator, [negative],
+        scorer, registry, category_key, indicator, [negative],
         sorted(registry.stakeholders)[:2], steps=7,
     )
     assert up["direction"] > 0
@@ -55,7 +61,7 @@ def test_response_curve_reports_the_declared_direction(registry, category_key, m
     assert len(up["expected"]) == 7
 
 
-def test_response_curve_carries_the_registry_expectation(registry, category_key, model):
+def test_response_curve_carries_the_registry_expectation(registry, category_key, scorer):
     """The curve ships the label the registry implies beside the model output.
 
     Without it the chart shows a shape with nothing to judge it against.
@@ -63,7 +69,7 @@ def test_response_curve_carries_the_registry_expectation(registry, category_key,
     indicator = registry.sweepable(category_key)[0]
     category = registry.category(category_key)
     data = analysis.response_curve(
-        model, registry, category_key, indicator,
+        scorer, registry, category_key, indicator,
         [category.default_context_key], ["balanced_optimizer"], steps=9,
     )
     assert min(data["expected"]) >= 0.0
@@ -71,7 +77,7 @@ def test_response_curve_carries_the_registry_expectation(registry, category_key,
     assert max(data["expected"]) > min(data["expected"])
 
 
-def test_excluded_indicators_are_flagged_in_the_response(registry, category_key, model):
+def test_excluded_indicators_are_flagged_in_the_response(registry, category_key, scorer):
     category = registry.category(category_key)
     excluded = [
         key for key in category.token_order
@@ -82,32 +88,32 @@ def test_excluded_indicators_are_flagged_in_the_response(registry, category_key,
         pytest.skip("nothing is excluded in the seeded registry")
 
     data = analysis.response_curve(
-        model, registry, category_key, excluded[0],
+        scorer, registry, category_key, excluded[0],
         [category.default_context_key], ["balanced_optimizer"], steps=5,
     )
     assert data["sweepable"] is False
     assert data["control_note"]
 
 
-def test_sensitivity_covers_every_available_context(registry, category_key, model):
+def test_sensitivity_covers_every_available_context(registry, category_key, scorer):
     category = registry.category(category_key)
     alternatives = analysis.example_shortlist(
         registry, category_key, [category.default_context_key], size=3
     )
     data = analysis.context_sensitivity(
-        model, registry, category_key, alternatives, ["balanced_optimizer"]
+        scorer, registry, category_key, alternatives, ["balanced_optimizer"]
     )
     assert {row["label"] for row in data["rows"]} == category.available_contexts
     assert all(len(row["scores"]) == 3 for row in data["rows"])
 
 
-def test_sensitivity_covers_every_stakeholder(registry, category_key, model):
+def test_sensitivity_covers_every_stakeholder(registry, category_key, scorer):
     category = registry.category(category_key)
     alternatives = analysis.example_shortlist(
         registry, category_key, [category.default_context_key], size=3
     )
     data = analysis.stakeholder_sensitivity(
-        model, registry, category_key, alternatives, [category.default_context_key]
+        scorer, registry, category_key, alternatives, [category.default_context_key]
     )
     assert {row["label"] for row in data["rows"]} == set(registry.stakeholders)
 
@@ -127,7 +133,9 @@ def test_example_shortlist_varies_something(registry, category_key):
     assert varying
 
 
-def test_scoring_one_shortlist_matches_the_serving_path(registry, category_key, model):
+def test_scoring_one_shortlist_matches_the_serving_path(
+    registry, category_key, model, scorer
+):
     """The explorer and the inference API must agree about a score."""
     from core.dataset import collate
     from core.encoding import encode_set
@@ -140,7 +148,7 @@ def test_scoring_one_shortlist_matches_the_serving_path(registry, category_key, 
     ]
 
     through_explorer = analysis.score(
-        model, registry, category_key, alternatives, [context], ["balanced_optimizer"]
+        scorer, registry, category_key, alternatives, [context], ["balanced_optimizer"]
     )
 
     encoded = encode_set(

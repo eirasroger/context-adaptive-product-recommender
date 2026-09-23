@@ -35,7 +35,6 @@ COPY --chown=app requirements.txt ./
 RUN pip install --user --no-cache-dir -r requirements.txt
 
 COPY --chown=app core/ core/
-COPY --chown=app model/ model/
 COPY --chown=app serve/ serve/
 COPY --chown=app ingest/generators/ ingest/generators/
 COPY --chown=app ingest/__init__.py ingest/
@@ -43,8 +42,7 @@ COPY --chown=app app.py ./
 COPY --chown=app --from=frontend /build/frontend/dist frontend/dist/
 
 # 7860 is the Hugging Face Spaces default. Override with PORT elsewhere.
-ENV PORT=7860 \
-    RECOMMENDER_DEVICE=cpu
+ENV PORT=7860
 EXPOSE 7860
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \

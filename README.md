@@ -308,14 +308,20 @@ flowchart LR
   DB --> TRAIN["train"]
   SNAP --> TRAIN
   TRAIN --> CK["checkpoint<br/>carries the registry it trained under"]
-  CK -->|promote| REL["serve/release/"]
-  REL --> DEP["deployment"]
+  CK -->|promote| REL["serve/release/<br/>model.pt and model.onnx"]
+  REL --> DEP["deployment<br/>runs model.onnx"]
 ```
 
 A snapshot is a frozen, hashed export of the training data. The checkpoint
 stores the snapshot hash, the registry version and a full copy of the registry,
-so any score traces back to the data and definitions that produced it. The
-deployment reads everything from `serve/release/` and needs no database.
+so any score traces back to the data and definitions that produced it.
+
+Torch trains the model; the service runs it through ONNX Runtime. Promotion
+exports `model.pt` to `model.onnx`, which carries the same registry and
+provenance and records the hash of the checkpoint it came from. The deployment
+reads `model.onnx` alone and needs neither torch nor a database. Tests fail
+when `model.onnx` was exported from another checkpoint, or when the two engines
+score the test fold differently.
 
 ## Repository layout
 
@@ -514,7 +520,8 @@ python -m serve.release runs/<run> --notes "why this one"
 
 Promotion writes a manifest recording the run, the registry version, the
 snapshot hash and the evaluation. It also refreshes the test fixture in
-`tests/fixtures/snapshot/`, which CI uses to re-score the shipped model.
+`tests/fixtures/snapshot/`, which CI uses to re-score the shipped model, and
+exports the served `model.onnx`.
 Promotion refuses a run that failed the behavioural gate, that has no
 evaluation on record, or that scores worse than the current release on any
 stratum. `--force` overrides the refusal and records that it was forced; the
@@ -528,7 +535,9 @@ shipped checkpoint:
 python -m model.restamp serve/release/model.pt 0.2.1
 ```
 
-The tool refuses if anything the model reads has changed.
+The tool refuses if anything the model reads has changed, and re-exports
+`model.onnx` beside the checkpoint. To export by hand, run
+`python -m model.export`.
 
 ## Tests
 
@@ -549,12 +558,14 @@ RECOMMENDER_UPDATE_CONTRACT=1 python -m pytest tests/test_api_contract.py
 
 ## Deploying
 
-A deployment needs the application code, `serve/release/` and
-`requirements.txt`. That file holds the serving dependencies alone and pins the
-CPU build of PyTorch.
+A deployment needs the application code, `serve/release/model.onnx`, the
+frontend build and `requirements.txt`. That file holds the serving
+dependencies alone: ONNX Runtime, numpy, FastAPI and PyYAML, about 140 MB
+installed.
 
-On one CPU, a scoring call takes about 10 ms, a comparison about 45 ms, and
-the process holds about 650 MB of memory. It needs no GPU and no database server.
+On one CPU, the service starts in about 0.4 s, a scoring call takes about 5 ms,
+a comparison about 22 ms, and the process holds about 110 MB of memory. It
+needs no GPU and no database server.
 
 - **Vercel.** The live deployment. Vercel builds production from the
   `production` branch of the GitHub repository; `app.py` and `vercel.json` are
@@ -562,8 +573,8 @@ the process holds about 650 MB of memory. It needs no GPU and no database server
 - **Container.** The `Dockerfile` builds a serving image that listens on
   `PORT`, 7860 by default, which suits Hugging Face Spaces.
 
-The service reads `serve/release/` by default. `RECOMMENDER_CHECKPOINT` points
-it at another checkpoint.
+The service reads `serve/release/model.onnx` by default. `RECOMMENDER_MODEL`
+points it at another exported model.
 
 ### Releasing
 
@@ -578,9 +589,9 @@ git push origin main:production
 never diverge; git refuses the push otherwise. Release a commit that CI has
 passed on `main`.
 
-Each deployment stores its own copy of the serving bundle, about 0.9 GB with
-PyTorch, and Hobby allows 10 GB in total. Deploying on release keeps that count
-to the versions worth serving. A branch named `preview-*` can be enabled in
+Each deployment stores its own copy of the serving bundle, about 0.15 GB, and
+Hobby allows 10 GB in total. Deploying on release keeps that count to the
+versions worth serving. A branch named `preview-*` can be enabled in
 `vercel.json` when a change needs a preview before release.
 
 ### Limits on a public deployment

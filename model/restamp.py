@@ -126,6 +126,13 @@ def main() -> None:
 
     from serve import release as served
 
+    served_model = args.checkpoint.with_name(served.SERVED_MODEL_FILE)
+    if served_model.exists():
+        from model import export as export_module
+
+        export_module.export(args.checkpoint, served_model)
+        print(f"  re-exported {served_model}")
+
     if args.checkpoint.resolve().parent == served.RELEASE_DIR.resolve():
         served.refresh_readme()
         print(f"  refreshed {served.README.name}")

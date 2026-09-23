@@ -1,6 +1,15 @@
 
 -r requirements.txt
 
+# The CPU wheel is pinned explicitly. Without the index URL, pip resolves to the
+# CUDA build, which is roughly 4.4 GB and useless without a GPU.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.11.0+cpu
+
+# Exporting a checkpoint to the ONNX model the service runs.
+onnx>=1.23
+onnxscript>=0.7
+
 pandas>=2.2
 pyarrow>=15
 SQLAlchemy>=2.0

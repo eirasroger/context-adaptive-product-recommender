@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 import torch
 import yaml
@@ -15,6 +16,7 @@ from serve import release as serve_release
 RELEASE_DIR = Path(__file__).resolve().parents[1] / "serve" / "release"
 MIRROR_DIR = Path(__file__).resolve().parents[1] / "registry"
 SHIPPED = RELEASE_DIR / "model.pt"
+FIXTURE = Path(__file__).parent / "fixtures" / "snapshot"
 
 RELEASE_STEPS = (
     "python -m db.seed && python -m db.release <version> && "
@@ -66,6 +68,51 @@ def test_the_manifest_describes_the_checkpoint_beside_it(shipped):
     assert manifest["registry_content_hash"] == shipped["meta"]["registry_content_hash"]
     assert manifest["registry_version"] == shipped["meta"]["registry_version"]
     assert manifest["model_sha256"] == serve_release.digest(SHIPPED)
+
+
+def test_the_served_model_was_exported_from_the_shipped_checkpoint(shipped):
+    import onnxruntime
+
+    from core import scoring
+
+    served = RELEASE_DIR / serve_release.SERVED_MODEL_FILE
+    assert served.exists(), "the release ships no model.onnx; run python -m model.export"
+    carried = (
+        onnxruntime.InferenceSession(str(served), providers=["CPUExecutionProvider"])
+        .get_modelmeta()
+        .custom_metadata_map
+    )
+    assert carried[scoring.SOURCE_SHA256] == serve_release.digest(SHIPPED), (
+        "model.onnx was exported from another checkpoint; run python -m model.export"
+    )
+
+
+def test_the_served_model_scores_the_test_fold_as_the_checkpoint_does(shipped):
+    from core.dataset import ComparisonSetDataset
+    from core.prepare import load_or_prepare
+    from core.scoring import pad
+    from model.export import TorchScorer
+    from serve.engine import ServedModel
+
+    registry = checkpoint_module.load_registry(SHIPPED)
+    model, _, _ = checkpoint_module.load(SHIPPED, device="cpu")
+    torch_scorer = TorchScorer(model)
+    onnx_scorer = ServedModel(RELEASE_DIR / serve_release.SERVED_MODEL_FILE).scorer
+
+    dataset = ComparisonSetDataset(load_or_prepare(registry, FIXTURE), fold="test")
+    assert len(dataset) > 0, "the fixture holds no test shortlists"
+    worst, reordered = 0.0, 0
+    for start in range(0, len(dataset), 512):
+        arrays = pad([dataset[i] for i in range(start, min(start + 512, len(dataset)))])
+        expected, got = torch_scorer(arrays), onnx_scorer(arrays)
+        real = arrays["alternative_mask"]
+        worst = max(worst, float(np.abs(expected - got)[real].max()))
+        for row, count in enumerate(real.sum(axis=1)):
+            if list(np.argsort(-expected[row, :count])) != list(np.argsort(-got[row, :count])):
+                reordered += 1
+
+    assert worst < 1e-5, f"the engines differ by up to {worst:.2e}"
+    assert reordered == 0, f"{reordered} shortlists rank differently"
 
 
 def test_the_release_carries_the_baseline_the_next_promotion_needs(shipped):

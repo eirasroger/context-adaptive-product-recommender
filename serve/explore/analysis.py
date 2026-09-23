@@ -10,59 +10,37 @@ from dataclasses import dataclass
 from typing import Sequence
 
 import numpy as np
-import torch
 
-from core.dataset import collate
 from core.encoding import AlternativeInput, encode_set
+from core.scoring import Scorer, item, pad
 from core.registry import Registry
 from ingest.generators import parametric
 
 DEFAULT_STEPS = 21
 
 
-@torch.no_grad()
 def score(
-    model,
+    scorer: Scorer,
     registry: Registry,
     category_key: str,
     alternatives: Sequence[AlternativeInput],
     context_keys: Sequence[str],
     stakeholder_keys: Sequence[str],
-    device: str | torch.device = "cpu",
 ) -> np.ndarray:
     encoded = encode_set(
         registry, category_key, alternatives, context_keys, stakeholder_keys
     )
-    n = len(alternatives)
-    item = {
-        "index": 0,
-        "channels": encoded.channels,
-        "level_slots": encoded.level_slots,
-        "indicator_slots": encoded.indicator_slots[0],
-        "family_slots": encoded.family_slots[0],
-        "category_slot": encoded.category_slot,
-        "category_key": category_key,
-        "stakeholder_slots": encoded.stakeholder_slots,
-        "context_slots": encoded.context_slots,
-        "pref": np.full(n, np.nan, dtype=np.float32),
-        "conf": np.full(n, np.nan, dtype=np.float32),
-        "provenance": "control",
-    }
-    model.eval()
-    batch = collate([item]).to(device)
-    return model(batch)[0, :n].cpu().numpy()
+    return scorer(pad([item(encoded, category_key)]))[0, : len(alternatives)]
 
 
-@torch.no_grad()
 def score_many(
-    model,
+    scorer: Scorer,
     registry: Registry,
     category_key: str,
     shortlists: Sequence[Sequence[AlternativeInput]],
     context_keys: Sequence[str],
     stakeholder_keys: Sequence[str],
     target: int,
-    device: str | torch.device = "cpu",
     chunk: int = 256,
 ) -> np.ndarray:
     """Score many shortlists at once, returning one alternative's score from each.
@@ -72,36 +50,16 @@ def score_many(
     seconds and tens of seconds, and nothing about the model requires it.
     """
     out = np.zeros(len(shortlists), dtype=np.float64)
-    model.eval()
-
     for start in range(0, len(shortlists), chunk):
         window = shortlists[start : start + chunk]
-        items = []
-        for shortlist in window:
-            encoded = encode_set(
-                registry, category_key, shortlist, context_keys, stakeholder_keys
+        items = [
+            item(
+                encode_set(registry, category_key, shortlist, context_keys, stakeholder_keys),
+                category_key,
             )
-            n = len(shortlist)
-            items.append(
-                {
-                    "index": 0,
-                    "channels": encoded.channels,
-                    "level_slots": encoded.level_slots,
-                    "indicator_slots": encoded.indicator_slots[0],
-                    "family_slots": encoded.family_slots[0],
-                    "category_slot": encoded.category_slot,
-                    "category_key": category_key,
-                    "stakeholder_slots": encoded.stakeholder_slots,
-                    "context_slots": encoded.context_slots,
-                    "pref": np.full(n, np.nan, dtype=np.float32),
-                    "conf": np.full(n, np.nan, dtype=np.float32),
-                    "provenance": "control",
-                }
-            )
-        batch = collate(items).to(device)
-        scores = model(batch)[:, target].cpu().numpy()
-        out[start : start + len(window)] = scores
-
+            for shortlist in window
+        ]
+        out[start : start + len(window)] = scorer(pad(items))[:, target]
     return out
 
 
@@ -112,14 +70,13 @@ class Series:
 
 
 def response_curve(
-    model,
+    scorer: Scorer,
     registry: Registry,
     category_key: str,
     indicator_key: str,
     context_keys: Sequence[str],
     stakeholder_keys: Sequence[str],
     steps: int = DEFAULT_STEPS,
-    device: str | torch.device = "cpu",
 ) -> dict:
     """How the score moves as one indicator moves, everything else held ideal.
 
@@ -142,13 +99,12 @@ def response_curve(
             stakeholder_key,
         )
         scores = score(
-            model,
+            scorer,
             registry,
             category_key,
             case.alternatives,
             context_keys,
             [stakeholder_key],
-            device,
         )
         series.append(
             {"label": stakeholder_key, "points": [round(float(v), 4) for v in scores]}
@@ -184,23 +140,21 @@ def response_curve(
 
 
 def _matrix(
-    model,
+    scorer: Scorer,
     registry: Registry,
     category_key: str,
     alternatives: Sequence[AlternativeInput],
     settings: Sequence[tuple[str, list[str], list[str]]],
-    device: str | torch.device,
 ) -> list[dict]:
     rows = []
     for label, context_keys, stakeholder_keys in settings:
         scores = score(
-            model,
+            scorer,
             registry,
             category_key,
             alternatives,
             context_keys,
             stakeholder_keys,
-            device,
         )
         order = np.argsort(-scores)
         rows.append(
@@ -214,23 +168,21 @@ def _matrix(
 
 
 def context_sensitivity(
-    model,
+    scorer: Scorer,
     registry: Registry,
     category_key: str,
     alternatives: Sequence[AlternativeInput],
     stakeholder_keys: Sequence[str],
-    device: str | torch.device = "cpu",
 ) -> dict:
     """The same shortlist scored under every context the category allows."""
     category = registry.category(category_key)
     contexts = sorted(category.available_contexts)
     rows = _matrix(
-        model,
+        scorer,
         registry,
         category_key,
         alternatives,
         [(key, [key], list(stakeholder_keys)) for key in contexts],
-        device,
     )
     return {
         "axis": "context",
@@ -242,22 +194,20 @@ def context_sensitivity(
 
 
 def stakeholder_sensitivity(
-    model,
+    scorer: Scorer,
     registry: Registry,
     category_key: str,
     alternatives: Sequence[AlternativeInput],
     context_keys: Sequence[str],
-    device: str | torch.device = "cpu",
 ) -> dict:
     """The same shortlist scored for every stakeholder archetype."""
     stakeholders = sorted(registry.stakeholders)
     rows = _matrix(
-        model,
+        scorer,
         registry,
         category_key,
         alternatives,
         [(key, list(context_keys), [key]) for key in stakeholders],
-        device,
     )
     return {
         "axis": "stakeholder",

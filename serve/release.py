@@ -12,6 +12,7 @@ from pathlib import Path
 
 RELEASE_DIR = Path(__file__).parent / "release"
 MODEL_FILE = "model.pt"
+SERVED_MODEL_FILE = "model.onnx"
 MANIFEST_FILE = "manifest.json"
 METRICS_FILE = "metrics.json"
 FIXTURE_DIR = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "snapshot"
@@ -165,6 +166,9 @@ def promote(
         shutil.copy2(run_dir / METRICS_FILE, release_dir / METRICS_FILE)
 
     from model import checkpoint as checkpoint_module
+    from model import export as export_module
+
+    export_module.export(release_dir / MODEL_FILE, release_dir / SERVED_MODEL_FILE)
 
     described = checkpoint_module.describe(checkpoint)
     meta = described["meta"]
