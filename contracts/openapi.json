@@ -1,6 +1,372 @@
 {
   "components": {
     "schemas": {
+      "AlternativePayload": {
+        "properties": {
+          "id": {
+            "description": "Caller's identifier for this alternative",
+            "title": "Id",
+            "type": "string"
+          },
+          "levels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Level keys for indicators declared on an ordered or unordered scale.",
+            "title": "Levels",
+            "type": "object"
+          },
+          "values": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Numeric indicator values. Omit an indicator you have no value for; omission means unknown and is never imputed.",
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "AlternativePayload",
+        "type": "object"
+      },
+      "Comparison": {
+        "properties": {
+          "comparisons": {
+            "items": {
+              "$ref": "#/components/schemas/HeadToHead"
+            },
+            "title": "Comparisons",
+            "type": "array"
+          },
+          "leader": {
+            "title": "Leader",
+            "type": "string"
+          },
+          "leader_index": {
+            "title": "Leader Index",
+            "type": "integer"
+          },
+          "leader_score": {
+            "title": "Leader Score",
+            "type": "number"
+          },
+          "scores": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Scores",
+            "type": "array"
+          },
+          "wins": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": "Per alternative index, the indicators it is credited with winning on.",
+            "title": "Wins",
+            "type": "object"
+          }
+        },
+        "required": [
+          "wins",
+          "leader",
+          "leader_index",
+          "leader_score",
+          "scores",
+          "comparisons"
+        ],
+        "title": "Comparison",
+        "type": "object"
+      },
+      "Difference": {
+        "properties": {
+          "closes": {
+            "title": "Closes",
+            "type": "number"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "family": {
+            "title": "Family",
+            "type": "string"
+          },
+          "favours": {
+            "title": "Favours",
+            "type": "string"
+          },
+          "flips": {
+            "title": "Flips",
+            "type": "boolean"
+          },
+          "indicator": {
+            "title": "Indicator",
+            "type": "string"
+          },
+          "leader_value": {
+            "title": "Leader Value",
+            "type": "string"
+          },
+          "new_gap": {
+            "title": "New Gap",
+            "type": "number"
+          },
+          "rival_value": {
+            "title": "Rival Value",
+            "type": "string"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          }
+        },
+        "required": [
+          "indicator",
+          "display_name",
+          "family",
+          "unit",
+          "leader_value",
+          "rival_value",
+          "new_gap",
+          "closes",
+          "flips",
+          "favours"
+        ],
+        "title": "Difference",
+        "type": "object"
+      },
+      "Form": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/FormCategory"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "families": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Families",
+            "type": "object"
+          },
+          "registry_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registry Version"
+          },
+          "snapshot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot"
+          },
+          "stakeholders": {
+            "items": {
+              "$ref": "#/components/schemas/FormStakeholder"
+            },
+            "title": "Stakeholders",
+            "type": "array"
+          }
+        },
+        "required": [
+          "registry_version",
+          "snapshot",
+          "categories",
+          "stakeholders",
+          "families"
+        ],
+        "title": "Form",
+        "type": "object"
+      },
+      "FormCategory": {
+        "properties": {
+          "contexts": {
+            "items": {
+              "$ref": "#/components/schemas/FormContext"
+            },
+            "title": "Contexts",
+            "type": "array"
+          },
+          "default_context": {
+            "title": "Default Context",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "eligibility_precondition": {
+            "title": "Eligibility Precondition",
+            "type": "string"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/FormField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "functional_unit": {
+            "title": "Functional Unit",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "display_name",
+          "functional_unit",
+          "eligibility_precondition",
+          "default_context",
+          "contexts",
+          "fields"
+        ],
+        "title": "FormCategory",
+        "type": "object"
+      },
+      "FormContext": {
+        "properties": {
+          "definition": {
+            "title": "Definition",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "display_name",
+          "definition"
+        ],
+        "title": "FormContext",
+        "type": "object"
+      },
+      "FormField": {
+        "properties": {
+          "definition": {
+            "title": "Definition",
+            "type": "string"
+          },
+          "direction": {
+            "title": "Direction",
+            "type": "integer"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "family": {
+            "title": "Family",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "levels": {
+            "items": {
+              "$ref": "#/components/schemas/Level"
+            },
+            "title": "Levels",
+            "type": "array"
+          },
+          "range": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReferenceRange"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "value_type": {
+            "title": "Value Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "display_name",
+          "family",
+          "unit",
+          "value_type",
+          "definition",
+          "direction",
+          "range",
+          "levels"
+        ],
+        "title": "FormField",
+        "type": "object"
+      },
+      "FormStakeholder": {
+        "properties": {
+          "definition": {
+            "title": "Definition",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "display_name",
+          "definition"
+        ],
+        "title": "FormStakeholder",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -14,12 +380,110 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HeadToHead": {
+        "properties": {
+          "contributing": {
+            "items": {
+              "$ref": "#/components/schemas/Difference"
+            },
+            "title": "Contributing",
+            "type": "array"
+          },
+          "decisive": {
+            "items": {
+              "$ref": "#/components/schemas/Difference"
+            },
+            "title": "Decisive",
+            "type": "array"
+          },
+          "gap": {
+            "title": "Gap",
+            "type": "number"
+          },
+          "rival": {
+            "title": "Rival",
+            "type": "string"
+          },
+          "rival_index": {
+            "title": "Rival Index",
+            "type": "integer"
+          },
+          "rival_score": {
+            "title": "Rival Score",
+            "type": "number"
+          },
+          "rival_wins": {
+            "items": {
+              "$ref": "#/components/schemas/Difference"
+            },
+            "title": "Rival Wins",
+            "type": "array"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rival",
+          "rival_index",
+          "rival_score",
+          "gap",
+          "decisive",
+          "contributing",
+          "rival_wins",
+          "summary"
+        ],
+        "title": "HeadToHead",
+        "type": "object"
+      },
+      "Level": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "disqualifying": {
+            "title": "Disqualifying",
+            "type": "boolean"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "display_name",
+          "disqualifying"
+        ],
+        "title": "Level",
+        "type": "object"
+      },
+      "ReferenceRange": {
+        "properties": {
+          "high": {
+            "title": "High",
+            "type": "number"
+          },
+          "low": {
+            "title": "Low",
+            "type": "number"
+          }
+        },
+        "required": [
+          "low",
+          "high"
+        ],
+        "title": "ReferenceRange",
+        "type": "object"
+      },
       "ScoreRequest": {
         "properties": {
           "alternatives": {
             "description": "The shortlist to rank.",
             "items": {
-              "$ref": "#/components/schemas/serve__api__AlternativePayload"
+              "$ref": "#/components/schemas/AlternativePayload"
             },
             "maxItems": 5,
             "title": "Alternatives",
@@ -174,7 +638,7 @@
         "properties": {
           "alternatives": {
             "items": {
-              "$ref": "#/components/schemas/serve__explore__api__AlternativePayload"
+              "$ref": "#/components/schemas/AlternativePayload"
             },
             "maxItems": 5,
             "title": "Alternatives",
@@ -244,63 +708,6 @@
         ],
         "title": "ValidationError",
         "type": "object"
-      },
-      "serve__api__AlternativePayload": {
-        "properties": {
-          "id": {
-            "description": "Caller's identifier for this alternative",
-            "title": "Id",
-            "type": "string"
-          },
-          "levels": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "Level keys for indicators declared on an ordered or unordered scale.",
-            "title": "Levels",
-            "type": "object"
-          },
-          "values": {
-            "additionalProperties": {
-              "type": "number"
-            },
-            "description": "Numeric indicator values. Omit an indicator you have no value for; omission means unknown and is never imputed.",
-            "title": "Values",
-            "type": "object"
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "title": "AlternativePayload",
-        "type": "object"
-      },
-      "serve__explore__api__AlternativePayload": {
-        "properties": {
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "levels": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "title": "Levels",
-            "type": "object"
-          },
-          "values": {
-            "additionalProperties": {
-              "type": "number"
-            },
-            "title": "Values",
-            "type": "object"
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "title": "AlternativePayload",
-        "type": "object"
       }
     }
   },
@@ -314,7 +721,7 @@
     "/api/categories": {
       "get": {
         "description": "What can be compared, and what each category assumes about its input.",
-        "operationId": "categories_api_categories_get",
+        "operationId": "categories",
         "responses": {
           "200": {
             "content": {
@@ -324,7 +731,7 @@
                     "additionalProperties": true,
                     "type": "object"
                   },
-                  "title": "Response Categories Api Categories Get",
+                  "title": "Response Categories",
                   "type": "array"
                 }
               }
@@ -337,7 +744,7 @@
     },
     "/api/categories/{category_key}/indicators": {
       "get": {
-        "operationId": "indicators_api_categories__category_key__indicators_get",
+        "operationId": "indicators",
         "parameters": [
           {
             "in": "path",
@@ -358,7 +765,7 @@
                     "additionalProperties": true,
                     "type": "object"
                   },
-                  "title": "Response Indicators Api Categories  Category Key  Indicators Get",
+                  "title": "Response Indicators",
                   "type": "array"
                 }
               }
@@ -382,7 +789,7 @@
     "/api/explore/compare": {
       "post": {
         "description": "Why the leading alternative is ahead of each of the others.",
-        "operationId": "compare_api_explore_compare_post",
+        "operationId": "compare",
         "requestBody": {
           "content": {
             "application/json": {
@@ -398,9 +805,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Compare Api Explore Compare Post",
-                  "type": "object"
+                  "$ref": "#/components/schemas/Comparison"
                 }
               }
             },
@@ -425,7 +830,7 @@
     },
     "/api/explore/context-sensitivity": {
       "post": {
-        "operationId": "context_sensitivity_api_explore_context_sensitivity_post",
+        "operationId": "context_sensitivity",
         "requestBody": {
           "content": {
             "application/json": {
@@ -442,7 +847,7 @@
               "application/json": {
                 "schema": {
                   "additionalProperties": true,
-                  "title": "Response Context Sensitivity Api Explore Context Sensitivity Post",
+                  "title": "Response Context Sensitivity",
                   "type": "object"
                 }
               }
@@ -469,15 +874,13 @@
     "/api/explore/form": {
       "get": {
         "description": "Everything needed to draw the input grid and the selectors.",
-        "operationId": "form_api_explore_form_get",
+        "operationId": "form",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Form Api Explore Form Get",
-                  "type": "object"
+                  "$ref": "#/components/schemas/Form"
                 }
               }
             },
@@ -492,7 +895,7 @@
     },
     "/api/explore/response": {
       "get": {
-        "operationId": "response_api_explore_response_get",
+        "operationId": "response",
         "parameters": [
           {
             "in": "query",
@@ -561,7 +964,7 @@
               "application/json": {
                 "schema": {
                   "additionalProperties": true,
-                  "title": "Response Response Api Explore Response Get",
+                  "title": "Response Response",
                   "type": "object"
                 }
               }
@@ -587,7 +990,7 @@
     },
     "/api/explore/stakeholder-sensitivity": {
       "post": {
-        "operationId": "stakeholder_sensitivity_api_explore_stakeholder_sensitivity_post",
+        "operationId": "stakeholder_sensitivity",
         "requestBody": {
           "content": {
             "application/json": {
@@ -604,7 +1007,7 @@
               "application/json": {
                 "schema": {
                   "additionalProperties": true,
-                  "title": "Response Stakeholder Sensitivity Api Explore Stakeholder Sensitivity Post",
+                  "title": "Response Stakeholder Sensitivity",
                   "type": "object"
                 }
               }
@@ -630,14 +1033,14 @@
     },
     "/api/health": {
       "get": {
-        "operationId": "health_api_health_get",
+        "operationId": "health",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
                   "additionalProperties": true,
-                  "title": "Response Health Api Health Get",
+                  "title": "Response Health",
                   "type": "object"
                 }
               }
@@ -650,7 +1053,7 @@
     },
     "/api/score": {
       "post": {
-        "operationId": "score_api_score_post",
+        "operationId": "score",
         "requestBody": {
           "content": {
             "application/json": {
@@ -688,7 +1091,7 @@
     },
     "/api/stakeholders": {
       "get": {
-        "operationId": "stakeholders_api_stakeholders_get",
+        "operationId": "stakeholders",
         "responses": {
           "200": {
             "content": {
@@ -698,7 +1101,7 @@
                     "additionalProperties": true,
                     "type": "object"
                   },
-                  "title": "Response Stakeholders Api Stakeholders Get",
+                  "title": "Response Stakeholders",
                   "type": "array"
                 }
               }

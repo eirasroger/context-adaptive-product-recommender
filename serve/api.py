@@ -20,7 +20,7 @@ from typing import Any
 import numpy as np
 import torch
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
 from core.dataset import collate
@@ -246,12 +246,15 @@ class Service:
 
 
 DEFAULT_CHECKPOINT = Path(__file__).parent / "release" / "model.pt"
-PAGE = Path(__file__).parent / "explore" / "static" / "index.html"
+FRONTEND = Path(__file__).resolve().parents[1] / "frontend" / "dist"
 
 
 def create_app(
-    checkpoint_path: Path | str | None = None, device: str = "cpu"
+    checkpoint_path: Path | str | None = None,
+    device: str = "cpu",
+    frontend: Path | None = FRONTEND,
 ) -> FastAPI:
+    """The API under /api, and the frontend build at every other path."""
     path = Path(
         checkpoint_path or os.environ.get(CHECKPOINT_ENV) or DEFAULT_CHECKPOINT
     )
@@ -273,6 +276,7 @@ def create_app(
         openapi_url="/api/openapi.json",
         docs_url="/api/docs",
         redoc_url="/api/redoc",
+        generate_unique_id_function=lambda route: route.name,
     )
     api = APIRouter(prefix="/api")
 
@@ -280,12 +284,6 @@ def create_app(
         if "instance" not in service:
             raise HTTPException(status_code=503, detail="model not loaded")
         return service["instance"]
-
-    @app.get("/", include_in_schema=False)
-    def page() -> FileResponse:
-        if not PAGE.exists():
-            raise HTTPException(status_code=404, detail="the page is not installed")
-        return FileResponse(PAGE, headers={"Cache-Control": "no-store, max-age=0"})
 
     @app.get("/explore/", include_in_schema=False)
     def former_page_address() -> RedirectResponse:
@@ -375,9 +373,15 @@ def create_app(
     from serve.explore.api import build_router
 
     api.include_router(build_router(_service, device=device, metered=metered))
+
+    @api.get("/{path:path}", include_in_schema=False)
+    def unknown(path: str) -> None:
+        """Keeps the frontend's fallback page off /api, which the server owns."""
+        raise HTTPException(status_code=404, detail=f"no endpoint /api/{path}")
+
     app.include_router(api)
 
+    if frontend is not None:
+        app.frontend("/", directory=frontend, fallback="index.html", check_dir=True)
+
     return app
-
-
-app = create_app(device=os.environ.get("RECOMMENDER_DEVICE", "cpu"))

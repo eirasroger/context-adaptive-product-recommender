@@ -59,11 +59,13 @@ def test_no_category_is_named_in_the_model_or_core_or_train():
     root = Path(__file__).resolve().parents[1]
     import yaml
 
-    seeds = yaml.safe_load(
-        (root / "db" / "seeds" / "40_category_concrete.yaml").read_text(encoding="utf-8")
-    )
-    names = {row["key"] for row in seeds.get("category", [])}
-    names |= {row["display_name"].lower() for row in seeds.get("category", [])}
+    rows = [
+        row
+        for seed in sorted((root / "db" / "seeds").glob("*.yaml"))
+        for row in (yaml.safe_load(seed.read_text(encoding="utf-8")) or {}).get("category", [])
+    ]
+    assert rows, "found no category in the seeds; the layout has changed"
+    names = {row["key"] for row in rows} | {row["display_name"].lower() for row in rows}
 
     offenders = []
     for directory in ("model", "core", "train"):

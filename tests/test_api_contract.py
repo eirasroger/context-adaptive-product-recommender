@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 from pathlib import Path
 
 import pytest
@@ -12,8 +11,7 @@ pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT = Path(__file__).parent / "contracts" / "openapi.json"
-PAGE = ROOT / "serve" / "explore" / "static" / "index.html"
+CONTRACT = ROOT / "contracts" / "openapi.json"
 
 #: Set to rewrite the committed contract after a deliberate API change.
 UPDATE_ENV = "RECOMMENDER_UPDATE_CONTRACT"
@@ -24,10 +22,12 @@ def schema():
     """The published schema. Reading it needs no checkpoint, only the routes."""
     from serve.api import create_app
 
-    return TestClient(create_app()).get("/api/openapi.json").json()
+    return TestClient(create_app(frontend=None)).get("/api/openapi.json").json()
 
 
 def test_the_published_schema_matches_the_committed_contract(schema):
+    """The frontend's types are generated from the committed contract, so this
+    is what keeps the page and the API in agreement."""
     rendered = json.dumps(schema, indent=2, sort_keys=True) + "\n"
 
     if os.environ.get(UPDATE_ENV):
@@ -48,18 +48,10 @@ def test_every_endpoint_lives_under_api(schema):
     assert not stray, f"endpoints outside /api: {stray}"
 
 
-def test_every_route_the_page_calls_exists(schema):
-    """The three endpoints the tool fetches, read out of the page itself."""
-    called = set(re.findall(r"""\bapi\(\s*["']([^"']+)["']""", PAGE.read_text(encoding="utf-8")))
-
-    assert called, "found no API calls in the page; the pattern has changed"
-    missing = sorted(path for path in called if path not in schema["paths"])
-    assert not missing, f"the page calls {missing}, which the API does not serve"
-
-
-def test_the_fields_the_page_reads_are_in_the_score_response(schema):
-    scored = schema["components"]["schemas"]["ScoredAlternative"]["properties"]
-    response = schema["components"]["schemas"]["ScoreResponse"]["properties"]
-
-    assert {"id", "score", "rank", "missing_indicators", "disqualifying_levels"} <= set(scored)
-    assert {"results", "notes", "eligibility_precondition", "functional_unit"} <= set(response)
+def test_operation_ids_are_unique(schema):
+    ids = [
+        operation["operationId"]
+        for path in schema["paths"].values()
+        for operation in path.values()
+    ]
+    assert len(ids) == len(set(ids)), sorted(ids)
