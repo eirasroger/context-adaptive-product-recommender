@@ -19,8 +19,8 @@ from typing import Any
 
 import numpy as np
 import torch
-from fastapi import Depends, FastAPI, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
 from core.dataset import collate
@@ -246,6 +246,7 @@ class Service:
 
 
 DEFAULT_CHECKPOINT = Path(__file__).parent / "release" / "model.pt"
+PAGE = Path(__file__).parent / "explore" / "static" / "index.html"
 
 
 def create_app(
@@ -269,7 +270,11 @@ def create_app(
         description=__doc__,
         version="0.1.0",
         lifespan=lifespan,
+        openapi_url="/api/openapi.json",
+        docs_url="/api/docs",
+        redoc_url="/api/redoc",
     )
+    api = APIRouter(prefix="/api")
 
     def _service() -> Service:
         if "instance" not in service:
@@ -277,11 +282,16 @@ def create_app(
         return service["instance"]
 
     @app.get("/", include_in_schema=False)
-    def root() -> RedirectResponse:
-        """Send a bare visit to the tool."""
-        return RedirectResponse(url="/explore/")
+    def page() -> FileResponse:
+        if not PAGE.exists():
+            raise HTTPException(status_code=404, detail="the page is not installed")
+        return FileResponse(PAGE, headers={"Cache-Control": "no-store, max-age=0"})
 
-    @app.get("/health")
+    @app.get("/explore/", include_in_schema=False)
+    def former_page_address() -> RedirectResponse:
+        return RedirectResponse(url="/", status_code=301)
+
+    @api.get("/health")
     def health() -> dict[str, Any]:
         instance = _service()
         return {
@@ -291,7 +301,7 @@ def create_app(
             "categories": sorted(instance.registry.categories),
         }
 
-    @app.get("/categories")
+    @api.get("/categories")
     def categories() -> list[dict[str, Any]]:
         """What can be compared, and what each category assumes about its input."""
         registry = _service().registry
@@ -308,7 +318,7 @@ def create_app(
             for key, category in sorted(registry.categories.items())
         ]
 
-    @app.get("/categories/{category_key}/indicators")
+    @api.get("/categories/{category_key}/indicators")
     def indicators(category_key: str) -> list[dict[str, Any]]:
         registry = _service().registry
         try:
@@ -345,7 +355,7 @@ def create_app(
             )
         return out
 
-    @app.get("/stakeholders")
+    @api.get("/stakeholders")
     def stakeholders() -> list[dict[str, Any]]:
         registry = _service().registry
         return [
@@ -358,13 +368,14 @@ def create_app(
             for key, stakeholder in sorted(registry.stakeholders.items())
         ]
 
-    @app.post("/score", response_model=ScoreResponse, dependencies=[metered])
+    @api.post("/score", response_model=ScoreResponse, dependencies=[metered])
     def score(request: ScoreRequest) -> ScoreResponse:
         return _service().score(request)
 
     from serve.explore.api import build_router
 
-    app.include_router(build_router(_service, device=device, metered=metered))
+    api.include_router(build_router(_service, device=device, metered=metered))
+    app.include_router(api)
 
     return app
 

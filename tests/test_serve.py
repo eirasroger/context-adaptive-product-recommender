@@ -68,14 +68,14 @@ def _payload(registry, category_key, n=3):
 
 
 def test_health_reports_what_is_loaded(client):
-    body = client.get("/health").json()
+    body = client.get("/api/health").json()
     assert body["status"] == "ok"
     assert body["categories"]
 
 
 def test_scoring_echoes_the_eligibility_precondition(client, registry, category_key):
     """The API must never let a score be mistaken for a compliance statement."""
-    response = client.post("/score", json=_payload(registry, category_key))
+    response = client.post("/api/score", json=_payload(registry, category_key))
     assert response.status_code == 200
     body = response.json()
 
@@ -94,7 +94,7 @@ def test_unavailable_context_is_refused(client, registry, category_key):
 
     payload = _payload(registry, category_key)
     payload["context"] = [unavailable[0]]
-    response = client.post("/score", json=payload)
+    response = client.post("/api/score", json=payload)
     assert response.status_code == 400
     assert "not available" in response.json()["detail"]
 
@@ -104,7 +104,7 @@ def test_missing_values_are_reported_not_imputed(client, registry, category_key)
     dropped = sorted(payload["alternatives"][0]["values"])[0]
     payload["alternatives"][0]["values"].pop(dropped)
 
-    body = client.post("/score", json=payload).json()
+    body = client.post("/api/score", json=payload).json()
     assert dropped in body["results"][0]["missing_indicators"]
     assert dropped not in body["results"][1]["missing_indicators"]
 
@@ -127,14 +127,14 @@ def test_a_disqualifying_level_is_surfaced(client, registry, category_key):
     payload = _payload(registry, category_key, n=2)
     payload["alternatives"][0]["levels"][key] = level_key
 
-    body = client.post("/score", json=payload).json()
+    body = client.post("/api/score", json=payload).json()
     assert f"{key}={level_key}" in body["results"][0]["disqualifying_levels"]
     assert body["notes"]
 
 
 def test_indicator_listing_exposes_the_definitions(client, category_key):
     """A caller has to be able to find out what it is being asked for."""
-    body = client.get(f"/categories/{category_key}/indicators").json()
+    body = client.get(f"/api/categories/{category_key}/indicators").json()
     assert body
     for row in body:
         assert row["definition"].strip()
@@ -143,10 +143,11 @@ def test_indicator_listing_exposes_the_definitions(client, category_key):
 
 def test_unknown_category_is_a_404(client):
     response = client.post(
-        "/score",
+        "/api/score",
         json={"category": "not_a_category", "alternatives": [{"id": "a"}]},
     )
     assert response.status_code == 404
+    assert "unknown category" in response.json()["detail"]
 
 
 def test_the_bare_domain_reaches_the_tool(client):
@@ -155,11 +156,16 @@ def test_the_bare_domain_reaches_the_tool(client):
     A deployment served a JSON 404 at the root once, which reads as a broken
     site even though every real route was working.
     """
-    response = client.get("/", follow_redirects=False)
-    assert response.status_code in (302, 307)
-    assert response.headers["location"] == "/explore/"
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
 
-    assert client.get("/", follow_redirects=True).status_code == 200
+
+def test_the_former_page_address_still_reaches_the_tool(client):
+    for old in ("/explore/", "/explore"):
+        response = client.get(old, follow_redirects=True)
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/html")
 
 
 def test_a_caller_past_the_rate_limit_is_refused(checkpoint, registry, category_key, monkeypatch):
@@ -171,9 +177,9 @@ def test_a_caller_past_the_rate_limit_is_refused(checkpoint, registry, category_
     headers = {"x-forwarded-for": "198.51.100.4"}
 
     with TestClient(create_app(checkpoint)) as limited:
-        assert limited.post("/score", json=payload, headers=headers).status_code == 200
-        assert limited.post("/score", json=payload, headers=headers).status_code == 200
-        refused = limited.post("/score", json=payload, headers=headers)
+        assert limited.post("/api/score", json=payload, headers=headers).status_code == 200
+        assert limited.post("/api/score", json=payload, headers=headers).status_code == 200
+        refused = limited.post("/api/score", json=payload, headers=headers)
 
     assert refused.status_code == 429
     assert int(refused.headers["retry-after"]) >= 1
@@ -188,10 +194,10 @@ def test_the_rate_limit_is_per_caller(checkpoint, registry, category_key, monkey
 
     with TestClient(create_app(checkpoint)) as limited:
         first = {"x-forwarded-for": "198.51.100.4"}
-        assert limited.post("/score", json=payload, headers=first).status_code == 200
-        assert limited.post("/score", json=payload, headers=first).status_code == 429
+        assert limited.post("/api/score", json=payload, headers=first).status_code == 200
+        assert limited.post("/api/score", json=payload, headers=first).status_code == 429
         second = {"x-forwarded-for": "198.51.100.9"}
-        assert limited.post("/score", json=payload, headers=second).status_code == 200
+        assert limited.post("/api/score", json=payload, headers=second).status_code == 200
 
 
 def test_the_page_stays_reachable_when_scoring_is_rate_limited(
@@ -205,19 +211,19 @@ def test_the_page_stays_reachable_when_scoring_is_rate_limited(
     headers = {"x-forwarded-for": "198.51.100.4"}
 
     with TestClient(create_app(checkpoint)) as limited:
-        limited.post("/score", json=payload, headers=headers)
-        assert limited.post("/score", json=payload, headers=headers).status_code == 429
-        assert limited.get("/health", headers=headers).status_code == 200
-        assert limited.get("/explore/form", headers=headers).status_code == 200
+        limited.post("/api/score", json=payload, headers=headers)
+        assert limited.post("/api/score", json=payload, headers=headers).status_code == 429
+        assert limited.get("/api/health", headers=headers).status_code == 200
+        assert limited.get("/api/explore/form", headers=headers).status_code == 200
 
 
 def test_an_oversized_shortlist_is_refused(client, registry, category_key):
     from serve import limits
 
     payload = _payload(registry, category_key, n=limits.MAX_ALTERNATIVES + 1)
-    assert client.post("/score", json=payload).status_code == 422
+    assert client.post("/api/score", json=payload).status_code == 422
 
 
 def test_a_shortlist_wider_than_the_corpus_is_refused(client, registry, category_key):
     payload = _payload(registry, category_key, n=6)
-    assert client.post("/score", json=payload).status_code == 422
+    assert client.post("/api/score", json=payload).status_code == 422

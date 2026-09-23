@@ -498,7 +498,7 @@ async function runScore() {
   setStatus("Scoring.");
   $("score").disabled = true;
   try {
-    renderResult(await api("/score", payload()));
+    renderResult(await api("/api/score", payload()));
     setStatus("");
     annotate();
   } catch (err) {
@@ -549,7 +549,7 @@ function renderResult(data) {
 async function annotate() {
   let data;
   try {
-    data = await api("/explore/compare", payload());
+    data = await api("/api/explore/compare", payload());
   } catch {
     return;
   }
@@ -608,7 +608,7 @@ try {
 
 (async function start() {
   try {
-    const form = await api("/explore/form");
+    const form = await api("/api/explore/form");
     state.form = form;
     $("build").textContent =
       `registry ${form.registry_version ?? "?"} · snapshot ${(form.snapshot ?? "").slice(0, 12)}`;

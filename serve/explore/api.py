@@ -6,18 +6,14 @@ browser, a notebook and a figure script.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from core.encoding import AlternativeInput
 from serve import limits
 from serve.explore import analysis, compare as compare_module
-
-STATIC = Path(__file__).parent / "static"
 
 
 class AlternativePayload(BaseModel):
@@ -229,12 +225,5 @@ def build_router(
         return analysis.stakeholder_sensitivity(
             service.model, registry, request.category, alternatives, contexts, device
         )
-
-    @router.get("/", include_in_schema=False)
-    def page() -> FileResponse:
-        index = STATIC / "index.html"
-        if not index.exists():
-            raise HTTPException(status_code=404, detail="the page is not installed")
-        return FileResponse(index, headers={"Cache-Control": "no-store, max-age=0"})
 
     return router

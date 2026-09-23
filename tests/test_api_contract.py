@@ -24,7 +24,7 @@ def schema():
     """The published schema. Reading it needs no checkpoint, only the routes."""
     from serve.api import create_app
 
-    return TestClient(create_app()).get("/openapi.json").json()
+    return TestClient(create_app()).get("/api/openapi.json").json()
 
 
 def test_the_published_schema_matches_the_committed_contract(schema):
@@ -39,6 +39,13 @@ def test_the_published_schema_matches_the_committed_contract(schema):
         "the API surface moved. Review the diff, then re-record it with "
         f"{UPDATE_ENV}=1 python -m pytest tests/test_api_contract.py"
     )
+
+
+def test_every_endpoint_lives_under_api(schema):
+    """The frontend owns every path outside /api, so an endpoint elsewhere can
+    collide with a page URL."""
+    stray = sorted(path for path in schema["paths"] if not path.startswith("/api/"))
+    assert not stray, f"endpoints outside /api: {stray}"
 
 
 def test_every_route_the_page_calls_exists(schema):

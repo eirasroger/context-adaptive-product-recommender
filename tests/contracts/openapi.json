@@ -311,10 +311,10 @@
   },
   "openapi": "3.1.0",
   "paths": {
-    "/categories": {
+    "/api/categories": {
       "get": {
         "description": "What can be compared, and what each category assumes about its input.",
-        "operationId": "categories_categories_get",
+        "operationId": "categories_api_categories_get",
         "responses": {
           "200": {
             "content": {
@@ -324,7 +324,7 @@
                     "additionalProperties": true,
                     "type": "object"
                   },
-                  "title": "Response Categories Categories Get",
+                  "title": "Response Categories Api Categories Get",
                   "type": "array"
                 }
               }
@@ -335,9 +335,9 @@
         "summary": "Categories"
       }
     },
-    "/categories/{category_key}/indicators": {
+    "/api/categories/{category_key}/indicators": {
       "get": {
-        "operationId": "indicators_categories__category_key__indicators_get",
+        "operationId": "indicators_api_categories__category_key__indicators_get",
         "parameters": [
           {
             "in": "path",
@@ -358,7 +358,7 @@
                     "additionalProperties": true,
                     "type": "object"
                   },
-                  "title": "Response Indicators Categories  Category Key  Indicators Get",
+                  "title": "Response Indicators Api Categories  Category Key  Indicators Get",
                   "type": "array"
                 }
               }
@@ -379,10 +379,10 @@
         "summary": "Indicators"
       }
     },
-    "/explore/compare": {
+    "/api/explore/compare": {
       "post": {
         "description": "Why the leading alternative is ahead of each of the others.",
-        "operationId": "compare_explore_compare_post",
+        "operationId": "compare_api_explore_compare_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -399,7 +399,7 @@
               "application/json": {
                 "schema": {
                   "additionalProperties": true,
-                  "title": "Response Compare Explore Compare Post",
+                  "title": "Response Compare Api Explore Compare Post",
                   "type": "object"
                 }
               }
@@ -423,9 +423,9 @@
         ]
       }
     },
-    "/explore/context-sensitivity": {
+    "/api/explore/context-sensitivity": {
       "post": {
-        "operationId": "context_sensitivity_explore_context_sensitivity_post",
+        "operationId": "context_sensitivity_api_explore_context_sensitivity_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -442,7 +442,7 @@
               "application/json": {
                 "schema": {
                   "additionalProperties": true,
-                  "title": "Response Context Sensitivity Explore Context Sensitivity Post",
+                  "title": "Response Context Sensitivity Api Explore Context Sensitivity Post",
                   "type": "object"
                 }
               }
@@ -466,17 +466,17 @@
         ]
       }
     },
-    "/explore/form": {
+    "/api/explore/form": {
       "get": {
         "description": "Everything needed to draw the input grid and the selectors.",
-        "operationId": "form_explore_form_get",
+        "operationId": "form_api_explore_form_get",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
                   "additionalProperties": true,
-                  "title": "Response Form Explore Form Get",
+                  "title": "Response Form Api Explore Form Get",
                   "type": "object"
                 }
               }
@@ -490,9 +490,9 @@
         ]
       }
     },
-    "/explore/response": {
+    "/api/explore/response": {
       "get": {
-        "operationId": "response_explore_response_get",
+        "operationId": "response_api_explore_response_get",
         "parameters": [
           {
             "in": "query",
@@ -561,7 +561,7 @@
               "application/json": {
                 "schema": {
                   "additionalProperties": true,
-                  "title": "Response Response Explore Response Get",
+                  "title": "Response Response Api Explore Response Get",
                   "type": "object"
                 }
               }
@@ -585,9 +585,9 @@
         ]
       }
     },
-    "/explore/stakeholder-sensitivity": {
+    "/api/explore/stakeholder-sensitivity": {
       "post": {
-        "operationId": "stakeholder_sensitivity_explore_stakeholder_sensitivity_post",
+        "operationId": "stakeholder_sensitivity_api_explore_stakeholder_sensitivity_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -604,7 +604,7 @@
               "application/json": {
                 "schema": {
                   "additionalProperties": true,
-                  "title": "Response Stakeholder Sensitivity Explore Stakeholder Sensitivity Post",
+                  "title": "Response Stakeholder Sensitivity Api Explore Stakeholder Sensitivity Post",
                   "type": "object"
                 }
               }
@@ -628,16 +628,16 @@
         ]
       }
     },
-    "/health": {
+    "/api/health": {
       "get": {
-        "operationId": "health_health_get",
+        "operationId": "health_api_health_get",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
                   "additionalProperties": true,
-                  "title": "Response Health Health Get",
+                  "title": "Response Health Api Health Get",
                   "type": "object"
                 }
               }
@@ -648,9 +648,9 @@
         "summary": "Health"
       }
     },
-    "/score": {
+    "/api/score": {
       "post": {
-        "operationId": "score_score_post",
+        "operationId": "score_api_score_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -686,9 +686,9 @@
         "summary": "Score"
       }
     },
-    "/stakeholders": {
+    "/api/stakeholders": {
       "get": {
-        "operationId": "stakeholders_stakeholders_get",
+        "operationId": "stakeholders_api_stakeholders_get",
         "responses": {
           "200": {
             "content": {
@@ -698,7 +698,7 @@
                     "additionalProperties": true,
                     "type": "object"
                   },
-                  "title": "Response Stakeholders Stakeholders Get",
+                  "title": "Response Stakeholders Api Stakeholders Get",
                   "type": "array"
                 }
               }

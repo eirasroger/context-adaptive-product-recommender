@@ -340,10 +340,11 @@ this.
 
 The comparison page is at
 <https://context-adaptive-product-recommende.vercel.app>. The API is served
-from the same address. A scoring request looks like this:
+from the same address under `/api`, with interactive documentation at
+`/api/docs`. A scoring request looks like this:
 
 ```bash
-curl -X POST https://context-adaptive-product-recommende.vercel.app/score   -H "Content-Type: application/json"   -d '{
+curl -X POST https://context-adaptive-product-recommende.vercel.app/api/score   -H "Content-Type: application/json"   -d '{
     "category": "concrete",
     "context": ["acoustic_insulation"],
     "stakeholders": ["cost_conscious_developer"],
@@ -357,13 +358,13 @@ curl -X POST https://context-adaptive-product-recommende.vercel.app/score   -H "
 Each result carries a score, a rank, the indicators left unknown and any
 disqualifying levels. The response also echoes the functional unit, the
 registry version, the model's snapshot hash and the eligibility assumption.
-Indicator keys, units and ranges come from `GET /categories/concrete/indicators`.
+Indicator keys, units and ranges come from `GET /api/categories/concrete/indicators`.
 The routes that run the model accept 10 calls a minute per caller; see
 [Limits](#limits-on-a-public-deployment).
 
 ## The comparison page
 
-The page at `/explore/` is for scoring a real shortlist by hand. Pick a
+The page at `/` is for scoring a real shortlist by hand. Pick a
 category, a context and whose priorities apply, enter the indicator values for
 each candidate, and press **Score**. A blank field means the value is unknown,
 and the model treats it that way.
@@ -374,7 +375,7 @@ is labelled as such. A new category appears on the page as soon as its registry
 rows exist.
 
 Each result is annotated with what that alternative wins on. To find out, the
-page asks `/explore/compare` to take the leading alternative, give it a rival's
+page asks `/api/explore/compare` to take the leading alternative, give it a rival's
 value for one indicator at a time, and score it again. Indicators that change
 the gap are the ones that matter to the result. Among those, an alternative is
 credited with a win where it holds the best value in the direction the context
@@ -384,18 +385,18 @@ declares. Every figure comes from the real model; nothing is sampled.
 
 | Route | Purpose |
 |---|---|
-| `GET /` | Redirects to the comparison page |
-| `GET /health` | The loaded registry version, snapshot and categories |
-| `POST /score` | Score a shortlist under a context and stakeholders |
-| `GET /categories` | The categories and the eligibility assumption of each |
-| `GET /categories/{key}/indicators` | Definitions, units, ranges and levels |
-| `GET /stakeholders` | The archetypes and what each prioritises |
-| `GET /explore/` | The comparison page |
-| `GET /explore/form` | Everything the page needs to draw its form |
-| `POST /explore/compare` | Which indicators separate the leader from each rival |
-| `GET /explore/response` | The score as one indicator sweeps its range |
-| `POST /explore/context-sensitivity` | One shortlist scored under every available context |
-| `POST /explore/stakeholder-sensitivity` | One shortlist scored for every stakeholder |
+| `GET /` | The comparison page |
+| `GET /api/health` | The loaded registry version, snapshot and categories |
+| `POST /api/score` | Score a shortlist under a context and stakeholders |
+| `GET /api/categories` | The categories and the eligibility assumption of each |
+| `GET /api/categories/{key}/indicators` | Definitions, units, ranges and levels |
+| `GET /api/stakeholders` | The archetypes and what each prioritises |
+| `GET /api/explore/form` | Everything the page needs to draw its form |
+| `POST /api/explore/compare` | Which indicators separate the leader from each rival |
+| `GET /api/explore/response` | The score as one indicator sweeps its range |
+| `POST /api/explore/context-sensitivity` | One shortlist scored under every available context |
+| `POST /api/explore/stakeholder-sensitivity` | One shortlist scored for every stakeholder |
+| `GET /api/docs` | Interactive documentation, generated from the schema |
 
 The last three produce the data behind figures and have no page of their own.
 The committed OpenAPI schema lives in `tests/contracts/openapi.json`, and a test
