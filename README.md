@@ -383,6 +383,19 @@ the gap are the ones that matter to the result. Among those, an alternative is
 credited with a win where it holds the best value in the direction the context
 declares. Every figure comes from the real model; nothing is sampled.
 
+### Sharing a comparison
+
+The address bar always holds the whole comparison: category, context,
+priorities, and every alternative's name and values. Copy it, or press
+**Copy link**, and whoever opens it sees the same shortlist, scored on arrival.
+Refreshing the page keeps your work.
+
+The comparison travels compressed in the part of the address after `#`, which
+browsers never send to a server, so nothing is stored anywhere. A link records
+the registry version it was made under. When the registry has since changed,
+the page keeps every value it still recognises, lists what it left out, and
+treats the missing values as unknown.
+
 ## API
 
 | Route | Purpose |

@@ -55,6 +55,9 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Test
+        run: npm test
+
       # Generates the API types from contracts/openapi.json, type-checks, builds.
       - name: Build
         run: npm run build

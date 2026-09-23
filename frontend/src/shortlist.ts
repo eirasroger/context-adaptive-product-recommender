@@ -1,6 +1,7 @@
 import type { components } from "./api/schema";
 
 export const MAX_COLUMNS = 5;
+export const MIN_COLUMNS = 2;
 
 export type Column = {
   id: number;
@@ -9,21 +10,33 @@ export type Column = {
   levels: Record<string, string>;
 };
 
+export type Shortlist = {
+  category: string;
+  context: string;
+  stakeholders: string[];
+  columns: Column[];
+};
+
 let nextId = 0;
 
 export const letter = (index: number) => String.fromCharCode(65 + index);
 
-export const blankColumn = (index: number): Column => ({
-  id: nextId++,
-  name: `Option ${letter(index)}`,
-  values: {},
-  levels: {},
-});
+export const column = (
+  name: string,
+  values: Record<string, string> = {},
+  levels: Record<string, string> = {},
+): Column => ({ id: nextId++, name, values, levels });
 
-export const blankShortlist = () => [blankColumn(0), blankColumn(1)];
+export const blankColumn = (index: number) => column(`Option ${letter(index)}`);
+
+export const blankColumns = (count = MIN_COLUMNS) =>
+  Array.from({ length: count }, (_, index) => blankColumn(index));
 
 export const isFilled = (column: Column) =>
   Object.keys(column.values).length > 0 || Object.keys(column.levels).length > 0;
+
+export const isScorable = (shortlist: Shortlist) =>
+  shortlist.columns.filter(isFilled).length >= MIN_COLUMNS;
 
 export function withEntry(
   entries: Record<string, string>,
@@ -34,17 +47,12 @@ export function withEntry(
   return value === "" ? rest : { ...rest, [key]: value };
 }
 
-export function scoreRequest(
-  category: string,
-  context: string,
-  stakeholders: string[],
-  columns: Column[],
-): components["schemas"]["ScoreRequest"] {
+export function scoreRequest(shortlist: Shortlist): components["schemas"]["ScoreRequest"] {
   return {
-    category,
-    context: [context],
-    stakeholders,
-    alternatives: columns.map((column, index) => ({
+    category: shortlist.category,
+    context: [shortlist.context],
+    stakeholders: shortlist.stakeholders,
+    alternatives: shortlist.columns.map((column, index) => ({
       id: column.name || `Option ${letter(index)}`,
       values: Object.fromEntries(
         Object.entries(column.values).map(([key, value]) => [key, Number(value)]),
