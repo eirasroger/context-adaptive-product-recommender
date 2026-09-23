@@ -236,3 +236,8 @@ runs/
 # Private working notes, plans and conventions.
 docs/
 CLAUDE.md
+
+# Frontend dependencies, and the API types generated from contracts/ on every
+# build. dist/ is ignored above.
+node_modules/
+frontend/src/api/schema.d.ts

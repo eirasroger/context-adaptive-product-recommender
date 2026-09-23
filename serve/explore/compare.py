@@ -48,18 +48,6 @@ class Difference:
     favours: str
 
 
-@dataclass(frozen=True)
-class HeadToHead:
-    rival: str
-    rival_index: int
-    rival_score: float
-    gap: float
-    decisive: list[dict]
-    contributing: list[dict]
-    rival_wins: list[dict]
-    summary: str
-
-
 def _display(registry: Registry, indicator_key: str, value) -> str:
     if value is None:
         return "unknown"

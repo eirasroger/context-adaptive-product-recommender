@@ -328,13 +328,15 @@ core/          registry loading and token encoding, shared by training and servi
 model/         tokens, encoder, comparator, scoring head, loss, checkpoints
 train/         training loop and run configurations
 eval/          metrics, behavioural assertions, reports and the release gate
-serve/         the API, the comparison page, rate limits and the shipped release
+serve/         the API, rate limits and the shipped release
+frontend/      the comparison page: React and TypeScript, built by Vite
+contracts/     the API's OpenAPI schema, which the frontend's types are generated from
 experiments/   offline analyses: what drives the scores, and SHAP
 tests/         the test suite, with its own small evaluation fixture
 ```
 
-No category name may appear in `model/`, `core/` or `train/`. A test enforces
-this.
+No category name may appear in `model/`, `core/` or `train/`, and no registry
+key may appear in `frontend/`. Tests enforce both.
 
 ## Using the service
 
@@ -386,6 +388,7 @@ declares. Every figure comes from the real model; nothing is sampled.
 | Route | Purpose |
 |---|---|
 | `GET /` | The comparison page |
+| `GET /api/docs` | Interactive documentation, generated from the schema |
 | `GET /api/health` | The loaded registry version, snapshot and categories |
 | `POST /api/score` | Score a shortlist under a context and stakeholders |
 | `GET /api/categories` | The categories and the eligibility assumption of each |
@@ -396,22 +399,37 @@ declares. Every figure comes from the real model; nothing is sampled.
 | `GET /api/explore/response` | The score as one indicator sweeps its range |
 | `POST /api/explore/context-sensitivity` | One shortlist scored under every available context |
 | `POST /api/explore/stakeholder-sensitivity` | One shortlist scored for every stakeholder |
-| `GET /api/docs` | Interactive documentation, generated from the schema |
 
 The last three produce the data behind figures and have no page of their own.
-The committed OpenAPI schema lives in `tests/contracts/openapi.json`, and a test
-fails when the live schema differs from it.
+Every path outside `/api` belongs to the page.
+
+The committed OpenAPI schema lives in `contracts/openapi.json`, and a test
+fails when the live schema differs from it. The page's TypeScript types are
+generated from that file on every build, so a change to the API that the page
+has not caught up with fails the type-check.
 
 ## Running locally
 
-The shipped model runs from a fresh clone with the serving dependencies alone:
+The shipped model runs from a fresh clone with the serving dependencies and
+Node 22.12 or later:
 
 ```bash
 pip install -r requirements.txt
-RECOMMENDER_RATE_LIMIT=0 RECOMMENDER_RATE_LIMIT_TOTAL=0 uvicorn serve.api:app
+(cd frontend && npm ci && npm run build)
+RECOMMENDER_RATE_LIMIT=0 RECOMMENDER_RATE_LIMIT_TOTAL=0 uvicorn app:app
 ```
 
-The page is then at <http://127.0.0.1:8000/>, with the rate limit lifted.
+The page is then at <http://127.0.0.1:8000/>, with the rate limit lifted. The
+service refuses to start without the frontend build.
+
+To work on the page, leave uvicorn running and start the Vite dev server, which
+reloads on every edit and passes `/api` through to port 8000:
+
+```bash
+cd frontend && npm run dev
+```
+
+The page is then at <http://localhost:5173/>.
 
 ## Rebuilding from source
 

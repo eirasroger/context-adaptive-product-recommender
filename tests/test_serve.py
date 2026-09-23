@@ -43,10 +43,18 @@ def checkpoint(registry, seeded, tmp_path_factory):
 
 
 @pytest.fixture(scope="module")
-def client(checkpoint):
+def frontend(tmp_path_factory):
+    """A stand-in build, so the Python suite never needs Node."""
+    directory = tmp_path_factory.mktemp("frontend")
+    (directory / "index.html").write_text("<!doctype html><title>page</title>")
+    return directory
+
+
+@pytest.fixture(scope="module")
+def client(checkpoint, frontend):
     from serve.api import create_app
 
-    with TestClient(create_app(checkpoint)) as client:
+    with TestClient(create_app(checkpoint, frontend=frontend)) as client:
         yield client
 
 
@@ -161,6 +169,34 @@ def test_the_bare_domain_reaches_the_tool(client):
     assert response.headers["content-type"].startswith("text/html")
 
 
+def test_a_missing_frontend_build_fails_at_startup(checkpoint, tmp_path):
+    from serve.api import create_app
+
+    with pytest.raises(RuntimeError):
+        create_app(checkpoint, frontend=tmp_path / "dist")
+
+
+def test_the_page_endpoints_answer_in_their_declared_shape(client, registry, category_key):
+    form = client.get("/api/explore/form").json()
+    assert {c["key"] for c in form["categories"]} == set(registry.categories)
+
+    payload = _payload(registry, category_key)
+    payload["alternatives"][1]["values"] = {}
+    compared = client.post("/api/explore/compare", json=payload)
+    assert compared.status_code == 200
+    assert len(compared.json()["scores"]) == len(payload["alternatives"])
+
+
+def test_a_page_path_serves_the_frontend_and_an_api_path_never_does(client):
+    browser = {"Accept": "text/html"}
+    assert client.get("/a/page/path", headers=browser).headers["content-type"].startswith(
+        "text/html"
+    )
+    missing = client.get("/api/no-such-endpoint", headers=browser)
+    assert missing.status_code == 404
+    assert missing.headers["content-type"] == "application/json"
+
+
 def test_the_former_page_address_still_reaches_the_tool(client):
     for old in ("/explore/", "/explore"):
         response = client.get(old, follow_redirects=True)
@@ -176,7 +212,7 @@ def test_a_caller_past_the_rate_limit_is_refused(checkpoint, registry, category_
     payload = _payload(registry, category_key)
     headers = {"x-forwarded-for": "198.51.100.4"}
 
-    with TestClient(create_app(checkpoint)) as limited:
+    with TestClient(create_app(checkpoint, frontend=None)) as limited:
         assert limited.post("/api/score", json=payload, headers=headers).status_code == 200
         assert limited.post("/api/score", json=payload, headers=headers).status_code == 200
         refused = limited.post("/api/score", json=payload, headers=headers)
@@ -192,7 +228,7 @@ def test_the_rate_limit_is_per_caller(checkpoint, registry, category_key, monkey
     monkeypatch.setenv("RECOMMENDER_RATE_LIMIT_TOTAL", "0")
     payload = _payload(registry, category_key)
 
-    with TestClient(create_app(checkpoint)) as limited:
+    with TestClient(create_app(checkpoint, frontend=None)) as limited:
         first = {"x-forwarded-for": "198.51.100.4"}
         assert limited.post("/api/score", json=payload, headers=first).status_code == 200
         assert limited.post("/api/score", json=payload, headers=first).status_code == 429
@@ -210,7 +246,7 @@ def test_the_page_stays_reachable_when_scoring_is_rate_limited(
     payload = _payload(registry, category_key)
     headers = {"x-forwarded-for": "198.51.100.4"}
 
-    with TestClient(create_app(checkpoint)) as limited:
+    with TestClient(create_app(checkpoint, frontend=None)) as limited:
         limited.post("/api/score", json=payload, headers=headers)
         assert limited.post("/api/score", json=payload, headers=headers).status_code == 429
         assert limited.get("/api/health", headers=headers).status_code == 200

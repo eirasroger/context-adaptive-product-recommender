@@ -13,13 +13,84 @@ from pydantic import BaseModel, Field
 
 from core.encoding import AlternativeInput
 from serve import limits
+from serve.api import AlternativePayload
 from serve.explore import analysis, compare as compare_module
+from serve.explore.compare import Difference
 
 
-class AlternativePayload(BaseModel):
-    id: str
-    values: dict[str, float] = Field(default_factory=dict)
-    levels: dict[str, str] = Field(default_factory=dict)
+class Level(BaseModel):
+    key: str
+    display_name: str
+    disqualifying: bool
+
+
+class ReferenceRange(BaseModel):
+    low: float
+    high: float
+
+
+class FormField(BaseModel):
+    key: str
+    display_name: str
+    family: str
+    unit: str | None
+    value_type: str
+    definition: str
+    direction: int
+    range: ReferenceRange | None
+    levels: list[Level]
+
+
+class FormContext(BaseModel):
+    key: str
+    display_name: str
+    definition: str
+
+
+class FormCategory(BaseModel):
+    key: str
+    display_name: str
+    functional_unit: str
+    eligibility_precondition: str
+    default_context: str
+    contexts: list[FormContext]
+    fields: list[FormField]
+
+
+class FormStakeholder(BaseModel):
+    key: str
+    display_name: str
+    definition: str
+
+
+class Form(BaseModel):
+    registry_version: str | None
+    snapshot: str | None
+    categories: list[FormCategory]
+    stakeholders: list[FormStakeholder]
+    families: dict[str, str]
+
+
+class HeadToHead(BaseModel):
+    rival: str
+    rival_index: int
+    rival_score: float
+    gap: float
+    decisive: list[Difference]
+    contributing: list[Difference]
+    rival_wins: list[Difference]
+    summary: str
+
+
+class Comparison(BaseModel):
+    wins: dict[str, list[str]] = Field(
+        description="Per alternative index, the indicators it is credited with winning on."
+    )
+    leader: str
+    leader_index: int
+    leader_score: float
+    scores: list[float]
+    comparisons: list[HeadToHead]
 
 
 class ShortlistRequest(BaseModel):
@@ -82,7 +153,7 @@ def build_router(
         return service, registry, contexts, stakeholders, alternatives
 
     @router.get("/form")
-    def form() -> dict[str, Any]:
+    def form() -> Form:
         """Everything needed to draw the input grid and the selectors."""
         service = service_getter()
         registry = service.registry
@@ -152,7 +223,7 @@ def build_router(
         }
 
     @router.post("/compare", dependencies=costly)
-    def compare(request: ShortlistRequest) -> dict[str, Any]:
+    def compare(request: ShortlistRequest) -> Comparison:
         """Why the leading alternative is ahead of each of the others."""
         service, registry, contexts, stakeholders, alternatives = _resolve(request)
         if len(alternatives) < 2:

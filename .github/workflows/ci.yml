@@ -36,3 +36,25 @@ jobs:
       # result of every other test. The run still fails.
       - name: Test
         run: python -m pytest tests -q --continue-on-collection-errors
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # Generates the API types from contracts/openapi.json, type-checks, builds.
+      - name: Build
+        run: npm run build
