@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 
 import type { FormCategory, FormField } from "../api/client";
+import { groupedByFamily } from "../fields";
 import { rangeBound, seriesColour, stagger } from "../format";
 import { blankColumn, type Column, MAX_COLUMNS, withEntry } from "../shortlist";
 import type { TipContent } from "./Tip";
@@ -17,6 +18,7 @@ export function Grid({ category, families, columns, onColumns, onTip }: Props) {
   const replace = (index: number, column: Column) =>
     onColumns(columns.map((c, i) => (i === index ? column : c)));
   const full = columns.length >= MAX_COLUMNS;
+  const fields = groupedByFamily(category.fields);
 
   return (
     <table className="grid">
@@ -63,9 +65,9 @@ export function Grid({ category, families, columns, onColumns, onTip }: Props) {
         </tr>
       </thead>
       <tbody key={category.key}>
-        {category.fields.map((field, row) => (
+        {fields.map((field, row) => (
           <Fragment key={field.key}>
-            {field.family !== category.fields[row - 1]?.family && (
+            {field.family !== fields[row - 1]?.family && (
               <tr className="familyrow enter" style={stagger(row)}>
                 <th className="rowhead">{families[field.family] ?? field.family}</th>
                 {columns.map((column) => (

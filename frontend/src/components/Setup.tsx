@@ -89,11 +89,6 @@ export function Setup({
             ))}
           </div>
         </div>
-
-        <details className="assumes">
-          <summary>What the model assumes</summary>
-          <p>{category.eligibility_precondition}</p>
-        </details>
       </div>
     </section>
   );

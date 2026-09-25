@@ -107,10 +107,6 @@ select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1
 }
 
 .definition { margin: 0; font-size: 13px; color: var(--text-muted); max-width: 760px; }
-.assumes summary {
-  cursor: pointer; font-size: 13px; color: var(--text-secondary); width: fit-content;
-}
-.assumes p { margin: 8px 0 0; font-size: 13px; color: var(--text-secondary); max-width: 760px; }
 
 .picker { position: relative; max-width: 460px; }
 .picker-button {
