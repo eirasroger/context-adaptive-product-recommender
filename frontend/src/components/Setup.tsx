@@ -1,4 +1,6 @@
 import type { Form, FormCategory } from "../api/client";
+import { stagger } from "../format";
+import { CategoryPicker } from "./CategoryPicker";
 
 type Props = {
   form: Form;
@@ -23,34 +25,56 @@ export function Setup({
     if (!stakeholders.includes(key)) onStakeholders([...stakeholders, key]);
     else if (stakeholders.length > 1) onStakeholders(stakeholders.filter((s) => s !== key));
   };
+  const chosen = category.contexts.find((c) => c.key === context);
 
   return (
-    <div className="card">
+    <section className="card">
       <h2>Setup</h2>
       <div className="setup">
         <div className="field">
-          <label htmlFor="category">Category</label>
-          <select id="category" value={category.key} onChange={(e) => onCategory(e.target.value)}>
-            {form.categories.map((c) => (
-              <option key={c.key} value={c.key}>
-                {c.display_name}
-              </option>
-            ))}
-          </select>
+          <span className="label" id="category-label">
+            Product category
+          </span>
+          <CategoryPicker categories={form.categories} active={category} onChoose={onCategory} />
+          {category.preview && (
+            <div className="notice enter" role="note" key={category.key}>
+              <span className="badge">Preview</span>
+              <p>
+                {category.display_name} is trained on a synthetic working dataset with rule-based
+                labels while real products are collected. Its scores show how the model applies the
+                declared rules; experts have yet to validate them.
+              </p>
+            </div>
+          )}
         </div>
+
         <div className="field">
-          <label htmlFor="context">Context</label>
-          <select id="context" value={context} onChange={(e) => onContext(e.target.value)}>
-            {category.contexts.map((c) => (
-              <option key={c.key} value={c.key}>
+          <span className="label" id="context-label">
+            Application
+          </span>
+          <div className="chips" role="radiogroup" aria-labelledby="context-label" key={category.key}>
+            {category.contexts.map((c, index) => (
+              <button
+                key={c.key}
+                type="button"
+                role="radio"
+                className="chip enter"
+                style={stagger(index)}
+                aria-checked={c.key === context}
+                onClick={() => onContext(c.key)}
+              >
                 {c.display_name}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
+          {chosen && <p className="definition">{chosen.definition}</p>}
         </div>
+
         <div className="field">
-          <label>Priorities</label>
-          <div className="chips">
+          <span className="label" id="priorities-label">
+            Whose priorities count
+          </span>
+          <div className="chips" role="group" aria-labelledby="priorities-label">
             {form.stakeholders.map((s) => (
               <button
                 key={s.key}
@@ -65,7 +89,12 @@ export function Setup({
             ))}
           </div>
         </div>
+
+        <details className="assumes">
+          <summary>What the model assumes</summary>
+          <p>{category.eligibility_precondition}</p>
+        </details>
       </div>
-    </div>
+    </section>
   );
 }

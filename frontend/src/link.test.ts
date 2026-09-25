@@ -15,6 +15,7 @@ const form: Form = {
     {
       key: "widget",
       display_name: "Widget",
+      preview: false,
       functional_unit: "one widget",
       eligibility_precondition: "",
       default_context: "plain",

@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
-import { api, type Comparison, type Form, type ScoreResponse, unwrap } from "./api/client";
+import { api, type Comparison, type Form, unwrap } from "./api/client";
 import { Grid } from "./components/Grid";
 import { Result } from "./components/Result";
+import { type Axis, Sensitivity } from "./components/Sensitivity";
 import { Setup } from "./components/Setup";
 import { Tip, type TipContent } from "./components/Tip";
+import { type Draft, isStale, switchCategory, unscored } from "./drafts";
 import { decodeLink, encodeLink, restore, snapshotOf } from "./link";
 import {
   blankColumns,
@@ -28,52 +31,68 @@ const URL_UPDATE_DELAY_MS = 400;
 
 export function App() {
   const [form, setForm] = useState<Form | null>(null);
-  const [shortlist, setShortlist] = useState<Shortlist | null>(null);
-  const [result, setResult] = useState<ScoreResponse | null>(null);
-  const [wins, setWins] = useState(new Map<number, string>());
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [parked, setParked] = useState(new Map<string, Draft>());
+  const [axis, setAxis] = useState<Axis>("context");
   const [scoring, setScoring] = useState(false);
   const [status, setStatus] = useState(quiet);
   const [linkNotice, setLinkNotice] = useState<Status>(quiet);
   const [tip, setTip] = useState<TipContent | null>(null);
   const latest = useRef(0);
 
-  const score = useCallback(async (target: Shortlist) => {
-    const body = scoreRequest(target);
-    const request = ++latest.current;
-    setStatus(note("Scoring."));
-    setScoring(true);
-    try {
-      setResult(await unwrap(api.POST("/api/score", { body })));
-      setWins(new Map());
-      setStatus(quiet);
-    } catch (err) {
-      setStatus(failure(messageOf(err)));
-      return;
-    } finally {
-      setScoring(false);
-    }
-    try {
-      const comparison = await unwrap(api.POST("/api/explore/compare", { body }));
-      if (request === latest.current) setWins(annotations(comparison));
-    } catch {}
+  const patch = useCallback((scored: Shortlist, change: Partial<Draft>) => {
+    setDraft((d) => (d && d.scored === scored ? { ...d, ...change } : d));
   }, []);
+
+  const score = useCallback(
+    async (target: Shortlist) => {
+      const body = scoreRequest(target);
+      const request = ++latest.current;
+      setStatus(note("Scoring."));
+      setScoring(true);
+      try {
+        const result = await unwrap(api.POST("/api/score", { body }));
+        if (request !== latest.current) return;
+        setDraft((d) =>
+          d && d.shortlist.category === target.category
+            ? { ...unscored(d.shortlist), scored: target, result }
+            : d,
+        );
+        setStatus(quiet);
+      } catch (err) {
+        setStatus(failure(messageOf(err)));
+        return;
+      } finally {
+        setScoring(false);
+      }
+      const [comparison, byContext] = await Promise.allSettled([
+        unwrap(api.POST("/api/explore/compare", { body })),
+        unwrap(api.POST("/api/explore/context-sensitivity", { body })),
+      ]);
+      patch(target, {
+        ...(comparison.status === "fulfilled" && { wins: annotations(comparison.value) }),
+        ...(byContext.status === "fulfilled" && { byContext: byContext.value }),
+      });
+    },
+    [patch],
+  );
 
   const open = useCallback(
     async (loaded: Form, fragment: string) => {
-      const fresh = defaultShortlist(loaded);
+      const fresh = unscored(defaultShortlist(loaded));
+      setParked(new Map());
       if (!fragment) {
-        setShortlist(fresh);
+        setDraft(fresh);
         return;
       }
       const snapshot = await decodeLink(fragment);
       const restored = snapshot && restore(snapshot, loaded);
-      setResult(null);
       if (!restored) {
-        setShortlist(fresh);
+        setDraft(fresh);
         setLinkNotice(failure("This link could not be read, so the page opened empty."));
         return;
       }
-      setShortlist(restored.shortlist);
+      setDraft(unscored(restored.shortlist));
       setLinkNotice(note(restored.notes.join(" ")));
       if (isScorable(restored.shortlist)) await score(restored.shortlist);
     },
@@ -101,6 +120,7 @@ export function App() {
     return () => removeEventListener("hashchange", reopen);
   }, [form, open]);
 
+  const shortlist = draft?.shortlist;
   useEffect(() => {
     if (!form || !shortlist) return;
     const timer = setTimeout(async () => {
@@ -120,42 +140,58 @@ export function App() {
     return () => removeEventListener("scroll", hide);
   }, []);
 
-  const category = form?.categories.find((c) => c.key === shortlist?.category);
-  if (!form || !shortlist || !category) {
+  const scored = draft?.scored;
+  const needsStakeholders = axis === "stakeholder" && !!scored && !draft?.byStakeholder;
+  useEffect(() => {
+    if (!needsStakeholders || !scored) return;
+    unwrap(api.POST("/api/explore/stakeholder-sensitivity", { body: scoreRequest(scored) }))
+      .then((byStakeholder) => patch(scored, { byStakeholder }))
+      .catch((err) => setStatus(failure(messageOf(err))));
+  }, [needsStakeholders, scored, patch]);
+
+  const category = form?.categories.find((c) => c.key === draft?.shortlist.category);
+  if (!form || !draft || !category) {
     return (
       <div className="wrap">
-        <Header form={form} />
+        <Header />
         <div className={status.error ? "msg error" : "msg"}>{status.text}</div>
       </div>
     );
   }
 
-  const update = (change: Partial<Shortlist>) => setShortlist({ ...shortlist, ...change });
+  const edit = (change: Partial<Shortlist>) =>
+    setDraft({ ...draft, shortlist: { ...draft.shortlist, ...change } });
 
   const chooseCategory = (key: string) => {
-    const chosen = form.categories.find((c) => c.key === key);
-    if (!chosen) return;
-    update({ category: key, context: chosen.default_context, columns: blankColumns() });
-    setResult(null);
+    if (key === category.key) return;
+    latest.current++;
+    const switched = switchCategory(parked, draft, key, (target) =>
+      shortlistFor(form, target, draft.shortlist.stakeholders),
+    );
+    withTransition(() => {
+      setParked(switched.parked);
+      setDraft(switched.next);
+      setStatus(quiet);
+      setLinkNotice(quiet);
+    });
   };
 
   const clear = () => {
-    update({ columns: blankColumns(shortlist.columns.length) });
-    setResult(null);
+    edit({ columns: blankColumns(draft.shortlist.columns.length) });
     setLinkNotice(quiet);
   };
 
   const runScore = () => {
-    if (!isScorable(shortlist)) {
+    if (!isScorable(draft.shortlist)) {
       setStatus(failure("Fill in at least two alternatives before scoring."));
       return;
     }
-    void score(shortlist);
+    void score(draft.shortlist);
   };
 
   const copyLink = async () => {
     const url = `${location.origin}${location.pathname}#${await encodeLink(
-      snapshotOf(shortlist, form.registry_version),
+      snapshotOf(draft.shortlist, form.registry_version),
     )}`;
     history.replaceState(null, "", url);
     try {
@@ -168,7 +204,7 @@ export function App() {
 
   return (
     <div className="wrap">
-      <Header form={form} />
+      <Header />
       {linkNotice.text && (
         <div className={linkNotice.error ? "msg error" : "msg"}>{linkNotice.text}</div>
       )}
@@ -176,21 +212,21 @@ export function App() {
       <Setup
         form={form}
         category={category}
-        context={shortlist.context}
-        stakeholders={shortlist.stakeholders}
+        context={draft.shortlist.context}
+        stakeholders={draft.shortlist.stakeholders}
         onCategory={chooseCategory}
-        onContext={(context) => update({ context })}
-        onStakeholders={(stakeholders) => update({ stakeholders })}
+        onContext={(context) => edit({ context })}
+        onStakeholders={(stakeholders) => edit({ stakeholders })}
       />
 
-      <div className="card">
+      <section className="card">
         <h2>Alternatives</h2>
         <div className="gridwrap">
           <Grid
             category={category}
             families={form.families}
-            columns={shortlist.columns}
-            onColumns={(columns: Column[]) => update({ columns })}
+            columns={draft.shortlist.columns}
+            onColumns={(columns: Column[]) => edit({ columns })}
             onTip={setTip}
           />
         </div>
@@ -204,46 +240,97 @@ export function App() {
           <span className="spacer" />
           <span className="hint">Leave a field blank to say the value is unknown.</span>
           <button className="primary" type="button" disabled={scoring} onClick={runScore}>
-            Score
+            {scoring ? "Scoring" : "Score"}
           </button>
         </div>
+      </section>
+
+      <div className={status.error ? "msg error" : "msg"} aria-live="polite">
+        {status.text}
       </div>
 
-      {result && <Result result={result} wins={wins} />}
+      {draft.result && draft.scored && (
+        <div className={isStale(draft) ? "outcome enter stale" : "outcome enter"} key={category.key}>
+          {isStale(draft) && (
+            <p className="stale-note">The inputs have changed since this score. Score again to update it.</p>
+          )}
+          <Result result={draft.result} wins={draft.wins} preview={category.preview} />
+          <Sensitivity
+            axis={axis}
+            onAxis={setAxis}
+            form={form}
+            category={category}
+            scored={draft.scored}
+            byContext={draft.byContext}
+            byStakeholder={draft.byStakeholder}
+          />
+        </div>
+      )}
 
-      <div className={status.error ? "msg error" : "msg"}>{status.text}</div>
+      <Footer form={form} />
       <Tip tip={tip} />
     </div>
   );
 }
 
-function Header({ form }: { form: Form | null }) {
+/** Cross-fades the page between states where the browser can, and applies the change at once elsewhere. */
+function withTransition(change: () => void) {
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (still || typeof document.startViewTransition !== "function") {
+    change();
+    return;
+  }
+  document.startViewTransition(() => flushSync(change));
+}
+
+function Header() {
   return (
-    <header>
-      <h1>Product Comparison</h1>
-      {form && (
-        <span className="build">
-          registry {form.registry_version ?? "?"} · snapshot {(form.snapshot ?? "").slice(0, 12)}
-        </span>
-      )}
-      <span className="spacer" />
-      <button type="button" onClick={toggleTheme}>
-        Theme
+    <header className="masthead">
+      <div>
+        <h1>Product Comparison</h1>
+        <p className="lede">
+          Score a shortlist of building products for one application and one set of priorities.
+        </p>
+      </div>
+      <button type="button" className="icon" aria-label="Switch colour theme" onClick={toggleTheme}>
+        <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+          <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M10 3a7 7 0 0 1 0 14z" fill="currentColor" />
+        </svg>
       </button>
     </header>
   );
+}
+
+function Footer({ form }: { form: Form }) {
+  return (
+    <footer className="footer">
+      <span>
+        Registry {form.registry_version ?? "unknown"} · snapshot{" "}
+        {(form.snapshot ?? "").slice(0, 12) || "unknown"}
+      </span>
+      <span className="spacer" />
+      <a href="https://doi.org/10.1016/j.spc.2026.06.011" target="_blank" rel="noreferrer">
+        Paper
+      </a>
+      <a href="https://doi.org/10.34810/DATA3164" target="_blank" rel="noreferrer">
+        Dataset
+      </a>
+    </footer>
+  );
+}
+
+function shortlistFor(form: Form, key: string, stakeholders: string[]): Shortlist {
+  const category = form.categories.find((c) => c.key === key);
+  if (!category) throw new Error(`the registry holds no category ${key}`);
+  return { category: key, context: category.default_context, stakeholders, columns: blankColumns() };
 }
 
 function defaultShortlist(form: Form): Shortlist {
   const [category] = form.categories;
   const [stakeholder] = form.stakeholders;
   if (!category || !stakeholder) throw new Error("the registry holds nothing to compare");
-  return {
-    category: category.key,
-    context: category.default_context,
-    stakeholders: [stakeholder.key],
-    columns: blankColumns(),
-  };
+  return shortlistFor(form, category.key, [stakeholder.key]);
 }
 
 function annotations(comparison: Comparison): Map<number, string> {

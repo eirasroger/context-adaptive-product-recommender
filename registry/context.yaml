@@ -9,6 +9,26 @@ context:
   definition_text: The product's own surface is the finished, visible surface. Finer aggregate and better workability give smoother, more uniform results. Very high secondary content can harm visual uniformity, so this context reaches into a circularity indicator and reverses its usual direction -- an empirical cross-family effect that nobody would author as a performance requirement, and the reason contexts need a learned residual on top of their declarations.
   is_baseline: 0
   is_active: 1
+- key: high_rise
+  display_name: High rise
+  definition_text: Tall buildings, above about 18 m. Fire risk grows with height and the class above the code minimum is priced by insurers, so reaction to fire counts strongly. Heavy systems load the structure and the fixings.
+  is_baseline: 0
+  is_active: 1
+- key: hot_summer
+  display_name: Hot summer
+  definition_text: Cooling dominates. Thermal mass on the room side of the insulation damps daily temperature swings, so internal heat capacity counts strongly; insulation still helps, less than in a cold climate.
+  is_baseline: 0
+  is_active: 1
+- key: new_build_mild
+  display_name: New build, mild climate
+  definition_text: 'Baseline for building envelopes: new construction in a mild climate on a quiet site. Every alternative is assumed compliant, so thermal and acoustic margins matter moderately and the decision turns mostly on environmental impact, cost and circularity.'
+  is_baseline: 1
+  is_active: 1
+- key: retrofit
+  display_name: Retrofit
+  definition_text: A system added to an existing building. Lowering heat loss is the purpose; thickness projects past the building line or eats into rooms; the existing structure limits the weight it can carry.
+  is_baseline: 0
+  is_active: 1
 - key: standard_structural
   display_name: Standard structural application
   definition_text: 'Baseline application: load-bearing elements with standard geometry, where every alternative is assumed structurally adequate. No strong bias towards any single performance property, so the decision turns on sustainability, cost and overall robustness. Being a baseline, it stays available for the categories that nominate it whether or not it reaches any of their indicators.'

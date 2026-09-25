@@ -238,11 +238,17 @@
           "key": {
             "title": "Key",
             "type": "string"
+          },
+          "preview": {
+            "description": "Trained partly on synthetic labels; scores restate the declared rules.",
+            "title": "Preview",
+            "type": "boolean"
           }
         },
         "required": [
           "key",
           "display_name",
+          "preview",
           "functional_unit",
           "eligibility_precondition",
           "default_context",
@@ -634,6 +640,67 @@
         "title": "ScoredAlternative",
         "type": "object"
       },
+      "Sensitivity": {
+        "properties": {
+          "alternatives": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Alternatives",
+            "type": "array"
+          },
+          "axis": {
+            "title": "Axis",
+            "type": "string"
+          },
+          "changes_winner": {
+            "title": "Changes Winner",
+            "type": "boolean"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/SensitivityRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "axis",
+          "alternatives",
+          "rows",
+          "changes_winner"
+        ],
+        "title": "Sensitivity",
+        "type": "object"
+      },
+      "SensitivityRow": {
+        "properties": {
+          "label": {
+            "description": "The context or stakeholder key this row varies.",
+            "title": "Label",
+            "type": "string"
+          },
+          "scores": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Scores",
+            "type": "array"
+          },
+          "winner": {
+            "title": "Winner",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "scores",
+          "winner"
+        ],
+        "title": "SensitivityRow",
+        "type": "object"
+      },
       "ShortlistRequest": {
         "properties": {
           "alternatives": {
@@ -846,9 +913,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Context Sensitivity",
-                  "type": "object"
+                  "$ref": "#/components/schemas/Sensitivity"
                 }
               }
             },
@@ -1006,9 +1071,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Stakeholder Sensitivity",
-                  "type": "object"
+                  "$ref": "#/components/schemas/Sensitivity"
                 }
               }
             },

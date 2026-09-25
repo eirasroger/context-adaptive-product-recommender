@@ -10,6 +10,7 @@ export type FormField = Schemas["FormField"];
 export type ShortlistRequest = Schemas["ShortlistRequest"];
 export type ScoreResponse = Schemas["ScoreResponse"];
 export type Comparison = Schemas["Comparison"];
+export type Sensitivity = Schemas["Sensitivity"];
 
 export const api = createClient<paths>();
 

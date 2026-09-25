@@ -53,7 +53,9 @@ def test_no_category_is_named_in_the_model_or_core_or_train():
         for row in (yaml.safe_load(seed.read_text(encoding="utf-8")) or {}).get("category", [])
     ]
     assert rows, "found no category in the seeds; the layout has changed"
-    names = {row["key"] for row in rows} | {row["display_name"].lower() for row in rows}
+    names = {row["key"] for row in rows} | {
+        row["display_name"].lower() for row in rows if "display_name" in row
+    }
 
     offenders = []
     for directory in ("model", "core", "train"):

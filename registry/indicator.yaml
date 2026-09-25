@@ -1,4 +1,14 @@
 indicator:
+- key: acoustic_reduction
+  display_name: Airborne sound reduction
+  family_key: performance
+  value_type: continuous
+  unit: dB
+  definition_text: Weighted airborne sound reduction index of the system, RA or Rw as declared or catalogued. Higher is better. A product property, distinct from the building's facade insulation D2m,nT,Atr, which also depends on windows and room geometry.
+  default_direction: 1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
 - key: b
   display_name: Biodiversity pressure
   family_key: environmental_impact
@@ -99,6 +109,16 @@ indicator:
   nominal_justification: null
   is_derived: 0
   is_active: 1
+- key: fire_reaction
+  display_name: Reaction to fire
+  family_key: health_safety
+  value_type: ordinal
+  unit: null
+  definition_text: 'Euroclass reaction to fire of the system per EN 13501-1, main class only. Higher is better. The spacing is uneven: A1 and A2 are non-combustible, and the step from A2 down to B is the largest on the scale. Smoke and droplet subclasses are left out until evidence shows decisions turn on them.'
+  default_direction: 1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
 - key: fu_haz
   display_name: Hazardous waste disposal
   family_key: circularity
@@ -169,6 +189,16 @@ indicator:
   nominal_justification: null
   is_derived: 0
   is_active: 1
+- key: heat_capacity
+  display_name: Internal heat capacity
+  family_key: performance
+  value_type: continuous
+  unit: kJ/m2K
+  definition_text: 'Internal areal heat capacity per EN ISO 13786: the thermal mass the room side of the system can exchange over a daily cycle. Sees where the mass sits, so heavy masonry behind external insulation scores high and the same masonry behind internal insulation scores low. Valuable where summer overheating is the risk; neutral elsewhere.'
+  default_direction: 0
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
 - key: scm_content
   display_name: Supplementary cementitious content
   family_key: performance
@@ -186,6 +216,36 @@ indicator:
   unit: mm
   definition_text: Consistency measure standing in for workability. Higher generally means easier placing and compaction and a better surface result. Very high values can be unnecessary where the application does not call for them, so this indicator is a candidate for an ideal-band declaration if the labelled evidence supports one; it is currently declared monotone.
   default_direction: 1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: surface_mass
+  display_name: Surface mass
+  family_key: performance
+  value_type: continuous
+  unit: kg/m2
+  definition_text: 'Mass of one square metre of the installed system. Carries weight only: the acoustic and thermal-inertia benefits of mass are measured directly by the sound reduction and heat capacity indicators, so a direction here would count them twice. Context supplies the direction where load matters. Spans more than an order of magnitude across typologies, so it is normalised on a logarithmic scale.'
+  default_direction: 0
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: thickness
+  display_name: Overall thickness
+  family_key: performance
+  value_type: continuous
+  unit: mm
+  definition_text: Overall thickness of the installed system. Lower is better, weakly in new build, where it costs floor area, and strongly in retrofit, where it projects past the building line or eats into existing rooms.
+  default_direction: -1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
+- key: u_value
+  display_name: Thermal transmittance
+  family_key: performance
+  value_type: continuous
+  unit: W/m2K
+  definition_text: Heat flow through one square metre of the whole system per kelvin of temperature difference, per EN ISO 6946. Lower is better. Must meet the code limit for the climate zone; the margin below it still has value, because heating and cooling energy scale with it over the service life.
+  default_direction: -1
   nominal_justification: null
   is_derived: 0
   is_active: 1

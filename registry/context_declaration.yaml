@@ -1,5 +1,13 @@
 context_declaration:
 - context_key: acoustic_insulation
+  indicator_key: acoustic_reduction
+  category_key: '*'
+  direction: 1
+  priority: 0.9
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: acoustic_insulation
   indicator_key: density
   category_key: '*'
   direction: 1
@@ -71,6 +79,94 @@ context_declaration:
   is_required: 0
   ideal_value: null
   note: null
+- context_key: high_rise
+  indicator_key: fire_reaction
+  category_key: '*'
+  direction: 1
+  priority: 0.9
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: high_rise
+  indicator_key: surface_mass
+  category_key: '*'
+  direction: -1
+  priority: 0.5
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: hot_summer
+  indicator_key: heat_capacity
+  category_key: '*'
+  direction: 1
+  priority: 0.8
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: hot_summer
+  indicator_key: u_value
+  category_key: '*'
+  direction: -1
+  priority: 0.5
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: new_build_mild
+  indicator_key: acoustic_reduction
+  category_key: '*'
+  direction: 1
+  priority: 0.3
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: new_build_mild
+  indicator_key: fire_reaction
+  category_key: '*'
+  direction: 1
+  priority: 0.2
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: new_build_mild
+  indicator_key: thickness
+  category_key: '*'
+  direction: -1
+  priority: 0.2
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: new_build_mild
+  indicator_key: u_value
+  category_key: '*'
+  direction: -1
+  priority: 0.5
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: retrofit
+  indicator_key: surface_mass
+  category_key: '*'
+  direction: -1
+  priority: 0.8
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: retrofit
+  indicator_key: thickness
+  category_key: '*'
+  direction: -1
+  priority: 0.8
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: retrofit
+  indicator_key: u_value
+  category_key: '*'
+  direction: -1
+  priority: 0.8
+  is_required: 0
+  ideal_value: null
+  note: null
 - context_key: standard_structural
   indicator_key: cement_content
   category_key: '*'
@@ -137,6 +233,14 @@ context_declaration:
   note: null
 - context_key: thermal_insulation
   indicator_key: density
+  category_key: '*'
+  direction: -1
+  priority: 0.9
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: thermal_insulation
+  indicator_key: u_value
   category_key: '*'
   direction: -1
   priority: 0.9

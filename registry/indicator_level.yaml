@@ -1,4 +1,53 @@
 indicator_level:
+- indicator_key: fire_reaction
+  level_key: f
+  level_index: 0
+  display_name: Class F
+  definition_text: No performance determined.
+  normalised_position: 0.0
+  is_disqualifying: 0
+- indicator_key: fire_reaction
+  level_key: e
+  level_index: 1
+  display_name: Class E
+  definition_text: Resists a small flame for a short time.
+  normalised_position: 0.1
+  is_disqualifying: 0
+- indicator_key: fire_reaction
+  level_key: d
+  level_index: 2
+  display_name: Class D
+  definition_text: Combustible, with a limited contribution to fire.
+  normalised_position: 0.25
+  is_disqualifying: 0
+- indicator_key: fire_reaction
+  level_key: c
+  level_index: 3
+  display_name: Class C
+  definition_text: Combustible, with a limited contribution to a developing fire.
+  normalised_position: 0.4
+  is_disqualifying: 0
+- indicator_key: fire_reaction
+  level_key: b
+  level_index: 4
+  display_name: Class B
+  definition_text: Combustible, with a very limited contribution to fire.
+  normalised_position: 0.55
+  is_disqualifying: 0
+- indicator_key: fire_reaction
+  level_key: a2
+  level_index: 5
+  display_name: Class A2
+  definition_text: Non-combustible in practice, with a minor organic content. The gap to class B is the widest on the scale.
+  normalised_position: 0.9
+  is_disqualifying: 0
+- indicator_key: fire_reaction
+  level_key: a1
+  level_index: 6
+  display_name: Class A1
+  definition_text: Non-combustible.
+  normalised_position: 1.0
+  is_disqualifying: 0
 - indicator_key: health
   level_key: h0
   level_index: 0

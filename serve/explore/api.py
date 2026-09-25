@@ -46,6 +46,9 @@ class FormContext(BaseModel):
 class FormCategory(BaseModel):
     key: str
     display_name: str
+    preview: bool = Field(
+        description="Trained partly on synthetic labels; scores restate the declared rules."
+    )
     functional_unit: str
     eligibility_precondition: str
     default_context: str
@@ -87,6 +90,19 @@ class Comparison(BaseModel):
     leader_score: float
     scores: list[float]
     comparisons: list[HeadToHead]
+
+
+class SensitivityRow(BaseModel):
+    label: str = Field(description="The context or stakeholder key this row varies.")
+    scores: list[float]
+    winner: int
+
+
+class Sensitivity(BaseModel):
+    axis: str
+    alternatives: list[str]
+    rows: list[SensitivityRow]
+    changes_winner: bool
 
 
 class ShortlistRequest(BaseModel):
@@ -186,6 +202,7 @@ def build_router(service_getter, metered: Any | None = None) -> APIRouter:
                 {
                     "key": key,
                     "display_name": category.display_name,
+                    "preview": category.is_preview,
                     "functional_unit": category.functional_unit_display,
                     "eligibility_precondition": category.eligibility_precondition_text,
                     "default_context": category.default_context_key,
@@ -277,14 +294,14 @@ def build_router(service_getter, metered: Any | None = None) -> APIRouter:
         )
 
     @router.post("/context-sensitivity", dependencies=costly)
-    def context_sensitivity(request: ShortlistRequest) -> dict[str, Any]:
+    def context_sensitivity(request: ShortlistRequest) -> Sensitivity:
         service, registry, _, stakeholders, alternatives = _resolve(request)
         return analysis.context_sensitivity(
             service.scorer, registry, request.category, alternatives, stakeholders
         )
 
     @router.post("/stakeholder-sensitivity", dependencies=costly)
-    def stakeholder_sensitivity(request: ShortlistRequest) -> dict[str, Any]:
+    def stakeholder_sensitivity(request: ShortlistRequest) -> Sensitivity:
         service, registry, contexts, _, alternatives = _resolve(request)
         return analysis.stakeholder_sensitivity(
             service.scorer, registry, request.category, alternatives, contexts

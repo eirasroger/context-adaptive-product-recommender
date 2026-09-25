@@ -153,6 +153,29 @@ def test_the_page_endpoints_answer_in_their_declared_shape(client, registry, cat
     assert len(compared.json()["scores"]) == len(payload["alternatives"])
 
 
+def test_a_category_trained_on_synthetic_labels_is_shown_as_a_preview(client, registry):
+    from core.registry import SYNTHETIC_PROVENANCE
+
+    form = client.get("/api/explore/form").json()
+    shown = {c["key"]: c["preview"] for c in form["categories"]}
+    assert shown == {
+        key: category.provenance_weights.get(SYNTHETIC_PROVENANCE, 0.0) > 0.0
+        for key, category in registry.categories.items()
+    }
+
+
+def test_the_sensitivity_endpoints_name_their_rows(client, registry, category_key):
+    payload = _payload(registry, category_key)
+    by_context = client.post("/api/explore/context-sensitivity", json=payload).json()
+    by_stakeholder = client.post("/api/explore/stakeholder-sensitivity", json=payload).json()
+
+    assert [row["label"] for row in by_context["rows"]] == sorted(
+        registry.category(category_key).available_contexts
+    )
+    assert [row["label"] for row in by_stakeholder["rows"]] == sorted(registry.stakeholders)
+    assert all(len(row["scores"]) == len(payload["alternatives"]) for row in by_context["rows"])
+
+
 def test_a_page_path_serves_the_frontend_and_an_api_path_never_does(client):
     browser = {"Accept": "text/html"}
     assert client.get("/a/page/path", headers=browser).headers["content-type"].startswith(

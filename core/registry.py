@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
 WILDCARD = "*"
+SYNTHETIC_PROVENANCE = "synthetic"
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,6 +131,11 @@ class CategorySpec:
     available_contexts: frozenset[str]
     #: indicator keys in slot order, stable because slots are append-only
     token_order: tuple[str, ...]
+
+    @property
+    def is_preview(self) -> bool:
+        """Trained partly on synthetic labels, so its scores restate the registry's own rules."""
+        return self.provenance_weights.get(SYNTHETIC_PROVENANCE, 0.0) > 0.0
 
 
 @dataclass(frozen=True)

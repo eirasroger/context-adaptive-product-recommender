@@ -1,4 +1,4 @@
-"""Build the working corpus: the main corpus, the facade overlay, its dataset and its control cases."""
+"""Build the facade corpus apart from the main one: a copy of it, plus the facade dataset and control cases."""
 
 from __future__ import annotations
 
@@ -15,11 +15,7 @@ from ingest.generators import run as control
 from ingest.generators.writer import write_cases
 from wip.facade import ingest, synthesise
 
-WORK_DIR = Path("data/wip")
-WORK_DB = WORK_DIR / "corpus.db"
-MIRROR_DIR = WORK_DIR / "registry"
-OVERLAY_DIR = Path(__file__).parent / "seeds"
-RELEASE = "0.3.0-wip"
+WORK_DB = Path("data/wip/corpus.db")
 CONTROL_SOURCE = "facade_wip_control"
 
 
@@ -37,6 +33,7 @@ def copy_corpus(source: Path, target: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("release", help="registry version to cut, e.g. 0.3.0")
     parser.add_argument("--sets", type=int, default=16_000, help="synthetic shortlists")
     parser.add_argument("--control-count", type=int, default=800, help="control cases per indicator")
     parser.add_argument("--seed", type=int, default=0)
@@ -47,7 +44,7 @@ def main() -> None:
     print(f"copied {db_path()} to {WORK_DB}")
 
     with session_scope(create_db_engine(WORK_DB)) as session:
-        for path in seed(session, OVERLAY_DIR):
+        for path in seed(session):
             print(f"applied {path.name}")
         registry = registry_module.from_session(session)
 
@@ -66,12 +63,11 @@ def main() -> None:
         written = write_cases(session, registry, cases, source_key=CONTROL_SOURCE, prefix="wipfacade")
         print(f"control cases: {written['comparison_sets']:,}")
 
-        folds = split.assign(session, replace=True)
-        print(f"folds: {folds}")
+        print(f"folds: {split.assign(session, replace=True)}")
         digest, _ = release.create_release(
-            session, RELEASE, "Work in progress: facade systems on synthetic data.", MIRROR_DIR
+            session, args.release, "Facade systems added as a preview on synthetic data."
         )
-        print(f"registry {RELEASE}  {digest[:12]}")
+        print(f"registry {args.release}  {digest[:12]}")
 
 
 if __name__ == "__main__":

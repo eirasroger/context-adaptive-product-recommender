@@ -1,5 +1,5 @@
-# Facade systems, the second category. Work in progress: applied on top of
-# db/seeds to the working database only. Reference ranges are provisional.
+# Facade systems, the second category. A preview: its data lives apart, in
+# data/wip, built by wip/facade. Reference ranges are provisional.
 
 provenance:
   - key: synthetic
@@ -8,8 +8,8 @@ provenance:
       Products sampled from typology templates and scored by a declared rule
       over the registry's directions and the stakeholders' priorities. Stands in
       for language-model and expert labels while a category is being built, so
-      the model can only learn what the rule already states. Used to prove the
-      pipeline for a new category; never part of a shipped result.
+      the model can only learn what the rule already states. A category trained
+      on it is shown as a preview.
 
 indicator:
   - key: u_value

@@ -6,3 +6,10 @@ category:
   eligibility_precondition_text: All alternatives are assumed to have passed a separate regulatory prefiltering step establishing basic standards compliance and suitability for the intended exposure class. This model ranks the surviving options on sustainability and contextual performance; it does not check exposure class rules, and its output must not be read as a compliance statement.
   default_context_key: standard_structural
   is_active: 1
+- key: facade_system
+  display_name: Facade system
+  definition_text: 'Opaque external wall systems compared per square metre installed: site built masonry, external thermal insulation composite systems, ventilated facades and sandwich panels. Typology is product metadata. The second category, and the first built without a published labelled dataset.'
+  functional_unit_key: m2_installed
+  eligibility_precondition_text: 'All alternatives are assumed to have passed a separate compliance check for the building: thermal transmittance against the climate zone limit, watertightness against rain exposure, facade sound insulation against the noise level, and reaction and resistance to fire against height and compartmentation. This model ranks the systems that pass; its output is no compliance statement.'
+  default_context_key: new_build_mild
+  is_active: 1

@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 
 import type { FormCategory, FormField } from "../api/client";
-import { rangeBound, seriesColour } from "../format";
+import { rangeBound, seriesColour, stagger } from "../format";
 import { blankColumn, type Column, MAX_COLUMNS, withEntry } from "../shortlist";
 import type { TipContent } from "./Tip";
 
@@ -62,11 +62,11 @@ export function Grid({ category, families, columns, onColumns, onTip }: Props) {
           </th>
         </tr>
       </thead>
-      <tbody>
+      <tbody key={category.key}>
         {category.fields.map((field, row) => (
           <Fragment key={field.key}>
             {field.family !== category.fields[row - 1]?.family && (
-              <tr className="familyrow">
+              <tr className="familyrow enter" style={stagger(row)}>
                 <th className="rowhead">{families[field.family] ?? field.family}</th>
                 {columns.map((column) => (
                   <td key={column.id} className="line" />
@@ -74,7 +74,7 @@ export function Grid({ category, families, columns, onColumns, onTip }: Props) {
                 <td />
               </tr>
             )}
-            <tr>
+            <tr className="enter" style={stagger(row)}>
               <th className="rowhead">
                 <abbr
                   onPointerMove={(e) =>

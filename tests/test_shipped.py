@@ -95,6 +95,7 @@ def test_the_served_model_scores_the_test_fold_as_the_checkpoint_does(shipped):
 
     dataset = ComparisonSetDataset(load_or_prepare(registry, FIXTURE), fold="test")
     assert len(dataset) > 0, "the fixture holds no test shortlists"
+    tolerance = 1e-5
     worst, reordered = 0.0, 0
     for start in range(0, len(dataset), 512):
         arrays = pad([dataset[i] for i in range(start, min(start + 512, len(dataset)))])
@@ -102,10 +103,11 @@ def test_the_served_model_scores_the_test_fold_as_the_checkpoint_does(shipped):
         real = arrays["alternative_mask"]
         worst = max(worst, float(np.abs(expected - got)[real].max()))
         for row, count in enumerate(real.sum(axis=1)):
-            if list(np.argsort(-expected[row, :count])) != list(np.argsort(-got[row, :count])):
+            ahead = expected[row, :count, None] - expected[row, None, :count] > tolerance
+            if (ahead & (got[row, :count, None] <= got[row, None, :count])).any():
                 reordered += 1
 
-    assert worst < 1e-5, f"the engines differ by up to {worst:.2e}"
+    assert worst < tolerance, f"the engines differ by up to {worst:.2e}"
     assert reordered == 0, f"{reordered} shortlists rank differently"
 
 

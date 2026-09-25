@@ -8,3 +8,18 @@ category_provenance_weight:
 - category_key: concrete
   provenance_key: llm
   weight: 0.4
+- category_key: concrete
+  provenance_key: synthetic
+  weight: 0.0
+- category_key: facade_system
+  provenance_key: control
+  weight: 0.4
+- category_key: facade_system
+  provenance_key: expert
+  weight: 0.0
+- category_key: facade_system
+  provenance_key: llm
+  weight: 0.0
+- category_key: facade_system
+  provenance_key: synthetic
+  weight: 0.6

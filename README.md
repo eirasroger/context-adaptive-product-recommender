@@ -6,8 +6,8 @@ priorities count; it returns a score between 0 and 1 for each.
 
 **Live at <https://context-adaptive-product-recommende.vercel.app>.**
 
-Concrete is the first product category. Further categories are meant to be
-added as data, with the model code left untouched.
+Concrete is the first product category and facade systems the second, added
+as registry rows and data with the model code left untouched.
 
 ## The problem
 
@@ -54,12 +54,12 @@ experts.
 ## Results
 
 <!-- results:start -->
-The model in `serve/release/` comes from run `baseline-20260921T125233Z` and
-carries registry 0.2.1. On 8,231 test shortlists it scores:
+The model in `serve/release/` comes from run `baseline-20260925T130649Z` and
+carries registry 0.3.1. On 12,791 test shortlists it scores:
 
 | Gap fidelity | Band placement | Top-1 agreement | Tie-tolerant rank correlation | Behavioural assertions |
 |---|---|---|---|---|
-| 0.048 | 0.018 | 0.905 | 0.909 | 456 of 456 pass |
+| 0.035 | 0.014 | 0.930 | 0.940 | 1248 of 1248 pass |
 <!-- results:end -->
 
 The behavioural assertions check that the model responds to each indicator in
@@ -161,8 +161,9 @@ Still open: reproducing the published single-category result under this
 architecture, adding a second category, and reading values from environmental
 product declarations.
 
-Work in progress: facade systems as the second category, in `wip/`, trained on
-a synthetic working dataset until real products are collected.
+Facade systems are the second category, live as a preview. They are trained on
+a synthetic working dataset, built by `wip/facade`, until real products are
+collected.
 
 ## Background
 

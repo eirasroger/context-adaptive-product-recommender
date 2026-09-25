@@ -1,1 +1,6 @@
-category_context_override: []
+category_context_override:
+- category_key: facade_system
+  context_key: architectural_finish
+  is_applicable: 0
+  display_name: null
+  justification: Its only declaration a facade holds is the reversed circular origin, which describes exposed concrete surfaces. Cladding appearance is a design choice made before the shortlist exists.

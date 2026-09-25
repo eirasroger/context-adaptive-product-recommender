@@ -4,15 +4,18 @@ import { fixed, seriesColour } from "../format";
 type Props = {
   result: ScoreResponse;
   wins: Map<number, string>;
+  preview: boolean;
 };
 
-export function Result({ result, wins }: Props) {
+export function Result({ result, wins, preview }: Props) {
   const ranked = [...result.results].sort((a, b) => a.rank - b.rank);
   const peak = Math.max(...ranked.map((r) => r.score), 0.0001);
 
   return (
-    <div className="card">
-      <h2>Result</h2>
+    <section className="card">
+      <h2>
+        Result {preview && <span className="badge">Preview</span>}
+      </h2>
       <div className="result">
         {ranked.map((r) => {
           const index = result.results.indexOf(r);
@@ -60,6 +63,6 @@ export function Result({ result, wins }: Props) {
             : []),
         ])}
       </div>
-    </div>
+    </section>
   );
 }

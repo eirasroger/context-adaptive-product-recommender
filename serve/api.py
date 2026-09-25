@@ -278,6 +278,7 @@ def create_app(
             {
                 "key": key,
                 "display_name": category.display_name,
+                "preview": category.is_preview,
                 "functional_unit": category.functional_unit_display,
                 "eligibility_precondition": category.eligibility_precondition_text,
                 "contexts": sorted(category.available_contexts),
