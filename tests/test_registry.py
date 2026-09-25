@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 from db import slots, validate
-from db.models import Indicator, Product
+from db.models import Context, ContextDeclaration, Indicator, Product
 
 
 def test_seeded_registry_is_valid(seeded):
@@ -33,6 +33,53 @@ def test_slots_are_stable_across_reseeding(seeded):
         for row in seeded.query(slots.EmbeddingSlot).all()
     }
     assert before == after
+
+
+def _fresh_seeded_session(path):
+    from db.seed import seed
+    from db.session import create_all, create_db_engine, session_factory
+
+    engine = create_db_engine(path)
+    create_all(engine)
+    session = session_factory(engine)()
+    seed(session)
+    return session
+
+
+def test_a_seed_row_without_a_display_name_extends_an_existing_context(tmp_path):
+    from db.seed import apply_seed_document
+
+    session = _fresh_seeded_session(tmp_path / "overlay.db")
+    context = session.query(Context).order_by(Context.key).first()
+    display_name = context.display_name
+
+    def declared() -> set[str]:
+        return {
+            row.indicator_key
+            for row in session.query(ContextDeclaration).filter_by(context_key=context.key)
+        }
+
+    before = declared()
+    added = next(row.key for row in session.query(Indicator).order_by(Indicator.key) if row.key not in before)
+    apply_seed_document(
+        session,
+        {"context": [{"key": context.key, "declarations": [
+            {"indicator_key": added, "direction": 1, "priority": 0.5}
+        ]}]},
+    )
+
+    assert declared() == before | {added}
+    assert session.get(Context, context.key).display_name == display_name
+    session.close()
+
+
+def test_a_seed_row_cannot_extend_an_entity_that_does_not_exist(tmp_path):
+    from db.seed import apply_seed_document
+
+    session = _fresh_seeded_session(tmp_path / "overlay.db")
+    with pytest.raises(ValueError, match="nothing to extend"):
+        apply_seed_document(session, {"context": [{"key": "no_such_context", "declarations": []}]})
+    session.close()
 
 
 def test_new_entity_appends_rather_than_inserts(seeded):

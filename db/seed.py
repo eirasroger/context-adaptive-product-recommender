@@ -55,6 +55,18 @@ def _bool(value: Any) -> int:
     return 1 if value else 0
 
 
+def _declares(session: Session, model, row: dict) -> bool:
+    """A row with a display name declares its entity; one without extends an existing one."""
+    if "display_name" in row:
+        return True
+    if session.get(model, row["key"]) is None:
+        raise ValueError(
+            f"{model.__tablename__} {row['key']!r} has no display_name and does not "
+            "exist yet, so there is nothing to extend"
+        )
+    return False
+
+
 def _load_families(session: Session, rows: list[dict]) -> None:
     for row in rows:
         _upsert(
@@ -162,17 +174,18 @@ def _load_stakeholders(session: Session, rows: list[dict]) -> None:
 def _load_contexts(session: Session, rows: list[dict]) -> None:
     for row in rows:
         key = row["key"]
-        _upsert(
-            session,
-            Context,
-            key,
-            key=key,
-            display_name=row["display_name"],
-            definition_text=row["definition_text"].strip(),
-            is_baseline=_bool(row.get("is_baseline", False)),
-            is_active=_bool(row.get("is_active", True)),
-        )
-        slots.allocate(session, "context", key)
+        if _declares(session, Context, row):
+            _upsert(
+                session,
+                Context,
+                key,
+                key=key,
+                display_name=row["display_name"],
+                definition_text=row["definition_text"].strip(),
+                is_baseline=_bool(row.get("is_baseline", False)),
+                is_active=_bool(row.get("is_active", True)),
+            )
+            slots.allocate(session, "context", key)
 
         for decl in row.get("declarations", []):
             category_key = decl.get("category_key", WILDCARD)
@@ -209,21 +222,22 @@ def _load_categories(session: Session, doc: dict) -> None:
 
     for row in doc.get("category", []):
         key = row["key"]
-        _upsert(
-            session,
-            Category,
-            key,
-            key=key,
-            display_name=row["display_name"],
-            definition_text=row["definition_text"].strip(),
-            functional_unit_key=row["functional_unit_key"],
-            eligibility_precondition_text=row[
-                "eligibility_precondition_text"
-            ].strip(),
-            default_context_key=row["default_context_key"],
-            is_active=_bool(row.get("is_active", True)),
-        )
-        slots.allocate(session, "category", key)
+        if _declares(session, Category, row):
+            _upsert(
+                session,
+                Category,
+                key,
+                key=key,
+                display_name=row["display_name"],
+                definition_text=row["definition_text"].strip(),
+                functional_unit_key=row["functional_unit_key"],
+                eligibility_precondition_text=row[
+                    "eligibility_precondition_text"
+                ].strip(),
+                default_context_key=row["default_context_key"],
+                is_active=_bool(row.get("is_active", True)),
+            )
+            slots.allocate(session, "category", key)
 
         for provenance_key, weight in (row.get("provenance_weights") or {}).items():
             _upsert(

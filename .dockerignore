@@ -1,6 +1,7 @@
 .git/
 data/
 runs/
+wip/
 **/node_modules/
 frontend/dist/
 **/__pycache__/

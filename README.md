@@ -161,6 +161,9 @@ Still open: reproducing the published single-category result under this
 architecture, adding a second category, and reading values from environmental
 product declarations.
 
+Work in progress: facade systems as the second category, in `wip/`, trained on
+a synthetic working dataset until real products are collected.
+
 ## Background
 
 The concrete dataset and the earlier single-category model are published:

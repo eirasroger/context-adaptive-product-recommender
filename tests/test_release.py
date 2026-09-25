@@ -280,7 +280,7 @@ def test_every_third_party_import_is_declared():
     root = _root()
     first_party = {
         "app", "core", "db", "eval", "experiments", "ingest", "model",
-        "registry", "serve", "snapshot", "tests", "train",
+        "registry", "serve", "snapshot", "tests", "train", "wip",
     }
 
     def _normalise(name: str) -> str:
