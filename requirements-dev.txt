@@ -22,6 +22,9 @@ llvmlite>=0.43
 scikit-learn>=1.4
 scipy>=1.11
 
+# Sizing concurrent training runs to the machine.
+psutil>=5.9
+
 pytest>=8.0
 pyflakes>=3.0
 

@@ -73,3 +73,41 @@ def test_a_rerun_split_counts_once_with_its_latest_result(tmp_path):
 
     assert [r["split_key"] for r in runs] == ["mccv-1", "mccv-2"]
     assert runs[0]["results"]["overall"]["gap_fidelity"] == 0.04
+
+
+GB = 1 << 30
+
+
+def _capacity(cores, free_ram_gb, free_gpu_gb, run_cores=1.5, run_ram_gb=2.0, run_gpu_gb=0.75):
+    return monte_carlo_cv.capacity(
+        monte_carlo_cv.Machine(
+            physical_cores=cores,
+            free_ram_bytes=int(free_ram_gb * GB),
+            free_gpu_bytes=None if free_gpu_gb is None else int(free_gpu_gb * GB),
+        ),
+        monte_carlo_cv.Footprint(
+            cores=run_cores, ram_bytes=int(run_ram_gb * GB),
+            gpu_bytes=None if free_gpu_gb is None else int(run_gpu_gb * GB),
+        ),
+    )
+
+
+def test_a_small_machine_trains_one_split_at_a_time():
+    parallel, _ = _capacity(cores=2, free_ram_gb=1, free_gpu_gb=None)
+    assert parallel == 1
+
+
+def test_the_scarcest_resource_sets_the_parallelism():
+    parallel, limits = _capacity(cores=32, free_ram_gb=100, free_gpu_gb=2)
+    assert limits["gpu"] == parallel == 3
+    assert limits["cpu"] > parallel and limits["ram"] > parallel
+
+
+def test_a_large_machine_trains_many_splits_at_once():
+    parallel, _ = _capacity(cores=32, free_ram_gb=100, free_gpu_gb=22)
+    assert parallel >= 16
+
+
+def test_without_a_gpu_only_cores_and_memory_count():
+    _, limits = _capacity(cores=8, free_ram_gb=16, free_gpu_gb=None)
+    assert set(limits) == {"cpu", "ram"}
