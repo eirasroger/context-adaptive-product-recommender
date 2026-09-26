@@ -87,6 +87,29 @@ def main() -> None:
     if args.batch_size is not None:
         config.optim.batch_size = args.batch_size
 
+    run_dir, results = execute(config, behavioural_suite=not args.skip_behavioural)
+
+    behavioural_results = results.get("behavioural")
+    if behavioural_results is not None:
+        if behavioural_results["no_response"]:
+            print(
+                f"\nnote: {len(behavioural_results['no_response'])} assertion(s) had no measurable "
+                "response. Not a gate failure -- it means the data never "
+                "isolates those indicators. See report.md."
+            )
+        if not behavioural_results["passed"]:
+            print(f"\nbehavioural gate FAILED: {len(behavioural_results['failures'])} assertion(s)")
+            raise SystemExit(1)
+
+    if config.promote:
+        if behavioural_results is None:
+            print("\nnot promoted: the behavioural suite was skipped")
+        else:
+            promote_on_pass(run_dir, config.notes)
+
+
+def execute(config: TrainConfig, behavioural_suite: bool = True) -> tuple[Path, dict]:
+    """Train, evaluate and save one run; the run directory and its results."""
     config.db = str(config.db or db_path())
     engine = create_db_engine(config.db)
     with session_scope(engine) as session:
@@ -140,8 +163,7 @@ def main() -> None:
     )
     seconds["evaluate"] = time.perf_counter() - started
 
-    suite = None
-    if not args.skip_behavioural:
+    if behavioural_suite:
         started = time.perf_counter()
         suite = behavioural.run(model, registry, device=device)
         seconds["behavioural"] = time.perf_counter() - started
@@ -185,22 +207,7 @@ def main() -> None:
 
     print()
     print(report_module.render(results, config.name))
-    if suite is not None:
-        if suite.flat:
-            print(
-                f"\nnote: {len(suite.flat)} assertion(s) had no measurable "
-                "response. Not a gate failure -- it means the data never "
-                "isolates those indicators. See report.md."
-            )
-        if not suite.passed:
-            print(f"\nbehavioural gate FAILED: {len(suite.failures)} assertion(s)")
-            raise SystemExit(1)
-
-    if config.promote:
-        if suite is None:
-            print("\nnot promoted: the behavioural suite was skipped")
-        else:
-            promote_on_pass(run_dir, config.notes)
+    return run_dir, results
 
 
 def promote_on_pass(run_dir: Path, notes: str) -> None:
