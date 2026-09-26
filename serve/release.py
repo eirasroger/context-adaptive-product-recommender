@@ -16,6 +16,7 @@ MANIFEST_FILE = "manifest.json"
 METRICS_FILE = "metrics.json"
 FIXTURE_DIR = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "snapshot"
 README = Path(__file__).resolve().parents[1] / "README.md"
+FIGURES_DIR = Path(__file__).resolve().parents[1] / "experiments" / "figures"
 RESULTS_START = "<!-- results:start -->"
 RESULTS_END = "<!-- results:end -->"
 #: A stratum may be this much worse, relative to the release, before promotion is refused;
@@ -150,6 +151,7 @@ def promote(
     fixture_dir: Path = FIXTURE_DIR,
     snapshot_root: Path | None = None,
     readme: Path = README,
+    figures_dir: Path | None = FIGURES_DIR,
 ) -> dict:
     run_dir = Path(run_dir)
     checkpoint = run_dir / "model.pt"
@@ -169,6 +171,16 @@ def promote(
             "before promoting, or pass force=True."
         )
 
+    from model import checkpoint as checkpoint_module
+
+    shipped_split = (read_manifest(release_dir) or {}).get("split_key")
+    run_split = checkpoint_module.describe(checkpoint)["meta"].get("split_key")
+    if shipped_split is not None and run_split != shipped_split and not force:
+        raise GateFailed(
+            f"{run_dir.name} was split by {run_split!r} and the release by {shipped_split!r}: "
+            "the release would be scored on sets it trained on."
+        )
+
     verdict = regression_against_release(run_dir, release_dir, snapshot_root)
     if verdict is not None and not verdict.passed and not force:
         raise GateFailed(
@@ -182,7 +194,6 @@ def promote(
     if (run_dir / METRICS_FILE).exists():
         shutil.copy2(run_dir / METRICS_FILE, release_dir / METRICS_FILE)
 
-    from model import checkpoint as checkpoint_module
     from model import export as export_module
 
     export_module.export(release_dir / MODEL_FILE, release_dir / SERVED_MODEL_FILE)
@@ -219,6 +230,10 @@ def promote(
     )
     if (release_dir / METRICS_FILE).exists():
         refresh_readme(release_dir, readme)
+    if figures_dir is not None:
+        from experiments import attribution
+
+        attribution.run(release_dir / MODEL_FILE, fixture_dir, figures_dir)
     return manifest
 
 

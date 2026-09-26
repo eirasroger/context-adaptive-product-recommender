@@ -18,295 +18,342 @@
   },
   "by_family": {
     "circularity": {
-      "band_placement": 0.0056022602213453045,
-      "gap_fidelity": 0.007775416447134044,
-      "n_alternatives": 4317,
-      "n_sets": 1234,
-      "pointwise_mae": 0.006836589425802231,
+      "band_placement": 0.0051564045895462094,
+      "gap_fidelity": 0.006880675427433206,
+      "n_alternatives": 4391,
+      "n_sets": 1259,
+      "pointwise_mae": 0.006464323960244656,
       "tie_tolerant_tau": 1.0,
       "top1_agreement": 1.0
     },
     "cost": {
-      "band_placement": 0.004703404684207497,
-      "gap_fidelity": 0.005773926299087584,
-      "n_alternatives": 3056,
-      "n_sets": 881,
-      "pointwise_mae": 0.005671949125826359,
+      "band_placement": 0.004573387161360237,
+      "gap_fidelity": 0.005130539327238684,
+      "n_alternatives": 2998,
+      "n_sets": 869,
+      "pointwise_mae": 0.005340207368135452,
       "tie_tolerant_tau": 1.0,
       "top1_agreement": 1.0
     },
     "environmental_impact": {
-      "band_placement": 0.004737525656344784,
-      "gap_fidelity": 0.008864046822807746,
-      "n_alternatives": 6567,
-      "n_sets": 1884,
-      "pointwise_mae": 0.007192249409854412,
+      "band_placement": 0.004245503057019945,
+      "gap_fidelity": 0.007899439216953302,
+      "n_alternatives": 6679,
+      "n_sets": 1916,
+      "pointwise_mae": 0.00658112158998847,
       "tie_tolerant_tau": 1.0,
-      "top1_agreement": 1.0
+      "top1_agreement": 0.9994780793319415
     },
     "health_safety": {
-      "band_placement": 0.009247165621141267,
-      "gap_fidelity": 0.014158433059432741,
-      "n_alternatives": 2581,
-      "n_sets": 732,
-      "pointwise_mae": 0.01196358259767294,
-      "tie_tolerant_tau": 0.9871011541072641,
-      "top1_agreement": 0.8838797814207651
+      "band_placement": 0.009407104285055343,
+      "gap_fidelity": 0.01293430936336016,
+      "n_alternatives": 2615,
+      "n_sets": 743,
+      "pointwise_mae": 0.011691522784531116,
+      "tie_tolerant_tau": 0.9848584595128373,
+      "top1_agreement": 0.892328398384926
     },
     "performance": {
-      "band_placement": 0.00549245088599449,
-      "gap_fidelity": 0.00983463521263962,
-      "n_alternatives": 4853,
-      "n_sets": 1376,
-      "pointwise_mae": 0.008116134442389011,
-      "tie_tolerant_tau": 0.9993615323224262,
-      "top1_agreement": 0.9832848837209303
+      "band_placement": 0.005873972403280663,
+      "gap_fidelity": 0.009402056538083618,
+      "n_alternatives": 4577,
+      "n_sets": 1320,
+      "pointwise_mae": 0.008224934339523315,
+      "tie_tolerant_tau": 0.9986204518020348,
+      "top1_agreement": 0.9818181818181818
     }
   },
   "fold": "test",
   "overall": {
-    "band_placement": 0.016118181991511084,
-    "gap_fidelity": 0.040873341831963755,
-    "n_alternatives": 37305,
-    "n_sets": 10646,
-    "pointwise_mae": 0.02809927985072136,
-    "tie_tolerant_tau": 0.9209782499749424,
-    "top1_agreement": 0.9190306218297952
+    "band_placement": 0.01586589431231196,
+    "gap_fidelity": 0.04004341500161705,
+    "n_alternatives": 37452,
+    "n_sets": 10721,
+    "pointwise_mae": 0.027758629992604256,
+    "tie_tolerant_tau": 0.9211321736693556,
+    "top1_agreement": 0.9185710288219383
   },
   "stratified": {
     "category": {
       "concrete": {
-        "band_placement": 0.01788015886389924,
-        "gap_fidelity": 0.04732596075894921,
+        "band_placement": 0.01735418783497396,
+        "gap_fidelity": 0.04639925650424365,
         "n_alternatives": 28793,
         "n_sets": 8231,
-        "pointwise_mae": 0.03199760243296623,
-        "tie_tolerant_tau": 0.9077294561894731,
-        "top1_agreement": 0.9023204956870368
+        "pointwise_mae": 0.031360041350126266,
+        "tie_tolerant_tau": 0.9082432120013357,
+        "top1_agreement": 0.9015915441623132
       },
       "facade_system": {
-        "band_placement": 0.010112868684419194,
-        "gap_fidelity": 0.018880999642308594,
-        "n_alternatives": 8512,
-        "n_sets": 2415,
-        "pointwise_mae": 0.01491269376128912,
-        "tie_tolerant_tau": 0.9680540343190945,
-        "top1_agreement": 0.975983436853002
+        "band_placement": 0.010946157772138894,
+        "gap_fidelity": 0.019033402387914435,
+        "n_alternatives": 8659,
+        "n_sets": 2490,
+        "pointwise_mae": 0.01578318513929844,
+        "tie_tolerant_tau": 0.9666303953572724,
+        "top1_agreement": 0.9746987951807229
+      }
+    },
+    "category_provenance": {
+      "concrete/control": {
+        "band_placement": 0.00517687794510965,
+        "gap_fidelity": 0.009763882011843465,
+        "n_alternatives": 18871,
+        "n_sets": 5400,
+        "pointwise_mae": 0.007899092510342598,
+        "tie_tolerant_tau": 0.9967217047135489,
+        "top1_agreement": 0.970925925925926
+      },
+      "concrete/expert": {
+        "band_placement": 0.019169653334268708,
+        "gap_fidelity": 0.05317743412196273,
+        "n_alternatives": 144,
+        "n_sets": 41,
+        "pointwise_mae": 0.0386875718832016,
+        "tie_tolerant_tau": 0.9,
+        "top1_agreement": 0.926829268292683
+      },
+      "concrete/llm": {
+        "band_placement": 0.04089649583490092,
+        "gap_fidelity": 0.1172068253130732,
+        "n_alternatives": 9778,
+        "n_sets": 2790,
+        "pointwise_mae": 0.07653047144412994,
+        "tie_tolerant_tau": 0.7472335468841002,
+        "top1_agreement": 0.7670250896057348
+      },
+      "facade_system/control": {
+        "band_placement": 0.006855916071171854,
+        "gap_fidelity": 0.007723807919854366,
+        "n_alternatives": 7043,
+        "n_sets": 2040,
+        "pointwise_mae": 0.007973519153892994,
+        "tie_tolerant_tau": 1.0,
+        "top1_agreement": 1.0
+      },
+      "facade_system/llm": {
+        "band_placement": 0.029488586816522812,
+        "gap_fidelity": 0.0703035639764534,
+        "n_alternatives": 1616,
+        "n_sets": 450,
+        "pointwise_mae": 0.04981999471783638,
+        "tie_tolerant_tau": 0.8361531611754229,
+        "top1_agreement": 0.86
       }
     },
     "context": {
       "acoustic_insulation": {
-        "band_placement": 0.015530528294479274,
-        "gap_fidelity": 0.039493951597474174,
-        "n_alternatives": 7604,
-        "n_sets": 2168,
-        "pointwise_mae": 0.027406012639403343,
-        "tie_tolerant_tau": 0.9246393876950251,
-        "top1_agreement": 0.9229704797047971
+        "band_placement": 0.015252874056425664,
+        "gap_fidelity": 0.038058878205005316,
+        "n_alternatives": 7713,
+        "n_sets": 2191,
+        "pointwise_mae": 0.026818811893463135,
+        "tie_tolerant_tau": 0.9273850907686365,
+        "top1_agreement": 0.9283432222729348
       },
       "architectural_finish": {
-        "band_placement": 0.013230352907388783,
-        "gap_fidelity": 0.03386121415763773,
+        "band_placement": 0.012830981498001742,
+        "gap_fidelity": 0.033755138146345905,
         "n_alternatives": 8646,
         "n_sets": 2453,
-        "pointwise_mae": 0.023538462817668915,
-        "tie_tolerant_tau": 0.9377593360995851,
-        "top1_agreement": 0.9147982062780269
+        "pointwise_mae": 0.023202618584036827,
+        "tie_tolerant_tau": 0.9370677731673582,
+        "top1_agreement": 0.911944557684468
       },
       "high_rise": {
-        "band_placement": 0.012650002019349918,
-        "gap_fidelity": 0.02276969478102834,
-        "n_alternatives": 1499,
-        "n_sets": 430,
-        "pointwise_mae": 0.018131636083126068,
-        "tie_tolerant_tau": 0.9658914728682171,
-        "top1_agreement": 0.9837209302325581
+        "band_placement": 0.01336901423286896,
+        "gap_fidelity": 0.022335903571464776,
+        "n_alternatives": 1509,
+        "n_sets": 433,
+        "pointwise_mae": 0.01833878643810749,
+        "tie_tolerant_tau": 0.9664218258132214,
+        "top1_agreement": 0.9838337182448037
       },
       "hot_summer": {
-        "band_placement": 0.009609698998300652,
-        "gap_fidelity": 0.016312107168334096,
-        "n_alternatives": 1677,
-        "n_sets": 475,
-        "pointwise_mae": 0.012630915269255638,
-        "tie_tolerant_tau": 0.9744439185991481,
-        "top1_agreement": 0.9789473684210527
+        "band_placement": 0.010409014025924191,
+        "gap_fidelity": 0.015900309015017648,
+        "n_alternatives": 1712,
+        "n_sets": 497,
+        "pointwise_mae": 0.014000295661389828,
+        "tie_tolerant_tau": 0.9708097928436912,
+        "top1_agreement": 0.9738430583501007
       },
       "new_build_mild": {
-        "band_placement": 0.012411731891752629,
-        "gap_fidelity": 0.024210365249999678,
-        "n_alternatives": 1244,
-        "n_sets": 356,
-        "pointwise_mae": 0.018756158649921417,
-        "tie_tolerant_tau": 0.9569347688410387,
-        "top1_agreement": 0.9578651685393258
+        "band_placement": 0.012829951685050437,
+        "gap_fidelity": 0.02509894895853631,
+        "n_alternatives": 1401,
+        "n_sets": 406,
+        "pointwise_mae": 0.01872020773589611,
+        "tie_tolerant_tau": 0.9591611479028698,
+        "top1_agreement": 0.9630541871921182
       },
       "retrofit": {
-        "band_placement": 0.009884309406592467,
-        "gap_fidelity": 0.021621602193480163,
-        "n_alternatives": 1527,
-        "n_sets": 428,
-        "pointwise_mae": 0.016791172325611115,
-        "tie_tolerant_tau": 0.9470264867566217,
-        "top1_agreement": 0.955607476635514
+        "band_placement": 0.011704410307786682,
+        "gap_fidelity": 0.020988420598587253,
+        "n_alternatives": 1530,
+        "n_sets": 440,
+        "pointwise_mae": 0.01841285638511181,
+        "tie_tolerant_tau": 0.9374358974358974,
+        "top1_agreement": 0.95
       },
       "standard_structural": {
-        "band_placement": 0.024270867840734213,
-        "gap_fidelity": 0.06676528979708615,
+        "band_placement": 0.02359708198424617,
+        "gap_fidelity": 0.06503316627996081,
         "n_alternatives": 8686,
         "n_sets": 2494,
-        "pointwise_mae": 0.044094063341617584,
-        "tie_tolerant_tau": 0.8691541872333306,
-        "top1_agreement": 0.8777064955894146
+        "pointwise_mae": 0.042984601110219955,
+        "tie_tolerant_tau": 0.8704927633230152,
+        "top1_agreement": 0.8728949478748997
       },
       "thermal_insulation": {
-        "band_placement": 0.016835281027260028,
-        "gap_fidelity": 0.04166706577886957,
-        "n_alternatives": 7237,
-        "n_sets": 2074,
-        "pointwise_mae": 0.02894926443696022,
-        "tie_tolerant_tau": 0.9146870481305516,
-        "top1_agreement": 0.9209257473481196
+        "band_placement": 0.016634954770135508,
+        "gap_fidelity": 0.04182515515865335,
+        "n_alternatives": 7132,
+        "n_sets": 2056,
+        "pointwise_mae": 0.029210548847913742,
+        "tie_tolerant_tau": 0.9145892500262964,
+        "top1_agreement": 0.9226653696498055
       }
     },
     "provenance": {
       "control": {
-        "band_placement": 0.005792889585818655,
-        "gap_fidelity": 0.009895581788225015,
-        "n_alternatives": 26028,
+        "band_placement": 0.005637259366771868,
+        "gap_fidelity": 0.00920450685758839,
+        "n_alternatives": 25914,
         "n_sets": 7440,
-        "pointwise_mae": 0.008231515996158123,
-        "tie_tolerant_tau": 0.9980037576326914,
+        "pointwise_mae": 0.007919320836663246,
+        "tie_tolerant_tau": 0.997573605562953,
         "top1_agreement": 0.9788978494623656
       },
       "expert": {
-        "band_placement": 0.01977900760929759,
-        "gap_fidelity": 0.06092848257366114,
+        "band_placement": 0.019169653334268708,
+        "gap_fidelity": 0.05317743412196273,
         "n_alternatives": 144,
         "n_sets": 41,
-        "pointwise_mae": 0.04260459542274475,
+        "pointwise_mae": 0.0386875718832016,
         "tie_tolerant_tau": 0.9,
         "top1_agreement": 0.926829268292683
       },
       "llm": {
-        "band_placement": 0.04034253638267141,
-        "gap_fidelity": 0.11343330200732131,
-        "n_alternatives": 11133,
-        "n_sets": 3165,
-        "pointwise_mae": 0.07436079531908035,
-        "tie_tolerant_tau": 0.7534684483089317,
-        "top1_agreement": 0.7781990521327015
+        "band_placement": 0.039312064026792846,
+        "gap_fidelity": 0.1106924834607649,
+        "n_alternatives": 11394,
+        "n_sets": 3240,
+        "pointwise_mae": 0.07274214923381805,
+        "tie_tolerant_tau": 0.7597296959078964,
+        "top1_agreement": 0.7799382716049382
       }
     },
     "set_size": {
       "n=2": {
-        "band_placement": 0.01780180543258232,
-        "gap_fidelity": 0.040526667721023965,
-        "n_alternatives": 5326,
-        "n_sets": 2663,
-        "pointwise_mae": 0.02644965797662735,
-        "tie_tolerant_tau": 0.9264594389689158,
-        "top1_agreement": 0.9609463011641006
+        "band_placement": 0.01730610186743235,
+        "gap_fidelity": 0.03968362580697636,
+        "n_alternatives": 5422,
+        "n_sets": 2711,
+        "pointwise_mae": 0.025940723717212677,
+        "tie_tolerant_tau": 0.9245705750560119,
+        "top1_agreement": 0.9586868314275175
       },
       "n=3": {
-        "band_placement": 0.015666408557586133,
-        "gap_fidelity": 0.04001139010088689,
-        "n_alternatives": 7908,
-        "n_sets": 2636,
-        "pointwise_mae": 0.02703370340168476,
-        "tie_tolerant_tau": 0.9170224119530416,
-        "top1_agreement": 0.9218512898330804
+        "band_placement": 0.015340930987655937,
+        "gap_fidelity": 0.03878573414584415,
+        "n_alternatives": 7944,
+        "n_sets": 2648,
+        "pointwise_mae": 0.026569850742816925,
+        "tie_tolerant_tau": 0.9217921527041357,
+        "top1_agreement": 0.925226586102719
       },
       "n=4": {
-        "band_placement": 0.015607867306014439,
-        "gap_fidelity": 0.042119574799840305,
-        "n_alternatives": 10656,
-        "n_sets": 2664,
-        "pointwise_mae": 0.028935113921761513,
-        "tie_tolerant_tau": 0.9182991241559136,
-        "top1_agreement": 0.9054054054054054
+        "band_placement": 0.015443367071220003,
+        "gap_fidelity": 0.040888425831707084,
+        "n_alternatives": 10896,
+        "n_sets": 2724,
+        "pointwise_mae": 0.028295138850808144,
+        "tie_tolerant_tau": 0.9176162409954158,
+        "top1_agreement": 0.9016152716593245
       },
       "n=5": {
-        "band_placement": 0.015397669084472885,
-        "gap_fidelity": 0.04082687641792282,
-        "n_alternatives": 13415,
-        "n_sets": 2683,
-        "pointwise_mae": 0.028718430548906326,
-        "tie_tolerant_tau": 0.9232072275550537,
-        "top1_agreement": 0.8881848676854268
+        "band_placement": 0.015349087794682038,
+        "gap_fidelity": 0.04080305029789919,
+        "n_alternatives": 13190,
+        "n_sets": 2638,
+        "pointwise_mae": 0.028778696432709694,
+        "tie_tolerant_tau": 0.9227467811158798,
+        "top1_agreement": 0.8881728582259287
       }
     },
     "stakeholder": {
       "balanced_optimizer": {
-        "band_placement": 0.015577450405459764,
-        "gap_fidelity": 0.038958197328357466,
-        "n_alternatives": 4791,
-        "n_sets": 1376,
-        "pointwise_mae": 0.026973197236657143,
-        "tie_tolerant_tau": 0.9171486634359857,
-        "top1_agreement": 0.9113372093023255
+        "band_placement": 0.015866195186813984,
+        "gap_fidelity": 0.03867580739521536,
+        "n_alternatives": 4941,
+        "n_sets": 1409,
+        "pointwise_mae": 0.027023399248719215,
+        "tie_tolerant_tau": 0.9183179549236121,
+        "top1_agreement": 0.9127040454222853
       },
       "circular_economy_advocate": {
-        "band_placement": 0.019960178765751516,
-        "gap_fidelity": 0.04744570769314935,
-        "n_alternatives": 4964,
-        "n_sets": 1414,
-        "pointwise_mae": 0.03323982656002045,
-        "tie_tolerant_tau": 0.9106929510155317,
-        "top1_agreement": 0.9207920792079208
+        "band_placement": 0.019897927660508283,
+        "gap_fidelity": 0.047274869594578356,
+        "n_alternatives": 4929,
+        "n_sets": 1407,
+        "pointwise_mae": 0.03305792436003685,
+        "tie_tolerant_tau": 0.9061046947652618,
+        "top1_agreement": 0.914001421464108
       },
       "cost_conscious_developer": {
-        "band_placement": 0.018895599344722482,
-        "gap_fidelity": 0.050281971005861674,
-        "n_alternatives": 4840,
-        "n_sets": 1389,
-        "pointwise_mae": 0.03320544213056564,
-        "tie_tolerant_tau": 0.9017313991576977,
-        "top1_agreement": 0.9071274298056156
+        "band_placement": 0.01854706228365801,
+        "gap_fidelity": 0.0490355603331547,
+        "n_alternatives": 4949,
+        "n_sets": 1423,
+        "pointwise_mae": 0.0326475091278553,
+        "tie_tolerant_tau": 0.9040024536114093,
+        "top1_agreement": 0.9058327477160928
       },
       "health_safety_focused": {
-        "band_placement": 0.014717256542918718,
-        "gap_fidelity": 0.032286662943222404,
-        "n_alternatives": 5016,
-        "n_sets": 1422,
-        "pointwise_mae": 0.02307709865272045,
-        "tie_tolerant_tau": 0.9535921463632308,
-        "top1_agreement": 0.9353023909985936
+        "band_placement": 0.01422734196994688,
+        "gap_fidelity": 0.03146231481789162,
+        "n_alternatives": 5020,
+        "n_sets": 1430,
+        "pointwise_mae": 0.022586803883314133,
+        "tie_tolerant_tau": 0.9505584512285927,
+        "top1_agreement": 0.9342657342657342
       },
       "occupant_comfort_focused": {
-        "band_placement": 0.01683721561725675,
-        "gap_fidelity": 0.04133683095350255,
-        "n_alternatives": 4871,
-        "n_sets": 1408,
-        "pointwise_mae": 0.028873147442936897,
-        "tie_tolerant_tau": 0.9140931180435805,
-        "top1_agreement": 0.9112215909090909
+        "band_placement": 0.016172425201412006,
+        "gap_fidelity": 0.040345214368942235,
+        "n_alternatives": 4904,
+        "n_sets": 1427,
+        "pointwise_mae": 0.028354059904813766,
+        "tie_tolerant_tau": 0.916235294117647,
+        "top1_agreement": 0.9145059565522075
       },
       "pragmatic_contractor": {
-        "band_placement": 0.017572234317343286,
-        "gap_fidelity": 0.05278789668861225,
-        "n_alternatives": 4967,
-        "n_sets": 1410,
-        "pointwise_mae": 0.034551143646240234,
-        "tie_tolerant_tau": 0.8849583828775267,
-        "top1_agreement": 0.8865248226950354
+        "band_placement": 0.017035096022677807,
+        "gap_fidelity": 0.05182140053417996,
+        "n_alternatives": 4991,
+        "n_sets": 1419,
+        "pointwise_mae": 0.03370354324579239,
+        "tie_tolerant_tau": 0.8844444444444445,
+        "top1_agreement": 0.8872445384073291
       },
       "regulatory_aligned_builder": {
-        "band_placement": 0.01495697647775316,
-        "gap_fidelity": 0.03676398548762036,
-        "n_alternatives": 4754,
-        "n_sets": 1348,
-        "pointwise_mae": 0.02533550001680851,
-        "tie_tolerant_tau": 0.9299937772246422,
-        "top1_agreement": 0.9206231454005934
+        "band_placement": 0.014886513330153565,
+        "gap_fidelity": 0.03664884277356184,
+        "n_alternatives": 4696,
+        "n_sets": 1340,
+        "pointwise_mae": 0.02563905157148838,
+        "tie_tolerant_tau": 0.9256211425858522,
+        "top1_agreement": 0.914179104477612
       },
       "sustainability_maximalist": {
-        "band_placement": 0.01872067195967839,
-        "gap_fidelity": 0.04899050326140304,
-        "n_alternatives": 4934,
-        "n_sets": 1402,
-        "pointwise_mae": 0.03387961909174919,
-        "tie_tolerant_tau": 0.9014423076923077,
-        "top1_agreement": 0.912981455064194
+        "band_placement": 0.018550241242717782,
+        "gap_fidelity": 0.047253343369304736,
+        "n_alternatives": 5018,
+        "n_sets": 1435,
+        "pointwise_mae": 0.03318658843636513,
+        "tie_tolerant_tau": 0.908175355450237,
+        "top1_agreement": 0.9184668989547038
       }
     }
   }

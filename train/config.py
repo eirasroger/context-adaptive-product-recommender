@@ -63,6 +63,8 @@ class TrainConfig:
     loss: LossConfig = field(default_factory=LossConfig)
 
     notes: str = ""
+    #: Promote to the served release when every gate passes; the release files are left for review.
+    promote: bool = False
 
     @classmethod
     def load(cls, path: Path | str) -> "TrainConfig":

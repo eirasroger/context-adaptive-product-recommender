@@ -75,3 +75,9 @@ def test_the_shipped_configs_pin_nothing():
         assert "registry_version" not in config, (
             f"{path.name} pins a version, which goes stale at the next release"
         )
+
+
+def test_only_the_baseline_config_promotes():
+    assert TrainConfig.load(CONFIG_DIR / "default.yaml").promote
+    assert not TrainConfig.load(CONFIG_DIR / "smoke.yaml").promote
+    assert not TrainConfig().promote

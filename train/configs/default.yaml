@@ -28,4 +28,5 @@ loss:
   pairwise: 1.0
   listwise: 0.0
 
+promote: true
 notes: Concrete and facade systems; facade labels from language-model agents.

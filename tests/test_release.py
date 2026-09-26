@@ -93,6 +93,7 @@ def _promote(run_dir, tmp_path, **kwargs):
     kwargs.setdefault("fixture_dir", tmp_path / "fixture")
     kwargs.setdefault("snapshot_root", _snapshot(tmp_path / "snapshots").parent)
     kwargs.setdefault("readme", _readme(tmp_path))
+    kwargs.setdefault("figures_dir", None)
     return release_module.promote(run_dir, **kwargs)
 
 
@@ -483,3 +484,14 @@ def test_the_pyproject_declares_no_dependencies():
         "dependencies in requirements.txt, or teach the deployment about them"
     )
     assert "pyproject.toml" in (root / ".vercelignore").read_text(encoding="utf-8")
+
+
+def test_a_run_split_differently_from_the_release_is_refused(tmp_path, registry):
+    run_dir = _run(tmp_path, registry, passed=True)
+    release_dir = _released(tmp_path / "release", gap=0.05)
+    (release_dir / release_module.MANIFEST_FILE).write_text(
+        json.dumps({"split_key": "partition_2"}), encoding="utf-8"
+    )
+
+    with pytest.raises(release_module.GateFailed, match="trained on"):
+        _promote(run_dir, tmp_path, release_dir=release_dir)

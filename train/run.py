@@ -196,6 +196,23 @@ def main() -> None:
             print(f"\nbehavioural gate FAILED: {len(suite.failures)} assertion(s)")
             raise SystemExit(1)
 
+    if config.promote:
+        if suite is None:
+            print("\nnot promoted: the behavioural suite was skipped")
+        else:
+            promote_on_pass(run_dir, config.notes)
+
+
+def promote_on_pass(run_dir: Path, notes: str) -> None:
+    from serve import release
+
+    try:
+        manifest = release.promote(run_dir, notes=notes)
+    except release.GateFailed as refusal:
+        print(f"\nnot promoted: {refusal}")
+        raise SystemExit(1)
+    print(f"\npromoted {manifest['run']}; the release files are ready to commit")
+
 
 if __name__ == "__main__":
     main()
