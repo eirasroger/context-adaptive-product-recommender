@@ -169,7 +169,7 @@ def compute(predictions: Predictions) -> MetricSet:
     )
 
 
-STRATA = ("category", "provenance", "context", "stakeholder", "set_size")
+STRATA = ("category", "provenance", "category_provenance", "context", "stakeholder", "set_size")
 
 
 def strata_of(prepared: Prepared, set_index: int, kind: str) -> tuple[str, ...]:
@@ -178,6 +178,9 @@ def strata_of(prepared: Prepared, set_index: int, kind: str) -> tuple[str, ...]:
         return (prepared.category_keys[int(prepared.set_category[set_index])],)
     if kind == "provenance":
         return (prepared.set_provenance[set_index],)
+    if kind == "category_provenance":
+        (category,) = strata_of(prepared, set_index, "category")
+        return (f"{category}/{prepared.set_provenance[set_index]}",)
     if kind == "set_size":
         return (f"n={int(prepared.set_count[set_index])}",)
     if kind == "context":

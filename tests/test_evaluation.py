@@ -73,3 +73,13 @@ def test_no_stratum_drifts_from_what_was_recorded(scored, baseline):
                 assert scored["stratified"][kind][label][name] == pytest.approx(
                     recorded, abs=TOLERANCE
                 ), f"{kind}/{label}/{name}"
+
+
+def test_every_category_is_split_by_provenance(scored):
+    by_category = scored["stratified"]["category"]
+    split = scored["stratified"]["category_provenance"]
+
+    assert {label.split("/")[0] for label in split} == set(by_category)
+    for category, cell in by_category.items():
+        parts = [c for label, c in split.items() if label.startswith(f"{category}/")]
+        assert sum(part["n_sets"] for part in parts) == cell["n_sets"], category
