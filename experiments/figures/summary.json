@@ -1,18 +1,26 @@
 {
   "checkpoint": "serve/release/model.pt",
-  "model_sha256": "3c324e606d5b6641d01aadb7272d885637ee47dc52d9bc2b30e1e8885a17817e",
-  "registry_version": "0.3.1",
+  "model_sha256": "319838646478713952d0deddef2b7676b504276fb99f21877a7500e8ae3f8780",
+  "registry_version": "0.5.0",
   "snapshot": "tests/fixtures/snapshot",
   "seed": 0,
   "masked": {
+    "fire_reaction": "Class F",
     "health": "Hazardous substances present"
   },
   "categories": {
     "concrete": {
       "shortlists": 300,
       "shap_rank_correlation": {
-        "all": 0.602437261839669,
-        "unmasked": 0.5924598858916784
+        "all": 0.5261972088716297,
+        "unmasked": 0.5059673178886368
+      }
+    },
+    "facade_system": {
+      "shortlists": 300,
+      "shap_rank_correlation": {
+        "all": 0.6073299142163876,
+        "unmasked": 0.6001930900840002
       }
     }
   }

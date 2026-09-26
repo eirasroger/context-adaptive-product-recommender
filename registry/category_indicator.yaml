@@ -176,14 +176,6 @@ category_indicator:
   control_note: null
   note: null
 - category_key: facade_system
-  indicator_key: b
-  is_required: 0
-  relevance_mode: always
-  direction_override: null
-  control_mode: sweep
-  control_note: null
-  note: null
-- category_key: facade_system
   indicator_key: circ_orig
   is_required: 0
   relevance_mode: always

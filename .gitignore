@@ -99,7 +99,7 @@ data/*.db
 data/*.db-wal
 data/*.db-shm
 data/snapshots/
-data/wip/
+data/facade/
 *-prepared.pkl
 runs/
 docs/

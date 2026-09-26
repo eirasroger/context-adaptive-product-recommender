@@ -1,5 +1,6 @@
-# Baseline training configuration.
+# Baseline training configuration: every category, on the joint corpus built by ingest.facade.build.
 name: baseline
+db: data/joint.db
 split_key: default
 device: auto
 output_dir: runs
@@ -27,4 +28,4 @@ loss:
   pairwise: 1.0
   listwise: 0.0
 
-notes: Baseline with control coverage for every sweepable indicator.
+notes: Concrete and facade systems; facade labels from language-model agents.

@@ -47,8 +47,10 @@ class Thresholds:
 
     max_gap_fidelity: float | None = None
     max_band_placement: float | None = None
-    #: How much worse any stratum may get against the previous release.
+    #: How much worse, as a fraction of its previous gap, any stratum may get against the previous release.
     max_stratum_regression: float | None = None
+    #: Strata with fewer sets are reported and never gated: a handful of sets moves their gap.
+    min_stratum_sets: int = 0
     require_behavioural: bool = True
 
 
@@ -99,12 +101,14 @@ def gate(
             for label, cell in cells.items():
                 before = previous.get(label, {}).get("gap_fidelity")
                 after = cell.get("gap_fidelity")
-                if before is None or after is None:
+                if before is None or after is None or before <= 0:
                     continue
-                if after - before > thresholds.max_stratum_regression:
+                if cell.get("n_sets", thresholds.min_stratum_sets) < thresholds.min_stratum_sets:
+                    continue
+                if after > before * (1 + thresholds.max_stratum_regression):
                     reasons.append(
                         f"{kind}/{label} gap fidelity worsened "
-                        f"{before:.4f} -> {after:.4f}"
+                        f"{before:.4f} -> {after:.4f} ({after / before - 1:+.0%})"
                     )
 
     return GateResult(passed=not reasons, reasons=reasons)

@@ -22,12 +22,16 @@ from db.models import (
     Product,
 )
 from ingest.adapters.concrete_v1 import IngestError, file_hash
-from wip.facade.synthesise import CATEGORY_KEY
+from ingest.facade.synthesise import CATEGORY_KEY
 
-ADAPTER_VERSION = "facade_wip_v0"
-SOURCE_KEY = "facade_wip_synthetic"
-PROVENANCE_KEY = "synthetic"
-METADATA_FIELDS = {"id_prod", "typology"}
+ADAPTER_VERSION = "facade_v1"
+SOURCE_KEY = "facade_composed"
+#: How each label source is recorded: provenance, labeller and method.
+LABELLERS = {
+    "rule": ("synthetic", "rule:facade_v1", "Declared rule over registry directions and stakeholder priorities."),
+    "llm": ("llm", "llm:claude", "Language model, scenario by scenario, following ingest/facade/labelling_brief.md."),
+}
+METADATA_FIELDS = {"id_prod", "typology", "sources"}
 CHUNK = 5_000
 
 
@@ -45,7 +49,11 @@ def _value_row(registry: Registry, product_id: int, indicator_key: str, raw) -> 
     return {**row, "present": 1, "value_num": float(raw)}
 
 
-def ingest(session: Session, registry: Registry, scenarios_path: Path, labels_path: Path) -> dict[str, int]:
+def ingest(
+    session: Session, registry: Registry, scenarios_path: Path, labels_path: Path, labeller: str = "rule"
+) -> dict[str, int]:
+    """Ingest the scenarios the labels file covers; the rest are left out."""
+    provenance, labeller_key, method = LABELLERS[labeller]
     if session.get(DataSource, SOURCE_KEY) is not None:
         raise IngestError(f"source {SOURCE_KEY!r} is already in this corpus; rebuild it from scratch")
 
@@ -55,8 +63,8 @@ def ingest(session: Session, registry: Registry, scenarios_path: Path, labels_pa
     session.add(
         DataSource(
             key=SOURCE_KEY,
-            display_name="Facade systems, working dataset",
-            citation="Synthetic working dataset from wip.facade.synthesise. For development only.",
+            display_name="Facade systems composed from EPD layers",
+            citation="Composed from European EN 15804+A2 EPDs by ingest.facade.synthesise.",
             doi=None,
             ingested_at=now,
             adapter_version=ADAPTER_VERSION,
@@ -78,18 +86,20 @@ def ingest(session: Session, registry: Registry, scenarios_path: Path, labels_pa
     unknown: set[str] = set()
 
     for scenario in scenarios:
+        if scenario["id"] not in labels:
+            continue
         external_id = scenario["id"]
         rows[ComparisonSet].append({
             "id": set_id, "category_key": CATEGORY_KEY, "source_key": SOURCE_KEY,
-            "provenance_key": PROVENANCE_KEY, "generator_key": scenario["shortlist"],
+            "provenance_key": provenance, "generator_key": scenario["shortlist"],
             "external_id": external_id, "created_at": now,
         })
         rows[ComparisonSetContext] += [{"set_id": set_id, "context_key": key} for key in scenario["contexts"]]
         rows[ComparisonSetStakeholder] += [{"set_id": set_id, "stakeholder_key": key} for key in scenario["stakeholders"]]
         rows[LabelSet].append({
-            "id": label_set_id, "comparison_set_id": set_id, "provenance_key": PROVENANCE_KEY,
-            "labeller_key": f"rule:{ADAPTER_VERSION}", "scale_semantics": "within_set_relative",
-            "method_note": "Declared rule over registry directions and stakeholder priorities.",
+            "id": label_set_id, "comparison_set_id": set_id, "provenance_key": provenance,
+            "labeller_key": labeller_key, "scale_semantics": "within_set_relative",
+            "method_note": method,
             "created_at": now,
         })
         prefs = {row["id_prod"]: row for row in labels[external_id]["labelled_alternatives"]}

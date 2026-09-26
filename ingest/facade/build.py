@@ -1,4 +1,4 @@
-"""Build the facade corpus apart from the main one: a copy of it, plus the facade dataset and control cases."""
+"""Build the joint corpus: a copy of the main one, plus the facade dataset and its control cases."""
 
 from __future__ import annotations
 
@@ -13,10 +13,10 @@ from db.session import create_db_engine, db_path, session_scope
 from ingest import split
 from ingest.generators import run as control
 from ingest.generators.writer import write_cases
-from wip.facade import ingest, synthesise
+from ingest.facade import compose, ingest, synthesise
 
-WORK_DB = Path("data/wip/corpus.db")
-CONTROL_SOURCE = "facade_wip_control"
+JOINT_DB = Path("data/joint.db")
+CONTROL_SOURCE = "facade_control"
 
 
 def copy_corpus(source: Path, target: Path) -> None:
@@ -38,29 +38,33 @@ def main() -> None:
     parser.add_argument("--control-count", type=int, default=800, help="control cases per indicator")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--resynthesise", action="store_true", help="rewrite the working dataset")
+    parser.add_argument("--labels", choices=("llm", "rule"), default="llm", help="which labels to ingest")
     args = parser.parse_args()
 
-    copy_corpus(db_path(), WORK_DB)
-    print(f"copied {db_path()} to {WORK_DB}")
+    copy_corpus(db_path(), JOINT_DB)
+    print(f"copied {db_path()} to {JOINT_DB}")
 
-    with session_scope(create_db_engine(WORK_DB)) as session:
+    with session_scope(create_db_engine(JOINT_DB)) as session:
         for path in seed(session):
             print(f"applied {path.name}")
         registry = registry_module.from_session(session)
 
         scenarios = synthesise.DATASET_DIR / synthesise.SCENARIOS_FILE
-        labels = synthesise.DATASET_DIR / synthesise.LABELS_FILE
+        labels = synthesise.DATASET_DIR / (synthesise.LLM_LABELS_FILE if args.labels == "llm" else synthesise.LABELS_FILE)
         if args.resynthesise or not scenarios.exists():
-            synthesise.write(registry, synthesise.DATASET_DIR, args.sets, args.seed)
+            library = compose.Library.load()
+            print(f"EPD layers: {library.summary()}")
+            print(f"values set aside as unit errors: {len(compose.set_aside)}")
+            synthesise.write(registry, library, synthesise.DATASET_DIR, args.sets, args.seed)
             print(f"wrote the working dataset to {synthesise.DATASET_DIR}")
-        for table, count in ingest.ingest(session, registry, scenarios, labels).items():
+        for table, count in ingest.ingest(session, registry, scenarios, labels, args.labels).items():
             print(f"  {table:28s} {count:>9,}")
 
         category = synthesise.CATEGORY_KEY
         cases = control.generate(
             registry, category, sorted(registry.sweepable(category)), count=args.control_count, seed=args.seed
         )
-        written = write_cases(session, registry, cases, source_key=CONTROL_SOURCE, prefix="wipfacade")
+        written = write_cases(session, registry, cases, source_key=CONTROL_SOURCE, prefix="facade")
         print(f"control cases: {written['comparison_sets']:,}")
 
         print(f"folds: {split.assign(session, replace=True)}")

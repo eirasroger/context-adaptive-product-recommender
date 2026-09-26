@@ -19,7 +19,7 @@ category_provenance_weight:
   weight: 0.0
 - category_key: facade_system
   provenance_key: llm
-  weight: 0.0
+  weight: 0.6
 - category_key: facade_system
   provenance_key: synthetic
-  weight: 0.6
+  weight: 0.0

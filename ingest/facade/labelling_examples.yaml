@@ -1,0 +1,58 @@
+# Worked examples for the facade labelling brief. Values are real corpus products;
+# the judgements are written by hand. Keys follow the brief's indicator list.
+
+examples:
+  - applications: [Retrofit]
+    stakeholders: [Cost-conscious developer]
+    alternatives:
+      - {id_prod: A, gwp: 21.6, wdp: 49.5, fwu: null, circ_orig: 0.06, fu_recyc: 98.2, fu_incin: 0.0, fu_inert: 1.8, fu_haz: 0.01,
+         cost_product: 83.1, cost_labour: 72.8, cost_maintenance: 47.8, health: "Undocumented", u_value: 0.21,
+         acoustic_reduction: 54.9, surface_mass: 313, heat_capacity: 197, fire_reaction: "Class A2", thickness: 366}
+      - {id_prod: B, gwp: 52.0, wdp: 8.95, fwu: null, circ_orig: 0.12, fu_recyc: 88.6, fu_incin: 0.0, fu_inert: 11.4, fu_haz: 0.01,
+         cost_product: 95.2, cost_labour: 72.6, cost_maintenance: 46.8, health: "No listed substances, uncertified", u_value: 0.20,
+         acoustic_reduction: 44.1, surface_mass: 252, heat_capacity: 148, fire_reaction: "Class C", thickness: 317}
+      - {id_prod: C, gwp: 47.9, wdp: null, fwu: null, circ_orig: null, fu_recyc: 66.6, fu_incin: 0.0, fu_inert: 33.4, fu_haz: 0.0,
+         cost_product: 120.8, cost_labour: 60.5, cost_maintenance: 34.1, health: "Undocumented", u_value: 0.17,
+         acoustic_reduction: 46.3, surface_mass: 248, heat_capacity: 147, fire_reaction: "Class B", thickness: 343}
+    labels:
+      - {id_prod: A, pref: 0.62, conf: 0.7, reason: "Lowest total cost (204 against 215) and the lowest GWP, but the heaviest and thickest option, which weighs against it in a retrofit where added load and projection matter."}
+      - {id_prod: B, pref: 0.78, conf: 0.7, reason: "Thinnest and among the lightest, with a good U-value at a total cost within 5% of the cheapest; the best retrofit fit for a cost-led developer despite higher GWP."}
+      - {id_prod: C, pref: 0.74, conf: 0.6, reason: "Best U-value and lightest, which serves the retrofit's purpose, at the same total cost as B; several environmental values are unknown, so confidence is lower."}
+
+  - applications: [Acoustic insulation]
+    stakeholders: [Sustainability maximalist, Occupant comfort focused]
+    alternatives:
+      - {id_prod: A, gwp: 26.3, wdp: 4.07, fwu: 0.21, circ_orig: 1.78, fu_recyc: 0.0, fu_incin: 0.0, fu_inert: 100.0, fu_haz: 0.0,
+         cost_product: 96.8, cost_labour: 27.7, cost_maintenance: 23.9, health: "Material Health Bronze", u_value: 0.21,
+         acoustic_reduction: 32.7, surface_mass: 30.1, heat_capacity: 15.0, fire_reaction: "Class A2", thickness: 183}
+      - {id_prod: B, gwp: 100.4, wdp: 8.23, fwu: 0.21, circ_orig: 0.02, fu_recyc: 19.4, fu_incin: 0.17, fu_inert: 80.5, fu_haz: 0.01,
+         cost_product: 54.9, cost_labour: 89.0, cost_maintenance: 18.3, health: "Undocumented", u_value: 0.42,
+         acoustic_reduction: 52.6, surface_mass: 317, heat_capacity: 68.7, fire_reaction: "Class A1", thickness: 273}
+      - {id_prod: C, gwp: 36.1, wdp: null, fwu: 0.58, circ_orig: 5.26, fu_recyc: 69.9, fu_incin: 0.0, fu_inert: 30.1, fu_haz: 0.01,
+         cost_product: 192.8, cost_labour: 60.1, cost_maintenance: 17.3, health: "Undocumented", u_value: 0.33,
+         acoustic_reduction: 53.4, surface_mass: 327, heat_capacity: 167, fire_reaction: "Class B", thickness: 343}
+      - {id_prod: D, gwp: 80.7, wdp: null, fwu: 1.29, circ_orig: 1.72, fu_recyc: 69.8, fu_incin: 0.0, fu_inert: 30.2, fu_haz: 0.04,
+         cost_product: 115.3, cost_labour: 37.6, cost_maintenance: 10.0, health: "Undocumented", u_value: 0.27,
+         acoustic_reduction: 51.6, surface_mass: 480, heat_capacity: 158, fire_reaction: "Class A1", thickness: 313}
+    labels:
+      - {id_prod: A, pref: 0.35, conf: 0.8, reason: "Lowest GWP and the only certified health profile, but a sound reduction of 33 dB is far below the others on a noisy site, and all of it ends in landfill."}
+      - {id_prod: B, pref: 0.50, conf: 0.75, reason: "Good sound reduction, but the highest GWP, 80% landfilled at end of life and the weakest U-value, which a comfort-focused and sustainability-led pair both mark down."}
+      - {id_prod: C, pref: 0.86, conf: 0.8, reason: "Best sound reduction together with low GWP and 70% recovered at end of life; the high product cost matters little to these stakeholders."}
+      - {id_prod: D, pref: 0.66, conf: 0.75, reason: "Strong sound reduction and a good U-value, but GWP more than double C's, so a sustainability-led decision places it second."}
+
+  - applications: [High rise]
+    stakeholders: [Health and safety focused]
+    alternatives:
+      - {id_prod: A, gwp: 34.8, wdp: 4.79, fwu: 0.21, circ_orig: 4.69, fu_recyc: 56.6, fu_incin: 0.0, fu_inert: 43.4, fu_haz: 0.0,
+         cost_product: 63.0, cost_labour: 22.6, cost_maintenance: 12.4, health: "No listed substances, uncertified", u_value: 0.22,
+         acoustic_reduction: 30.9, surface_mass: 28.4, heat_capacity: 11.3, fire_reaction: "Class A2", thickness: 168}
+      - {id_prod: B, gwp: 16.4, wdp: 4.34, fwu: 0.13, circ_orig: 72.4, fu_recyc: 77.2, fu_incin: 0.0, fu_inert: 22.8, fu_haz: 0.0,
+         cost_product: 76.3, cost_labour: 24.4, cost_maintenance: 29.7, health: "No listed substances, uncertified", u_value: 0.42,
+         acoustic_reduction: 24.4, surface_mass: 11.6, heat_capacity: 12.7, fire_reaction: "Class C", thickness: 60}
+      - {id_prod: C, gwp: 44.9, wdp: 38.6, fwu: null, circ_orig: 15.3, fu_recyc: 44.1, fu_incin: 0.0, fu_inert: 55.8, fu_haz: 0.1,
+         cost_product: 79.6, cost_labour: 22.5, cost_maintenance: 17.1, health: "Undocumented", u_value: 0.37,
+         acoustic_reduction: 31.9, surface_mass: 20.8, heat_capacity: 5.4, fire_reaction: "Class A1", thickness: 100}
+    labels:
+      - {id_prod: A, pref: 0.88, conf: 0.85, reason: "Non-combustible (A2) with a screened chemical profile and the lowest cost; the safest well-documented option for a tall building."}
+      - {id_prod: B, pref: 0.30, conf: 0.8, reason: "Lowest GWP and highest recycled content, but a combustible class C facade on a high-rise is a serious safety drawback for this stakeholder."}
+      - {id_prod: C, pref: 0.62, conf: 0.65, reason: "Best reaction to fire (A1), but undocumented chemistry, some hazardous waste and higher impacts leave it behind A for a health-and-safety view."}

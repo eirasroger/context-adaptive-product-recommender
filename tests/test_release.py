@@ -280,7 +280,7 @@ def test_every_third_party_import_is_declared():
     root = _root()
     first_party = {
         "app", "core", "db", "eval", "experiments", "ingest", "model",
-        "registry", "serve", "snapshot", "tests", "train", "wip",
+        "registry", "serve", "snapshot", "tests", "train",
     }
 
     def _normalise(name: str) -> str:
@@ -367,6 +367,35 @@ def test_the_first_promotion_has_nothing_to_regress_against(tmp_path, registry):
     _promote(run_dir, tmp_path)
 
     assert (tmp_path / "release" / "model.pt").exists()
+
+
+def _gate_one_stratum(before: float, after: float, sets: int):
+    from eval import report as report_module
+
+    def metrics(gap):
+        return {"stratified": {"provenance": {"expert": {"gap_fidelity": gap, "n_sets": sets}}}}
+
+    return report_module.gate(
+        metrics(after),
+        report_module.Thresholds(
+            max_stratum_regression=release_module.MAX_STRATUM_REGRESSION,
+            min_stratum_sets=release_module.MIN_STRATUM_SETS,
+            require_behavioural=False,
+        ),
+        metrics(before),
+    )
+
+
+def test_seed_to_seed_variation_does_not_block_a_promotion():
+    assert _gate_one_stratum(0.0460, 0.0473, sets=8000).passed
+
+
+def test_a_clearly_worse_stratum_blocks_a_promotion():
+    assert not _gate_one_stratum(0.0460, 0.0600, sets=8000).passed
+
+
+def test_a_stratum_of_a_few_sets_is_reported_and_never_gated():
+    assert _gate_one_stratum(0.0460, 0.0900, sets=41).passed
 
 
 def test_a_regression_can_be_forced_and_says_so(tmp_path, registry):

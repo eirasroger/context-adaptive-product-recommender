@@ -1,4 +1,4 @@
-"""Find facade EPDs on open soda4LCA registry nodes and tabulate what the facade indicators need."""
+"""Find EN 15804+A2 facade EPDs on open soda4LCA registry nodes and tabulate what the facade indicators need."""
 
 from __future__ import annotations
 
@@ -43,12 +43,24 @@ EXCLUDED = (
 )
 
 FIELDS = [
-    "typology", "node", "name", "uuid", "reg_no", "ref_year", "valid_until", "standard",
-    "declared_amount", "declared_unit", "gwp_total_a1a3", "gwp_total_c3c4", "gwp_total_d",
-    "wdp_a1a3", "mfr_c", "cru_c", "url",
+    "typology", "node", "name", "uuid", "geo", "reg_no", "ref_year", "valid_until", "standard", "pcr",
+    "declared_amount", "declared_unit", "mass_kg", "grammage_kg_m2", "thickness_m", "density_kg_m3",
+    "gwp_total_a1a3", "gwp_total_c3c4", "gwp_total_d", "wdp_a1a3", "fw_a1a3", "sm_a1a3",
+    "mfr_c", "cru_c", "mer_c", "hwd_c", "url",
 ]
 
+#: Material properties an ILCD+EPD flow may carry, by their declared name.
+MATERIAL_PROPERTIES = {"grammage": "grammage_kg_m2", "layer thickness": "thickness_m", "gross density": "density_kg_m3"}
+
 PAGE_SIZE = 200
+
+#: Europe, as ISO country codes and the regional codes registries use; GLO is kept since European
+#: manufacturers often declare their market as global.
+EUROPE = {
+    "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT",
+    "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE", "GB", "UK", "NO", "CH", "IS", "LI", "TR", "RS", "BA", "MK", "AL",
+    "ME", "UA", "MD", "RER", "EU", "EUR", "EU-27", "EU-28", "EU+EFTA", "EU+EFTA+UK", "EUROPE", "GLO",
+}
 
 UNIT_NAMES = {"qm": "m2", "Stück": "piece", "pcs": "piece", "pcs.": "piece"}
 
@@ -76,6 +88,11 @@ def search(base: str, term: str) -> list[dict]:
         start += PAGE_SIZE
         if start >= page.get("totalCount", 0):
             return found
+
+
+def european(geo: str) -> bool:
+    codes = re.split(r"[\s,;/]+", geo.upper().strip()) if geo else []
+    return not codes or any(code in EUROPE or code.split("-")[0] in EUROPE for code in codes)
 
 
 def matches(term: str, name: str) -> bool:
@@ -110,11 +127,36 @@ def _sum(modules: dict[str, float], names: tuple[str, ...]) -> float | None:
     return sum(present) if present else None
 
 
+def material_properties(flow: dict) -> dict[str, float]:
+    out: dict[str, float] = {}
+    for block in ((flow.get("flowInformation") or {}).get("dataSetInformation") or {}).get("other", {}).get("anies", []):
+        if not isinstance(block, dict) or "Material" not in block:
+            continue
+        names = {
+            detail.get("id"): str((detail.get("Name") or {}).get("value", "")).lower()
+            for detail in (block.get("Metadata") or {}).get("PropertyDetails", [])
+        }
+        for material in block["Material"]:
+            for datum in (material.get("BulkDetails") or {}).get("PropertyData", []):
+                field = MATERIAL_PROPERTIES.get(names.get(datum.get("property"), ""))
+                try:
+                    value = float((datum.get("Data") or {}).get("value"))
+                except (TypeError, ValueError):
+                    continue
+                if field:
+                    out[field] = value
+    return out
+
+
 def details(base: str, uuid: str) -> dict:
     data = fetch_json(f"{base}/resource/processes/{uuid}?format=JSON&view=extended")
     exchanges = (data.get("exchanges") or {}).get("exchange", [])
     reference = next((e for e in exchanges if e.get("referenceFlow")), {})
-    prop = next((p for p in reference.get("flowProperties", []) if p.get("referenceFlowProperty")), {})
+    properties = reference.get("flowProperties", [])
+    declared = next((p for p in properties if p.get("referenceFlowProperty")), {})
+    declared_mass = next(
+        (p.get("meanValue") for p in properties if _text(p.get("name")).lower() in ("mass", "masse")), None
+    )
 
     results = {
         _text(r["referenceToLCIAMethodDataSet"].get("shortDescription")).lower(): _modules(r)
@@ -130,24 +172,53 @@ def details(base: str, uuid: str) -> dict:
         return {}
 
     gwp = pick(results, "gwp-total", "(gwp)", "global warming potential total", "climate change - total", "global warming")
-    wdp = pick(results, "wdp", "water (user) deprivation", "water deprivation")
-    mfr = pick(flows, "materials for recycling", "(mfr)")
-    cru = pick(flows, "components for re-use", "(cru)")
+    wdp = pick(results, "(wdp)", "water (user) deprivation", "water deprivation")
+    method = (data.get("modellingAndValidation") or {}).get("LCIMethodAndAllocation") or {}
+
+    flow_ref = (reference.get("referenceToFlowDataSet") or {}).get("refObjectId")
+    material = material_properties(fetch_json(f"{base}/resource/flows/{flow_ref}?format=JSON&view=extended")) if flow_ref else {}
+
+    amount = declared.get("meanValue", reference.get("meanAmount"))
+    unit = UNIT_NAMES.get(declared.get("referenceUnit", ""), declared.get("referenceUnit", ""))
     return {
-        "declared_amount": prop.get("meanValue", reference.get("meanAmount")),
-        "declared_unit": UNIT_NAMES.get(prop.get("referenceUnit", ""), prop.get("referenceUnit", "")),
+        "pcr": "; ".join(_text(r.get("shortDescription")) for r in method.get("referenceToLCAMethodDetails", [])),
+        "declared_amount": amount,
+        "declared_unit": unit,
+        "mass_kg": declared_mass if declared_mass is not None else mass_from(unit, amount, material),
+        **material,
         "gwp_total_a1a3": _sum(gwp, ("A1-A3",)) if "A1-A3" in gwp else _sum(gwp, ("A1", "A2", "A3")),
         "gwp_total_c3c4": _sum(gwp, ("C3", "C4")),
         "gwp_total_d": gwp.get("D"),
         "wdp_a1a3": wdp.get("A1-A3"),
-        "mfr_c": _sum(mfr, ("C3", "C4")),
-        "cru_c": _sum(cru, ("C3", "C4")),
+        "fw_a1a3": pick(flows, "(fw)").get("A1-A3"),
+        "sm_a1a3": pick(flows, "(sm)").get("A1-A3"),
+        "mfr_c": _sum(pick(flows, "(mfr)"), ("C3", "C4")),
+        "cru_c": _sum(pick(flows, "(cru)"), ("C3", "C4")),
+        "mer_c": _sum(pick(flows, "(mer)"), ("C3", "C4")),
+        "hwd_c": _sum(pick(flows, "(hwd)"), ("C3", "C4")),
     }
+
+
+def mass_from(unit: str, amount, material: dict[str, float]) -> float | None:
+    """Mass per declared unit from the material properties, where no mass is declared."""
+    if amount is None:
+        return None
+    if unit == "kg":
+        return amount
+    if unit == "t":
+        return amount * 1000
+    if unit == "m2" and "grammage_kg_m2" in material:
+        return amount * material["grammage_kg_m2"]
+    if unit == "m2" and {"thickness_m", "density_kg_m3"} <= material.keys():
+        return amount * material["thickness_m"] * material["density_kg_m3"]
+    if unit == "m3" and "density_kg_m3" in material:
+        return amount * material["density_kg_m3"]
+    return None
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--out", type=Path, default=Path("data/wip/facade/epd"))
+    parser.add_argument("--out", type=Path, default=Path("data/facade/epd"))
     parser.add_argument("--valid-from", type=int, default=2026, help="drop EPDs expiring before this year")
     args = parser.parse_args()
 
@@ -160,6 +231,10 @@ def main() -> None:
                         continue
                     if not matches(term, _text(hit.get("name"))):
                         continue
+                    if not any("15804+A2" in c.get("name", "").replace(" ", "") for c in hit.get("compliance", [])):
+                        continue
+                    if not european(hit.get("geo", "")):
+                        continue
                     candidates.setdefault((node, hit["uuid"]), {"typology": typology, "node": node, "hit": hit})
         print(f"{node}: {sum(1 for key in candidates if key[0] == node)} candidates")
 
@@ -170,6 +245,7 @@ def main() -> None:
             "node": entry["node"],
             "name": _text(hit.get("name")).strip(),
             "uuid": hit["uuid"],
+            "geo": hit.get("geo", ""),
             "reg_no": hit.get("regNo", ""),
             "ref_year": hit.get("refYear", ""),
             "valid_until": hit.get("validUntil", ""),

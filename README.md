@@ -54,12 +54,12 @@ experts.
 ## Results
 
 <!-- results:start -->
-The model in `serve/release/` comes from run `baseline-20260925T130649Z` and
-carries registry 0.3.1. On 12,791 test shortlists it scores:
+The model in `serve/release/` comes from run `baseline-20260926T161320Z` and
+carries registry 0.5.0. On 10,646 test shortlists it scores:
 
 | Gap fidelity | Band placement | Top-1 agreement | Tie-tolerant rank correlation | Behavioural assertions |
 |---|---|---|---|---|
-| 0.035 | 0.014 | 0.930 | 0.940 | 1248 of 1248 pass |
+| 0.041 | 0.016 | 0.919 | 0.921 | 1200 of 1200 pass |
 <!-- results:end -->
 
 The behavioural assertions check that the model responds to each indicator in
@@ -106,9 +106,9 @@ python -m alembic upgrade head          # the registry
 python -m db.seed && python -m db.validate
 python -m db.release 0.1.0
 
-python -m ingest.adapters.concrete_v1 <scenarios.json> <labels.json>   # the data
+python -m ingest.adapters.concrete_v1 <scenarios.json> <labels.json>   # concrete
 python -m ingest.split
-python -m snapshot.build 0.1.0
+python -m ingest.facade.build <version>   # facades, into the joint corpus
 
 python -m train.run --config train/configs/default.yaml   # train and evaluate
 python -m serve.release runs/<run>                         # promote to serve/release/
@@ -157,13 +157,10 @@ that is a flaw in the design.
 
 ## Status
 
-Still open: reproducing the published single-category result under this
-architecture, adding a second category, and reading values from environmental
-product declarations.
-
-Facade systems are the second category, live as a preview. They are trained on
-a synthetic working dataset, built by `wip/facade`, until real products are
-collected.
+Facade systems are the second category. Their products are composed from
+European environmental product declarations and labelled by language-model
+agents, scenario by scenario, as the concrete corpus was. Expert validation of
+the facade labels is still open.
 
 ## Background
 

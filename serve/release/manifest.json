@@ -22,7 +22,7 @@
       "monotonicity": {
         "fail": 0,
         "no_response": 0,
-        "pass": 1240
+        "pass": 1192
       },
       "sign_flip": {
         "fail": 0,
@@ -31,22 +31,22 @@
       }
     },
     "overall": {
-      "band_placement": 0.013710562238480932,
-      "gap_fidelity": 0.03544030557898824,
-      "n_alternatives": 44691,
-      "n_sets": 12791,
-      "pointwise_mae": 0.024252377450466156,
-      "tie_tolerant_tau": 0.939830394400323,
-      "top1_agreement": 0.9296380267375498
+      "band_placement": 0.016118181991511084,
+      "gap_fidelity": 0.040873341831963755,
+      "n_alternatives": 37305,
+      "n_sets": 10646,
+      "pointwise_mae": 0.02809927985072136,
+      "tie_tolerant_tau": 0.9209782499749424,
+      "top1_agreement": 0.9190306218297952
     }
   },
-  "model_bytes": 2462347,
-  "model_sha256": "3c324e606d5b6641d01aadb7272d885637ee47dc52d9bc2b30e1e8885a17817e",
+  "model_bytes": 2464907,
+  "model_sha256": "319838646478713952d0deddef2b7676b504276fb99f21877a7500e8ae3f8780",
   "notes": "",
-  "promoted_at": "2026-09-25T13:43:59.932252+00:00",
-  "registry_content_hash": "8aad27117e4d00dba3a3ca3da4ac2f8765b6f6f8489dad3c9bf54de5bc3817b9",
-  "registry_version": "0.3.1",
-  "run": "baseline-20260925T130649Z",
-  "snapshot_hash": "5b5ff946e748946934158ef1fc87c43e3da954dbdb5e0403ecb1712f3c290b9e",
+  "promoted_at": "2026-09-26T16:54:56.568011+00:00",
+  "registry_content_hash": "c1e6b50863de56bc075224b11e99f532d74a3405b655c91b6cd62b0cb38fd19d",
+  "registry_version": "0.5.0",
+  "run": "baseline-20260926T161320Z",
+  "snapshot_hash": "fe7917640a90d54b0e7df8f9fd50aed069310ef5e9a90988fba49a2c11c09abe",
   "split_key": "default"
 }

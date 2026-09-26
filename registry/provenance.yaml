@@ -10,4 +10,4 @@ provenance:
   definition_text: Scored by a language model against a written assessment brief. Broad coverage of realistic trade-offs, with a self-reported confidence that is used to weight the loss.
 - key: synthetic
   display_name: Synthetic, rule labelled
-  definition_text: Products sampled from typology templates and scored by a declared rule over the registry's directions and the stakeholders' priorities. Stands in for language-model and expert labels while a category is being built, so the model can only learn what the rule already states. A category trained on it is shown as a preview.
+  definition_text: Products composed from real EPD layers, or taken whole from system EPDs, and scored by a declared rule over the registry's directions and the stakeholders' priorities. Stands in for language-model and expert labels while a category is being built, so the model can only learn what the rule already states. A category trained on it is shown as a preview.

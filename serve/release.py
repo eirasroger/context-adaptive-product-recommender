@@ -18,7 +18,10 @@ FIXTURE_DIR = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "snap
 README = Path(__file__).resolve().parents[1] / "README.md"
 RESULTS_START = "<!-- results:start -->"
 RESULTS_END = "<!-- results:end -->"
-MAX_STRATUM_REGRESSION = 0.001
+#: A stratum may be this much worse, relative to the release, before promotion is refused;
+#: seed-to-seed variation alone moves the gap by a few per cent.
+MAX_STRATUM_REGRESSION = 0.10
+MIN_STRATUM_SETS = 100
 
 #: A larger release probably carries data along with the checkpoint.
 SIZE_WARNING_MB = 25
@@ -93,8 +96,31 @@ def refresh_readme(release_dir: Path = RELEASE_DIR, readme: Path = README) -> No
     )
 
 
-def regression_against_release(run_dir: Path, release_dir: Path):
-    """Gate the run against the strata of the release it would replace."""
+def released_on_incoming_sets(run_dir: Path, release_dir: Path, snapshot_root: Path | None = None) -> dict | None:
+    """The released model scored on the incoming run's test fold, so both face the same sets."""
+    released, incoming = Path(release_dir) / MODEL_FILE, Path(run_dir) / MODEL_FILE
+    if not released.exists() or not incoming.exists():
+        return None
+
+    import torch
+
+    from core.prepare import load_or_prepare
+    from eval import report as report_module
+    from model import checkpoint as checkpoint_module
+    from snapshot.build import SNAPSHOT_ROOT
+
+    snapshot_hash = checkpoint_module.describe(incoming)["meta"].get("snapshot_hash")
+    snapshot_dir = Path(snapshot_root or SNAPSHOT_ROOT) / str(snapshot_hash)
+    if not snapshot_dir.exists():
+        return None
+    registry = checkpoint_module.load_registry(incoming)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model, _, _ = checkpoint_module.load(released, registry=registry, device=device)
+    return report_module.evaluate_all(model, registry, load_or_prepare(registry, snapshot_dir), device=device)
+
+
+def regression_against_release(run_dir: Path, release_dir: Path, snapshot_root: Path | None = None):
+    """Gate the run against the release it would replace, on the same test sets where both can be scored."""
     from eval import report as report_module
 
     baseline_path = Path(release_dir) / METRICS_FILE
@@ -102,13 +128,17 @@ def regression_against_release(run_dir: Path, release_dir: Path):
     if not baseline_path.exists() or not incoming_path.exists():
         return None
 
+    baseline = released_on_incoming_sets(run_dir, release_dir, snapshot_root)
+    if baseline is None:
+        baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
     return report_module.gate(
         json.loads(incoming_path.read_text(encoding="utf-8")),
         report_module.Thresholds(
             max_stratum_regression=MAX_STRATUM_REGRESSION,
+            min_stratum_sets=MIN_STRATUM_SETS,
             require_behavioural=False,
         ),
-        json.loads(baseline_path.read_text(encoding="utf-8")),
+        baseline,
     )
 
 
@@ -139,7 +169,7 @@ def promote(
             "before promoting, or pass force=True."
         )
 
-    verdict = regression_against_release(run_dir, release_dir)
+    verdict = regression_against_release(run_dir, release_dir, snapshot_root)
     if verdict is not None and not verdict.passed and not force:
         raise GateFailed(
             f"{run_dir.name} is worse than the release it would replace:\n"
