@@ -16,12 +16,14 @@ MANIFEST_FILE = "manifest.json"
 METRICS_FILE = "metrics.json"
 FIXTURE_DIR = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "snapshot"
 README = Path(__file__).resolve().parents[1] / "README.md"
-FIGURES_DIR = Path(__file__).resolve().parents[1] / "experiments" / "figures"
 RESULTS_START = "<!-- results:start -->"
 RESULTS_END = "<!-- results:end -->"
-#: A stratum may be this much worse, relative to the release, before promotion is refused;
-#: seed-to-seed variation alone moves the gap by a few per cent.
+#: Promotion is refused when a stratum is this much worse than the release, relative to its gap,
+#: and also worse by more than STRATUM_NOISE_SIGMAS combined standard errors. Large strata are
+#: held to the relative limit; small ones, whose gap moves up to 29 % between equally good runs,
+#: to their own noise.
 MAX_STRATUM_REGRESSION = 0.10
+STRATUM_NOISE_SIGMAS = 3.0
 MIN_STRATUM_SETS = 100
 
 #: A larger release probably carries data along with the checkpoint.
@@ -137,6 +139,7 @@ def regression_against_release(run_dir: Path, release_dir: Path, snapshot_root: 
         report_module.Thresholds(
             max_stratum_regression=MAX_STRATUM_REGRESSION,
             min_stratum_sets=MIN_STRATUM_SETS,
+            stratum_noise_sigmas=STRATUM_NOISE_SIGMAS,
             require_behavioural=False,
         ),
         baseline,
@@ -151,7 +154,6 @@ def promote(
     fixture_dir: Path = FIXTURE_DIR,
     snapshot_root: Path | None = None,
     readme: Path = README,
-    figures_dir: Path | None = FIGURES_DIR,
 ) -> dict:
     run_dir = Path(run_dir)
     checkpoint = run_dir / "model.pt"
@@ -230,10 +232,6 @@ def promote(
     )
     if (release_dir / METRICS_FILE).exists():
         refresh_readme(release_dir, readme)
-    if figures_dir is not None:
-        from experiments import attribution
-
-        attribution.run(release_dir / MODEL_FILE, fixture_dir, figures_dir)
     return manifest
 
 

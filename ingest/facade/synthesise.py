@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Sequence
 
 from core.registry import Registry
+from eval.metrics import SHORTLIST_ACROSS, SHORTLIST_WITHIN
 from ingest.generators import parametric
 from ingest.facade import compose
 
@@ -93,7 +94,7 @@ def shortlist(rng: random.Random, pools: dict[str, list[dict]]) -> tuple[str, li
     size = rng.randint(MIN_ALTS, MAX_ALTS)
     if rng.random() < WITHIN_TYPOLOGY_SHARE:
         typology = rng.choice(list(pools))
-        return f"within:{typology}", rng.sample(pools[typology], size)
+        return f"{SHORTLIST_WITHIN}:{typology}", rng.sample(pools[typology], size)
     typologies = [rng.choice(list(pools)) for _ in range(size)]
     while len(set(typologies)) < 2:
         typologies[rng.randrange(size)] = rng.choice(list(pools))
@@ -103,7 +104,7 @@ def shortlist(rng: random.Random, pools: dict[str, list[dict]]) -> tuple[str, li
         while candidate in chosen:
             candidate = rng.choice(pools[typology])
         chosen.append(candidate)
-    return "across", chosen
+    return SHORTLIST_ACROSS, chosen
 
 
 def synthesise(

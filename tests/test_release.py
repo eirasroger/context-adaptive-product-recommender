@@ -93,7 +93,6 @@ def _promote(run_dir, tmp_path, **kwargs):
     kwargs.setdefault("fixture_dir", tmp_path / "fixture")
     kwargs.setdefault("snapshot_root", _snapshot(tmp_path / "snapshots").parent)
     kwargs.setdefault("readme", _readme(tmp_path))
-    kwargs.setdefault("figures_dir", None)
     return release_module.promote(run_dir, **kwargs)
 
 
@@ -370,17 +369,21 @@ def test_the_first_promotion_has_nothing_to_regress_against(tmp_path, registry):
     assert (tmp_path / "release" / "model.pt").exists()
 
 
-def _gate_one_stratum(before: float, after: float, sets: int):
+def _gate_one_stratum(before: float, after: float, sets: int, se: float | None = None):
     from eval import report as report_module
 
     def metrics(gap):
-        return {"stratified": {"provenance": {"expert": {"gap_fidelity": gap, "n_sets": sets}}}}
+        cell = {"gap_fidelity": gap, "n_sets": sets}
+        if se is not None:
+            cell["gap_fidelity_se"] = se
+        return {"stratified": {"provenance": {"expert": cell}}}
 
     return report_module.gate(
         metrics(after),
         report_module.Thresholds(
             max_stratum_regression=release_module.MAX_STRATUM_REGRESSION,
             min_stratum_sets=release_module.MIN_STRATUM_SETS,
+            stratum_noise_sigmas=release_module.STRATUM_NOISE_SIGMAS,
             require_behavioural=False,
         ),
         metrics(before),
@@ -397,6 +400,18 @@ def test_a_clearly_worse_stratum_blocks_a_promotion():
 
 def test_a_stratum_of_a_few_sets_is_reported_and_never_gated():
     assert _gate_one_stratum(0.0460, 0.0900, sets=41).passed
+
+
+def test_a_small_stratum_moving_within_its_noise_ships():
+    assert _gate_one_stratum(0.0210, 0.0260, sets=458, se=0.0013).passed
+
+
+def test_a_small_stratum_worse_beyond_its_noise_is_refused():
+    assert not _gate_one_stratum(0.0210, 0.0320, sets=458, se=0.0013).passed
+
+
+def test_a_large_precise_stratum_is_still_held_to_the_relative_limit():
+    assert not _gate_one_stratum(0.0460, 0.0520, sets=8000, se=0.0005).passed
 
 
 def test_a_regression_can_be_forced_and_says_so(tmp_path, registry):

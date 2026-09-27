@@ -74,8 +74,8 @@ def _grouped(predictions: Predictions) -> dict[int, tuple[np.ndarray, np.ndarray
     }
 
 
-def gap_fidelity(predictions: Predictions) -> float:
-    """Mean absolute error of within-set score differences. Lower is better."""
+def _gap_errors(predictions: Predictions) -> list[float]:
+    """Each set's mean absolute error of within-set score differences."""
     errors = []
     for predicted, actual in _grouped(predictions).values():
         if len(predicted) < 2:
@@ -84,7 +84,19 @@ def gap_fidelity(predictions: Predictions) -> float:
         predicted_gaps = (predicted[:, None] - predicted[None, :])[upper]
         actual_gaps = (actual[:, None] - actual[None, :])[upper]
         errors.append(float(np.mean(np.abs(predicted_gaps - actual_gaps))))
+    return errors
+
+
+def gap_fidelity(predictions: Predictions) -> float:
+    """Mean absolute error of within-set score differences. Lower is better."""
+    errors = _gap_errors(predictions)
     return float(np.mean(errors)) if errors else float("nan")
+
+
+def gap_fidelity_se(predictions: Predictions) -> float:
+    """Standard error of gap fidelity over the sets, the noise a regression must clear."""
+    errors = _gap_errors(predictions)
+    return float(np.std(errors, ddof=1) / np.sqrt(len(errors))) if len(errors) > 1 else float("nan")
 
 
 def band_placement(predictions: Predictions) -> float:
@@ -140,6 +152,7 @@ class MetricSet:
     n_sets: int
     n_alternatives: int
     gap_fidelity: float
+    gap_fidelity_se: float
     band_placement: float
     pointwise_mae: float
     top1_agreement: float
@@ -150,6 +163,7 @@ class MetricSet:
             "n_sets": self.n_sets,
             "n_alternatives": self.n_alternatives,
             "gap_fidelity": self.gap_fidelity,
+            "gap_fidelity_se": self.gap_fidelity_se,
             "band_placement": self.band_placement,
             "pointwise_mae": self.pointwise_mae,
             "top1_agreement": self.top1_agreement,
@@ -162,6 +176,7 @@ def compute(predictions: Predictions) -> MetricSet:
         n_sets=len(set(predictions.set_index.tolist())),
         n_alternatives=len(predictions),
         gap_fidelity=gap_fidelity(predictions),
+        gap_fidelity_se=gap_fidelity_se(predictions),
         band_placement=band_placement(predictions),
         pointwise_mae=pointwise_mae(predictions),
         top1_agreement=top1_agreement(predictions),
@@ -169,7 +184,10 @@ def compute(predictions: Predictions) -> MetricSet:
     )
 
 
-STRATA = ("category", "provenance", "category_provenance", "context", "stakeholder", "set_size")
+STRATA = ("category", "provenance", "category_provenance", "context", "stakeholder", "set_size", "shortlist")
+
+SHORTLIST_ACROSS = "across"
+SHORTLIST_WITHIN = "within"
 
 
 def strata_of(prepared: Prepared, set_index: int, kind: str) -> tuple[str, ...]:
@@ -189,6 +207,13 @@ def strata_of(prepared: Prepared, set_index: int, kind: str) -> tuple[str, ...]:
     if kind == "stakeholder":
         slots = prepared.set_stakeholder_slots[set_index]
         return tuple(f"stakeholder_slot={slot}" for slot in slots) or ("none",)
+    if kind == "shortlist":
+        generator = prepared.set_generator[set_index]
+        if generator == SHORTLIST_ACROSS:
+            return (SHORTLIST_ACROSS,)
+        if isinstance(generator, str) and generator.startswith(f"{SHORTLIST_WITHIN}:"):
+            return (SHORTLIST_WITHIN, generator)
+        return ()
     raise ValueError(f"unknown stratum {kind!r}")
 
 

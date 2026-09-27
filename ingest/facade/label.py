@@ -6,6 +6,7 @@ import argparse
 import json
 import math
 import random
+import re
 from pathlib import Path
 
 import yaml
@@ -97,6 +98,11 @@ def status() -> dict[str, int]:
     }
 
 
+def next_chunk_number(paths: list[Path]) -> int:
+    """One past the highest chunk number, reading only the leading digits, so chunk_13b counts as 13."""
+    return 1 + max((int(re.match(r"chunk_(\d+)", p.stem).group(1)) for p in paths), default=0)
+
+
 def write_chunks(registry: Registry, sets: int, chunks: int, seed: int, resend: bool = False) -> None:
     """A new round of chunks, numbered after the existing ones: fresh scenarios, or pending ones with resend."""
     scenarios = json.loads((DATASET_DIR / SCENARIOS_FILE).read_text(encoding="utf-8"))
@@ -111,7 +117,7 @@ def write_chunks(registry: Registry, sets: int, chunks: int, seed: int, resend: 
     sets = len(chosen)
     CHUNKS_DIR.mkdir(parents=True, exist_ok=True)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    first = 1 + max((int(p.stem.split("_")[1][:2]) for p in CHUNKS_DIR.glob("chunk_*.json")), default=0)
+    first = next_chunk_number(list(CHUNKS_DIR.glob("chunk_*.json")))
     size = math.ceil(sets / chunks)
     for offset in range(chunks):
         part = []

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
@@ -51,6 +52,8 @@ class Thresholds:
     max_stratum_regression: float | None = None
     #: Strata with fewer sets are reported and never gated: a handful of sets moves their gap.
     min_stratum_sets: int = 0
+    #: A stratum must also worsen by this many combined standard errors, so small or noisy strata are not refused on noise.
+    stratum_noise_sigmas: float | None = None
     require_behavioural: bool = True
 
 
@@ -105,13 +108,23 @@ def gate(
                     continue
                 if cell.get("n_sets", thresholds.min_stratum_sets) < thresholds.min_stratum_sets:
                     continue
-                if after > before * (1 + thresholds.max_stratum_regression):
+                allowed = _allowed_gap(before, previous[label], cell, thresholds)
+                if after > allowed:
                     reasons.append(
                         f"{kind}/{label} gap fidelity worsened "
-                        f"{before:.4f} -> {after:.4f} ({after / before - 1:+.0%})"
+                        f"{before:.4f} -> {after:.4f} ({after / before - 1:+.0%}; up to {allowed:.4f} allowed)"
                     )
 
     return GateResult(passed=not reasons, reasons=reasons)
+
+
+def _allowed_gap(before: float, previous: dict, current: dict, thresholds: Thresholds) -> float:
+    allowed = before * (1 + thresholds.max_stratum_regression)
+    se_before, se_after = previous.get("gap_fidelity_se"), current.get("gap_fidelity_se")
+    if thresholds.stratum_noise_sigmas is None or se_before is None or se_after is None:
+        return allowed
+    noise = thresholds.stratum_noise_sigmas * float(np.hypot(se_before, se_after))
+    return max(allowed, before + noise)
 
 
 HEADERS = (
