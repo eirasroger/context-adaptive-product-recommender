@@ -1,6 +1,7 @@
 import { type KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 
 import type { FormCategory } from "../api/client";
+import { unitText } from "../format";
 
 type Props = {
   categories: FormCategory[];
@@ -68,7 +69,7 @@ export function CategoryPicker({ categories, active, onChoose }: Props) {
         onClick={() => (open ? setOpen(false) : show())}
         onKeyDown={onKey}
       >
-        <Summary category={active} />
+        <Summary category={active} withUnit={false} />
         <svg className="chevron" viewBox="0 0 16 16" aria-hidden="true">
           <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" />
         </svg>
@@ -85,7 +86,7 @@ export function CategoryPicker({ categories, active, onChoose }: Props) {
               onPointerEnter={() => setCursor(index)}
               onClick={() => choose(c.key)}
             >
-              <Summary category={c} />
+              <Summary category={c} withUnit />
               {c.key === active.key && (
                 <svg className="check" viewBox="0 0 16 16" aria-hidden="true">
                   <path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" strokeWidth="1.8" />
@@ -99,14 +100,16 @@ export function CategoryPicker({ categories, active, onChoose }: Props) {
   );
 }
 
-function Summary({ category }: { category: FormCategory }) {
+function Summary({ category, withUnit }: { category: FormCategory; withUnit: boolean }) {
   return (
     <span className="picker-summary">
       <span className="picker-name">
         {category.display_name}
         {category.preview && <span className="badge">Preview</span>}
       </span>
-      <span className="picker-unit">Compared per {category.functional_unit.toLowerCase()}</span>
+      {withUnit && (
+        <span className="picker-unit">Compared per {unitText(category.functional_unit_symbol)}</span>
+      )}
     </span>
   );
 }

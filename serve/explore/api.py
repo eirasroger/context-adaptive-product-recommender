@@ -50,6 +50,7 @@ class FormCategory(BaseModel):
         description="Trained partly on synthetic labels; scores restate the declared rules."
     )
     functional_unit: str
+    functional_unit_symbol: str
     eligibility_precondition: str
     default_context: str
     contexts: list[FormContext]
@@ -181,7 +182,7 @@ def build_router(service_getter, metered: Any | None = None) -> APIRouter:
                         "key": indicator_key,
                         "display_name": indicator.display_name,
                         "family": indicator.family_key,
-                        "unit": indicator.unit,
+                        "unit": category.indicator_unit(indicator.unit),
                         "value_type": indicator.value_type,
                         "definition": indicator.definition_text,
                         "direction": indicator.default_direction,
@@ -204,6 +205,7 @@ def build_router(service_getter, metered: Any | None = None) -> APIRouter:
                     "display_name": category.display_name,
                     "preview": category.is_preview,
                     "functional_unit": category.functional_unit_display,
+                    "functional_unit_symbol": category.functional_unit_symbol,
                     "eligibility_precondition": category.eligibility_precondition_text,
                     "default_context": category.default_context_key,
                     "contexts": [
@@ -263,7 +265,7 @@ def build_router(service_getter, metered: Any | None = None) -> APIRouter:
         if indicator not in spec.members:
             raise HTTPException(
                 status_code=404,
-                detail=f"{category!r} does not hold indicator {indicator!r}",
+                detail=f"{category!r} has no indicator {indicator!r}",
             )
 
         contexts = [context] if context else [spec.default_context_key]

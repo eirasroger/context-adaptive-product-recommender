@@ -67,7 +67,7 @@ export function restore(snapshot: Snapshot, form: Form): Restored | null {
   if (stakeholders.length === 0) stakeholders = [fallbackStakeholder.key];
 
   const fields = new Map(category.fields.map((field) => [field.key, field]));
-  const columns = snapshot.alternatives.slice(0, MAX_COLUMNS).map((alternative) => {
+  const columns = snapshot.alternatives.slice(0, MAX_COLUMNS).map((alternative, index) => {
     const values: Entries = {};
     for (const [key, value] of Object.entries(alternative.values)) {
       const field = fields.get(key);
@@ -79,11 +79,11 @@ export function restore(snapshot: Snapshot, form: Form): Restored | null {
       if (fields.get(key)?.levels.some((l) => l.key === level)) levels[key] = level;
       else dropped.push(`${quoted(key)} = ${quoted(level)} in ${alternative.name}`);
     }
-    return column(alternative.name, values, levels);
+    return column(alternative.name, index, values, levels);
   });
   const extra = snapshot.alternatives.length - MAX_COLUMNS;
   if (extra > 0) dropped.push(`${extra} alternative${extra === 1 ? "" : "s"} past the ${MAX_COLUMNS}th`);
-  while (columns.length < MIN_COLUMNS) columns.push(blankColumn(columns.length));
+  while (columns.length < MIN_COLUMNS) columns.push(blankColumn(columns));
 
   const notes: string[] = [];
   if (snapshot.registry !== form.registry_version) {

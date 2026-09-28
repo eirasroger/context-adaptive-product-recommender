@@ -3,11 +3,13 @@ import { fixed, seriesColour } from "../format";
 
 type Props = {
   result: ScoreResponse;
+  /** Colour slot of each scored option, in the order they were sent. */
+  colours: readonly number[];
   wins: Map<number, string>;
   preview: boolean;
 };
 
-export function Result({ result, wins, preview }: Props) {
+export function Result({ result, colours, wins, preview }: Props) {
   const ranked = [...result.results].sort((a, b) => a.rank - b.rank);
   const peak = Math.max(...ranked.map((r) => r.score), 0.0001);
 
@@ -30,7 +32,7 @@ export function Result({ result, wins, preview }: Props) {
               <span className="track">
                 <span
                   className="fill"
-                  style={{ width: `${(r.score / peak) * 100}%`, background: seriesColour(index) }}
+                  style={{ width: `${(r.score / peak) * 100}%`, background: seriesColour(colours[index] ?? index) }}
                 />
               </span>
               <span className="val">{fixed(r.score)}</span>

@@ -196,9 +196,9 @@ export function App() {
     history.replaceState(null, "", url);
     try {
       await navigator.clipboard.writeText(url);
-      setStatus(note("Link copied. It holds the whole comparison."));
+      setStatus(note("Link copied. Opening it restores this comparison with every value you entered."));
     } catch {
-      setStatus(failure("The browser would not copy. The address bar holds the link."));
+      setStatus(failure("The browser would not copy. Copy the link from the address bar instead."));
     }
   };
 
@@ -254,7 +254,12 @@ export function App() {
           {isStale(draft) && (
             <p className="stale-note">The inputs have changed since this score. Score again to update it.</p>
           )}
-          <Result result={draft.result} wins={draft.wins} preview={category.preview} />
+          <Result
+            result={draft.result}
+            colours={draft.scored.columns.map((c) => c.colour)}
+            wins={draft.wins}
+            preview={category.preview}
+          />
           <Sensitivity
             axis={axis}
             onAxis={setAxis}
@@ -286,12 +291,7 @@ function withTransition(change: () => void) {
 function Header() {
   return (
     <header className="masthead">
-      <div>
-        <h1>Product Comparison</h1>
-        <p className="lede">
-          Score a shortlist of building products for one application and one set of priorities.
-        </p>
-      </div>
+      <h1>Product Comparison</h1>
       <button type="button" className="icon" aria-label="Switch colour theme" onClick={toggleTheme}>
         <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
           <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="1.6" />
@@ -322,14 +322,14 @@ function Footer({ form }: { form: Form }) {
 
 function shortlistFor(form: Form, key: string, stakeholders: string[]): Shortlist {
   const category = form.categories.find((c) => c.key === key);
-  if (!category) throw new Error(`the registry holds no category ${key}`);
+  if (!category) throw new Error(`the registry has no category ${key}`);
   return { category: key, context: category.default_context, stakeholders, columns: blankColumns() };
 }
 
 function defaultShortlist(form: Form): Shortlist {
   const [category] = form.categories;
   const [stakeholder] = form.stakeholders;
-  if (!category || !stakeholder) throw new Error("the registry holds nothing to compare");
+  if (!category || !stakeholder) throw new Error("the registry has nothing to compare");
   return shortlistFor(form, category.key, [stakeholder.key]);
 }
 

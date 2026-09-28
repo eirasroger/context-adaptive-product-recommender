@@ -12,7 +12,7 @@ const start = (category: string): Shortlist => ({
 
 describe("switchCategory", () => {
   it("resumes a category exactly as it was left", () => {
-    const filled = unscored({ ...start("first"), columns: [column("X", { k: "1" }), column("Y")] });
+    const filled = unscored({ ...start("first"), columns: [column("X", 0, { k: "1" }), column("Y", 1)] });
     const away = switchCategory(new Map(), filled, "second", start);
     const back = switchCategory(away.parked, away.next, "first", start);
     expect(back.next).toBe(filled);
@@ -29,7 +29,7 @@ describe("switchCategory", () => {
 });
 
 describe("isStale", () => {
-  it("holds once the shortlist moves on from the one that was scored", () => {
+  it("is stale once the shortlist moves on from the one that was scored", () => {
     const shortlist = start("first");
     const scored = { ...unscored(shortlist), scored: shortlist };
     expect(isStale(scored)).toBe(false);

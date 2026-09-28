@@ -280,6 +280,7 @@ def create_app(
                 "display_name": category.display_name,
                 "preview": category.is_preview,
                 "functional_unit": category.functional_unit_display,
+                "functional_unit_symbol": category.functional_unit_symbol,
                 "eligibility_precondition": category.eligibility_precondition_text,
                 "contexts": sorted(category.available_contexts),
                 "default_context": category.default_context_key,

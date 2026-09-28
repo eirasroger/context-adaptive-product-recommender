@@ -76,7 +76,29 @@ Which indicators drive the scores, by context and by stakeholder:
 
 The [comparison page](https://context-adaptive-product-recommende.vercel.app)
 scores a shortlist entered by hand and says what each option wins on. The
-address holds the whole comparison, so it can be shared as a link.
+address contains the whole comparison, so it can be shared as a link.
+
+Five facade systems, entered per square metre:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="media/inputs-dark.png">
+  <img alt="Setup and the five facade systems entered for comparison" src="media/inputs-light.png">
+</picture>
+
+The ranking for a new build in a mild climate, and how the winner changes
+with the application:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="media/ranking-by-application-dark.png">
+  <img alt="Ranked result and the ranking under each application" src="media/ranking-by-application-light.png">
+</picture>
+
+And with whose priorities count:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="media/ranking-by-priorities-dark.png">
+  <img alt="The ranking under each stakeholder's priorities" src="media/ranking-by-priorities-light.png">
+</picture>
 
 The API is served from the same address under `/api`, documented at
 [`/api/docs`](https://context-adaptive-product-recommende.vercel.app/api/docs):

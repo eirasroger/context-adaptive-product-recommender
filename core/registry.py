@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 
 WILDCARD = "*"
 SYNTHETIC_PROVENANCE = "synthetic"
+#: Indicator units are shared across categories and name the functional unit with this phrase.
+FUNCTIONAL_UNIT_PHRASE = "functional unit"
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,6 +126,7 @@ class CategorySpec:
     display_name: str
     functional_unit_key: str
     functional_unit_display: str
+    functional_unit_symbol: str
     eligibility_precondition_text: str
     default_context_key: str
     members: Mapping[str, MembershipSpec]
@@ -131,6 +134,10 @@ class CategorySpec:
     available_contexts: frozenset[str]
     #: indicator keys in slot order, stable because slots are append-only
     token_order: tuple[str, ...]
+
+    def indicator_unit(self, unit: str | None) -> str | None:
+        """An indicator's unit in this category's terms, as in kg CO2-eq per m2."""
+        return unit.replace(FUNCTIONAL_UNIT_PHRASE, self.functional_unit_symbol) if unit else unit
 
     @property
     def is_preview(self) -> bool:
@@ -353,7 +360,7 @@ def from_document(
         for row in document["stakeholder"]
     }
 
-    units = {row["key"]: row["display_name"] for row in document["functional_unit"]}
+    units = {row["key"]: row for row in document["functional_unit"]}
 
     ranges: dict[tuple[str, str], RangeSpec] = {}
     for row in document.get("indicator_reference_range", []):
@@ -404,7 +411,8 @@ def from_document(
             slot=slot_tables["category"][key],
             display_name=row["display_name"],
             functional_unit_key=row["functional_unit_key"],
-            functional_unit_display=units[row["functional_unit_key"]],
+            functional_unit_display=units[row["functional_unit_key"]]["display_name"],
+            functional_unit_symbol=units[row["functional_unit_key"]]["unit"],
             eligibility_precondition_text=row["eligibility_precondition_text"],
             default_context_key=row["default_context_key"],
             members=members,

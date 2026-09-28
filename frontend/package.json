@@ -10,7 +10,8 @@
     "dev": "npm run generate && vite",
     "typecheck": "npm run generate && tsc --noEmit",
     "build": "npm run typecheck && vite build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "screenshots": "node scripts/readme-screenshots.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -23,6 +24,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "openapi-typescript": "^7.13.0",
+    "playwright-core": "^1.63.0",
     "typescript": "~5.9.3",
     "vite": "^8.3.0",
     "vitest": "^5.0.1"

@@ -235,6 +235,10 @@
             "title": "Functional Unit",
             "type": "string"
           },
+          "functional_unit_symbol": {
+            "title": "Functional Unit Symbol",
+            "type": "string"
+          },
           "key": {
             "title": "Key",
             "type": "string"
@@ -250,6 +254,7 @@
           "display_name",
           "preview",
           "functional_unit",
+          "functional_unit_symbol",
           "eligibility_precondition",
           "default_context",
           "contexts",

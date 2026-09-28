@@ -20,6 +20,7 @@ const AXES: { key: Axis; label: string }[] = [
 ];
 
 export function Sensitivity({ axis, onAxis, form, category, scored, byContext, byStakeholder }: Props) {
+  const colourOf = (index: number) => scored.columns[index]?.colour ?? index;
   const matrix = axis === "context" ? byContext : byStakeholder;
   const names = new Map<string, string>(
     axis === "context"
@@ -54,7 +55,7 @@ export function Sensitivity({ axis, onAxis, form, category, scored, byContext, b
         <p className="msg">Scoring the shortlist under every {axis === "context" ? "application" : "archetype"}.</p>
       ) : (
         <>
-          <p className="summary">{summarise(axis, matrix)}</p>
+          {!matrix.changes_winner && <p className="summary">{steadyLeader(axis, matrix)}</p>}
           <div className="gridwrap">
             <table className="matrix">
               <thead>
@@ -62,7 +63,7 @@ export function Sensitivity({ axis, onAxis, form, category, scored, byContext, b
                   <th />
                   {matrix.alternatives.map((name, index) => (
                     <th key={index} scope="col">
-                      <span className="swatch" style={{ background: seriesColour(index) }} />
+                      <span className="swatch" style={{ background: seriesColour(colourOf(index)) }} />
                       {name}
                     </th>
                   ))}
@@ -79,7 +80,7 @@ export function Sensitivity({ axis, onAxis, form, category, scored, byContext, b
                       <td key={index} className={index === row.winner ? "win" : undefined}>
                         <span className="meter">
                           <span
-                            style={{ width: `${Math.max(2, value * 100)}%`, background: seriesColour(index) }}
+                            style={{ width: `${Math.max(2, value * 100)}%`, background: seriesColour(colourOf(index)) }}
                           />
                         </span>
                         <span className="num">{fixed(value, 2)}</span>
@@ -90,23 +91,13 @@ export function Sensitivity({ axis, onAxis, form, category, scored, byContext, b
               </tbody>
             </table>
           </div>
-          <p className="footnote">
-            {axis === "context"
-              ? "Each row scores the same shortlist in another application, with the chosen priorities."
-              : "Each row scores the same shortlist for one archetype alone, in the chosen application."}
-          </p>
         </>
       )}
     </section>
   );
 }
 
-function summarise(axis: Axis, matrix: Matrix): string {
-  if (matrix.changes_winner) {
-    return axis === "context"
-      ? "The best option depends on the application."
-      : "The best option depends on whose priorities count.";
-  }
+function steadyLeader(axis: Axis, matrix: Matrix): string {
   const leader = matrix.alternatives[matrix.rows[0]?.winner ?? 0] ?? "The same option";
   return axis === "context"
     ? `${leader} leads in every application.`

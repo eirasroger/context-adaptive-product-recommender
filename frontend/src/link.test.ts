@@ -17,6 +17,7 @@ const form: Form = {
       display_name: "Widget",
       preview: false,
       functional_unit: "one widget",
+      functional_unit_symbol: "widget",
       eligibility_precondition: "",
       default_context: "plain",
       contexts: [
@@ -124,7 +125,7 @@ describe("a damaged link", () => {
 });
 
 describe("restoring against the current registry", () => {
-  it("drops and reports what the registry no longer holds, keeping the rest", () => {
+  it("drops and reports what the registry no longer has, keeping the rest", () => {
     const restored = restore(
       {
         ...snapshot,
@@ -172,7 +173,7 @@ describe("restoring against the current registry", () => {
     expect(wide.notes[0]).toContain("2 alternatives");
 
     const short = restore({ ...snapshot, alternatives: [alternative("only")] }, form)!;
-    expect(short.shortlist.columns.map((c) => c.name)).toEqual(["only", "Option B"]);
+    expect(short.shortlist.columns.map((c) => c.name)).toEqual(["only", "Option A"]);
   });
 
   it("says when the link was made under another registry", () => {

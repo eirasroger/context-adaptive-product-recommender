@@ -1,0 +1,134 @@
+{
+  "category": "facade_system",
+  "context": "new_build_mild",
+  "stakeholders": [
+    "balanced_optimizer"
+  ],
+  "alternatives": [
+    {
+      "name": "Brick cavity wall",
+      "values": {
+        "gwp": "95",
+        "wdp": "20",
+        "fwu": "0.4",
+        "circ_orig": "5",
+        "fu_recyc": "60",
+        "fu_incin": "2",
+        "fu_inert": "37",
+        "fu_haz": "0.1",
+        "cost_product": "95",
+        "cost_labour": "70",
+        "cost_maintenance": "15",
+        "u_value": "0.3",
+        "acoustic_reduction": "58",
+        "surface_mass": "420",
+        "heat_capacity": "120",
+        "thickness": "360"
+      },
+      "levels": {
+        "health": "h3",
+        "fire_reaction": "a1"
+      }
+    },
+    {
+      "name": "Steel sandwich panel",
+      "values": {
+        "gwp": "35",
+        "wdp": "12",
+        "fwu": "0.2",
+        "circ_orig": "25",
+        "fu_recyc": "85",
+        "fu_incin": "5",
+        "fu_inert": "10",
+        "fu_haz": "0.2",
+        "cost_product": "85",
+        "cost_labour": "20",
+        "cost_maintenance": "8",
+        "u_value": "0.15",
+        "acoustic_reduction": "30",
+        "surface_mass": "28",
+        "heat_capacity": "8",
+        "thickness": "200"
+      },
+      "levels": {
+        "health": "h3",
+        "fire_reaction": "b"
+      }
+    },
+    {
+      "name": "ETICS on concrete",
+      "values": {
+        "gwp": "85",
+        "wdp": "25",
+        "fwu": "0.5",
+        "circ_orig": "5",
+        "fu_recyc": "30",
+        "fu_incin": "10",
+        "fu_inert": "59",
+        "fu_haz": "0.5",
+        "cost_product": "90",
+        "cost_labour": "55",
+        "cost_maintenance": "35",
+        "u_value": "0.2",
+        "acoustic_reduction": "54",
+        "surface_mass": "450",
+        "heat_capacity": "210",
+        "thickness": "340"
+      },
+      "levels": {
+        "health": "h3",
+        "fire_reaction": "a2"
+      }
+    },
+    {
+      "name": "Timber ventilated facade",
+      "values": {
+        "gwp": "-15",
+        "wdp": "8",
+        "fwu": "0.2",
+        "circ_orig": "20",
+        "fu_recyc": "75",
+        "fu_incin": "20",
+        "fu_inert": "5",
+        "fu_haz": "0.1",
+        "cost_product": "120",
+        "cost_labour": "45",
+        "cost_maintenance": "30",
+        "u_value": "0.18",
+        "acoustic_reduction": "44",
+        "surface_mass": "70",
+        "heat_capacity": "35",
+        "thickness": "160"
+      },
+      "levels": {
+        "health": "h5",
+        "fire_reaction": "d"
+      }
+    },
+    {
+      "name": "Precast concrete element",
+      "values": {
+        "gwp": "140",
+        "wdp": "30",
+        "fwu": "0.6",
+        "circ_orig": "10",
+        "fu_recyc": "70",
+        "fu_incin": "0",
+        "fu_inert": "30",
+        "fu_haz": "0.1",
+        "cost_product": "150",
+        "cost_labour": "25",
+        "cost_maintenance": "10",
+        "u_value": "0.25",
+        "acoustic_reduction": "60",
+        "surface_mass": "520",
+        "heat_capacity": "190",
+        "thickness": "300"
+      },
+      "levels": {
+        "health": "h4",
+        "fire_reaction": "a1"
+      }
+    }
+  ]
+}
