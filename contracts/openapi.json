@@ -4,7 +4,7 @@
       "AlternativePayload": {
         "properties": {
           "id": {
-            "description": "Caller's identifier for this alternative",
+            "description": "Caller's identifier for this alternative, unique in the shortlist",
             "title": "Id",
             "type": "string"
           },
@@ -489,44 +489,6 @@
         "title": "ReferenceRange",
         "type": "object"
       },
-      "ScoreRequest": {
-        "properties": {
-          "alternatives": {
-            "description": "The shortlist to rank.",
-            "items": {
-              "$ref": "#/components/schemas/AlternativePayload"
-            },
-            "maxItems": 5,
-            "title": "Alternatives",
-            "type": "array"
-          },
-          "category": {
-            "title": "Category",
-            "type": "string"
-          },
-          "context": {
-            "description": "Active application contexts. Defaults to the category's baseline context when empty.",
-            "items": {
-              "type": "string"
-            },
-            "title": "Context",
-            "type": "array"
-          },
-          "stakeholders": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Stakeholders",
-            "type": "array"
-          }
-        },
-        "required": [
-          "category",
-          "alternatives"
-        ],
-        "title": "ScoreRequest",
-        "type": "object"
-      },
       "ScoreResponse": {
         "properties": {
           "category": {
@@ -709,10 +671,12 @@
       "ShortlistRequest": {
         "properties": {
           "alternatives": {
+            "description": "The shortlist to rank.",
             "items": {
               "$ref": "#/components/schemas/AlternativePayload"
             },
             "maxItems": 5,
+            "minItems": 2,
             "title": "Alternatives",
             "type": "array"
           },
@@ -721,6 +685,7 @@
             "type": "string"
           },
           "context": {
+            "description": "Active application contexts. Defaults to the category's baseline context when empty.",
             "items": {
               "type": "string"
             },
@@ -728,15 +693,19 @@
             "type": "array"
           },
           "stakeholders": {
+            "description": "Whose priorities count, as keys from /api/stakeholders.",
             "items": {
               "type": "string"
             },
+            "minItems": 1,
             "title": "Stakeholders",
             "type": "array"
           }
         },
         "required": [
-          "category"
+          "category",
+          "stakeholders",
+          "alternatives"
         ],
         "title": "ShortlistRequest",
         "type": "object"
@@ -780,6 +749,13 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "description": "A partner key. Calls without one share the public limit.",
+        "scheme": "bearer",
+        "type": "http"
       }
     }
   },
@@ -894,6 +870,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Compare",
         "tags": [
           "explore"
@@ -935,6 +916,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Context Sensitivity",
         "tags": [
           "explore"
@@ -1052,6 +1038,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Response",
         "tags": [
           "explore"
@@ -1093,6 +1084,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Stakeholder Sensitivity",
         "tags": [
           "explore"
@@ -1126,7 +1122,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ScoreRequest"
+                "$ref": "#/components/schemas/ShortlistRequest"
               }
             }
           },
@@ -1154,6 +1150,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Score"
       }
     },

@@ -71,7 +71,7 @@ export function withEntry(
   return value === "" ? rest : { ...rest, [key]: value };
 }
 
-export function scoreRequest(shortlist: Shortlist): components["schemas"]["ScoreRequest"] {
+export function scoreRequest(shortlist: Shortlist): components["schemas"]["ShortlistRequest"] {
   const taken = shortlist.columns.map((c) => c.name);
   return {
     category: shortlist.category,

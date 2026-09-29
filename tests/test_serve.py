@@ -19,7 +19,11 @@ def frontend(tmp_path_factory):
 def client(served, frontend):
     from serve.api import create_app
 
-    with TestClient(create_app(served, frontend=frontend)) as client:
+    with pytest.MonkeyPatch.context() as env:
+        env.setenv("RECOMMENDER_RATE_LIMIT", "0")
+        env.setenv("RECOMMENDER_RATE_LIMIT_TOTAL", "0")
+        app = create_app(served, frontend=frontend)
+    with TestClient(app) as client:
         yield client
 
 
@@ -120,11 +124,10 @@ def test_indicator_listing_exposes_the_definitions(client, category_key):
         assert row["value_type"] in ("continuous", "ordinal", "nominal", "boolean")
 
 
-def test_unknown_category_is_a_404(client):
-    response = client.post(
-        "/api/score",
-        json={"category": "not_a_category", "alternatives": [{"id": "a"}]},
-    )
+def test_unknown_category_is_a_404(client, registry, category_key):
+    payload = _payload(registry, category_key)
+    payload["category"] = "not_a_category"
+    response = client.post("/api/score", json=payload)
     assert response.status_code == 404
     assert "unknown category" in response.json()["detail"]
 
@@ -252,3 +255,128 @@ def test_an_oversized_shortlist_is_refused(client, registry, category_key):
 def test_a_shortlist_wider_than_the_corpus_is_refused(client, registry, category_key):
     payload = _payload(registry, category_key, n=6)
     assert client.post("/api/score", json=payload).status_code == 422
+
+
+SHORTLIST_ENDPOINTS = [
+    "/api/score",
+    "/api/explore/compare",
+    "/api/explore/context-sensitivity",
+    "/api/explore/stakeholder-sensitivity",
+]
+
+
+@pytest.mark.parametrize("endpoint", SHORTLIST_ENDPOINTS)
+def test_an_undeclared_indicator_is_refused_with_the_declared_ones(
+    client, registry, category_key, endpoint
+):
+    payload = _payload(registry, category_key)
+    payload["alternatives"][0]["values"]["not_an_indicator"] = 1.0
+
+    response = client.post(endpoint, json=payload)
+    assert response.status_code == 400
+    detail = response.json()["detail"]
+    assert "not_an_indicator" in detail
+    assert registry.category(category_key).token_order[0] in detail
+
+
+@pytest.mark.parametrize("endpoint", SHORTLIST_ENDPOINTS)
+def test_a_shortlist_without_stakeholders_is_refused(client, registry, category_key, endpoint):
+    payload = _payload(registry, category_key)
+    payload["stakeholders"] = []
+    assert client.post(endpoint, json=payload).status_code == 422
+
+
+@pytest.mark.parametrize("endpoint", SHORTLIST_ENDPOINTS)
+def test_a_single_alternative_is_refused(client, registry, category_key, endpoint):
+    assert client.post(endpoint, json=_payload(registry, category_key, n=1)).status_code == 422
+
+
+def test_repeated_alternative_ids_are_refused(client, registry, category_key):
+    payload = _payload(registry, category_key)
+    payload["alternatives"][1]["id"] = payload["alternatives"][0]["id"]
+    response = client.post("/api/score", json=payload)
+    assert response.status_code == 400
+    assert "unique" in response.json()["detail"]
+
+
+def test_the_page_and_the_api_score_the_same_shortlist_alike(client, registry, category_key):
+    payload = _payload(registry, category_key)
+    payload["alternatives"][1]["values"] = {}
+
+    scored = client.post("/api/score", json=payload).json()["results"]
+    compared = client.post("/api/explore/compare", json=payload).json()["scores"]
+    assert [r["score"] for r in scored] == pytest.approx(compared, abs=1e-4)
+
+
+def _partner_app(served, monkeypatch, public: int, partner: int, key: str = "partner-key"):
+    from serve import partners
+    from serve.api import create_app
+
+    monkeypatch.setenv("RECOMMENDER_RATE_LIMIT", str(public))
+    monkeypatch.setenv("RECOMMENDER_RATE_LIMIT_TOTAL", "0")
+    monkeypatch.setenv("RECOMMENDER_PARTNER_RATE_LIMIT", str(partner))
+    monkeypatch.setenv(partners.KEYS_ENV, f"someone:{partners.digest(key)}")
+    return TestClient(create_app(served, frontend=None))
+
+
+def test_a_partner_key_is_metered_apart_from_the_public_limit(
+    served, registry, category_key, monkeypatch
+):
+    payload = _payload(registry, category_key)
+    address = {"x-forwarded-for": "198.51.100.4"}
+    keyed = {**address, "Authorization": "Bearer partner-key"}
+
+    with _partner_app(served, monkeypatch, public=1, partner=3) as app:
+        assert app.post("/api/score", json=payload, headers=address).status_code == 200
+        assert app.post("/api/score", json=payload, headers=address).status_code == 429
+        served_with_key = [
+            app.post("/api/score", json=payload, headers=keyed).status_code for _ in range(4)
+        ]
+
+    assert served_with_key == [200, 200, 200, 429]
+
+
+def test_an_unrecognised_key_is_refused_before_scoring(served, registry, category_key, monkeypatch):
+    with _partner_app(served, monkeypatch, public=10, partner=10) as app:
+        response = app.post(
+            "/api/score",
+            json=_payload(registry, category_key),
+            headers={"Authorization": "Bearer mistyped-key"},
+        )
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+
+
+def test_a_listed_origin_may_call_the_api_from_a_browser(served, registry, category_key, monkeypatch):
+    from serve.api import CORS_ENV, create_app
+
+    monkeypatch.setenv(CORS_ENV, "https://bim.example.org")
+    monkeypatch.setenv("RECOMMENDER_RATE_LIMIT", "1")
+    monkeypatch.setenv("RECOMMENDER_RATE_LIMIT_TOTAL", "0")
+    origin = {"Origin": "https://bim.example.org"}
+
+    with TestClient(create_app(served, frontend=None)) as app:
+        preflight = app.options(
+            "/api/score",
+            headers={
+                **origin,
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "authorization,content-type",
+            },
+        )
+        app.post("/api/score", json=_payload(registry, category_key), headers=origin)
+        refused = app.post("/api/score", json=_payload(registry, category_key), headers=origin)
+
+    assert preflight.status_code == 200
+    assert preflight.headers["access-control-allow-origin"] == origin["Origin"]
+    assert refused.status_code == 429
+    assert "retry-after" in refused.headers["access-control-expose-headers"].lower()
+
+
+def test_an_unlisted_origin_receives_no_cors_permission(served, monkeypatch):
+    from serve.api import CORS_ENV, create_app
+
+    monkeypatch.setenv(CORS_ENV, "https://bim.example.org")
+    with TestClient(create_app(served, frontend=None)) as app:
+        response = app.get("/api/health", headers={"Origin": "https://elsewhere.example.org"})
+    assert "access-control-allow-origin" not in response.headers

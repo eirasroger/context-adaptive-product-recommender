@@ -14,45 +14,19 @@ from typing import Any
 
 import numpy as np
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from core.encoding import AlternativeInput
 from core.registry import Registry
-from serve import limits, release
+from serve import limits, partners, release
 from serve.engine import ServedModel
 from serve.explore import analysis
+from serve.shortlist import ShortlistRequest, resolve
 
 MODEL_ENV = "RECOMMENDER_MODEL"
 COMMIT_ENV = "VERCEL_GIT_COMMIT_SHA"
-
-
-class AlternativePayload(BaseModel):
-    id: str = Field(description="Caller's identifier for this alternative")
-    values: dict[str, float] = Field(
-        default_factory=dict,
-        description="Numeric indicator values. Omit an indicator you have no "
-        "value for; omission means unknown and is never imputed.",
-    )
-    levels: dict[str, str] = Field(
-        default_factory=dict,
-        description="Level keys for indicators declared on an ordered or "
-        "unordered scale.",
-    )
-
-
-class ScoreRequest(BaseModel):
-    category: str
-    context: list[str] = Field(
-        default_factory=list,
-        description="Active application contexts. Defaults to the category's "
-        "baseline context when empty.",
-    )
-    stakeholders: list[str] = Field(default_factory=list)
-    alternatives: list[AlternativePayload] = Field(
-        max_length=limits.MAX_ALTERNATIVES,
-        description="The shortlist to rank.",
-    )
+CORS_ENV = "RECOMMENDER_CORS_ORIGINS"
 
 
 class ScoredAlternative(BaseModel):
@@ -84,57 +58,15 @@ class Service:
         self.registry_version = served.registry_version
         self.snapshot_hash = served.snapshot_hash
 
-    def score(self, request: ScoreRequest) -> ScoreResponse:
-        registry = self.registry
-
-        try:
-            category = registry.category(request.category)
-        except LookupError:
-            raise HTTPException(
-                status_code=404,
-                detail=(
-                    f"unknown category {request.category!r}; "
-                    f"available: {sorted(registry.categories)}"
-                ),
-            )
-
-        if not request.alternatives:
-            raise HTTPException(status_code=400, detail="no alternatives submitted")
-
-        contexts = request.context or [category.default_context_key]
-        unavailable = [
-            key for key in contexts if key not in category.available_contexts
-        ]
-        if unavailable:
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"context(s) {unavailable} are not available for "
-                    f"{request.category!r}; available: "
-                    f"{sorted(category.available_contexts)}"
-                ),
-            )
-
-        unknown_stakeholders = [
-            key for key in request.stakeholders if key not in registry.stakeholders
-        ]
-        if unknown_stakeholders:
-            raise HTTPException(
-                status_code=400,
-                detail=f"unknown stakeholder(s) {unknown_stakeholders}",
-            )
-
-        notes: list[str] = []
-        alternatives, per_alternative = self._build_inputs(
-            registry, category, request, notes
-        )
+    def score(self, request: ShortlistRequest) -> ScoreResponse:
+        shortlist = resolve(self.registry, request)
         scores = analysis.score(
             self.scorer,
-            registry,
-            request.category,
-            alternatives,
-            contexts,
-            request.stakeholders,
+            self.registry,
+            shortlist.category_key,
+            shortlist.alternatives,
+            shortlist.contexts,
+            shortlist.stakeholders,
         )
 
         order = np.argsort(-scores)
@@ -145,12 +77,13 @@ class Service:
                 id=alternative.key,
                 score=round(float(scores[position]), 4),
                 rank=rank_of[position],
-                missing_indicators=per_alternative[position]["missing"],
-                disqualifying_levels=per_alternative[position]["disqualifying"],
+                missing_indicators=shortlist.missing[position],
+                disqualifying_levels=shortlist.disqualifying[position],
             )
-            for position, alternative in enumerate(alternatives)
+            for position, alternative in enumerate(shortlist.alternatives)
         ]
 
+        notes: list[str] = []
         if any(result.disqualifying_levels for result in results):
             notes.append(
                 "One or more alternatives sit at a level the registry marks as "
@@ -158,64 +91,18 @@ class Service:
                 "the model's, the judgement is yours."
             )
 
+        category = shortlist.category
         return ScoreResponse(
-            category=request.category,
+            category=shortlist.category_key,
             functional_unit=category.functional_unit_display,
             eligibility_precondition=category.eligibility_precondition_text,
-            contexts=list(contexts),
-            stakeholders=list(request.stakeholders),
+            contexts=shortlist.contexts,
+            stakeholders=shortlist.stakeholders,
             registry_version=self.registry_version,
             model_snapshot=self.snapshot_hash,
             results=results,
             notes=notes,
         )
-
-    @staticmethod
-    def _build_inputs(registry, category, request, notes):
-        held = set(category.token_order)
-        alternatives = []
-        per_alternative = []
-        unexpected: set[str] = set()
-
-        for payload in request.alternatives:
-            values = {k: v for k, v in payload.values.items() if k in held}
-            levels = {k: v for k, v in payload.levels.items() if k in held}
-            unexpected |= (set(payload.values) | set(payload.levels)) - held
-
-            disqualifying = []
-            for indicator_key, level_key in levels.items():
-                indicator = registry.indicator(indicator_key)
-                try:
-                    level = indicator.level(level_key)
-                except LookupError:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=(
-                            f"{indicator_key} has no level {level_key!r}; "
-                            f"declared levels: "
-                            f"{[lv.key for lv in indicator.levels]}"
-                        ),
-                    )
-                if level.is_disqualifying:
-                    disqualifying.append(f"{indicator_key}={level_key}")
-
-            supplied = set(values) | set(levels)
-            derived = {k for k in held if registry.indicator(k).is_derived}
-            missing = sorted(held - supplied - derived)
-
-            alternatives.append(
-                AlternativeInput(key=payload.id, values=values, levels=levels)
-            )
-            per_alternative.append(
-                {"missing": missing, "disqualifying": disqualifying}
-            )
-
-        if unexpected:
-            notes.append(
-                f"Ignored indicator(s) not declared for this category: "
-                f"{sorted(unexpected)}."
-            )
-        return alternatives, per_alternative
 
 
 DEFAULT_MODEL = release.RELEASE_DIR / release.SERVED_MODEL_FILE
@@ -229,8 +116,11 @@ def create_app(
     """The API under /api, and the frontend build at every other path."""
     path = Path(model_path or os.environ.get(MODEL_ENV) or DEFAULT_MODEL)
     service: dict[str, Service] = {}
-    limiter = limits.from_env()
-    metered = Depends(limits.gate(limiter))
+    metered = Depends(
+        limits.gate(
+            limits.from_env(), limits.partner_limiter_from_env(), partners.from_env()
+        )
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -248,6 +138,16 @@ def create_app(
         redoc_url="/api/redoc",
         generate_unique_id_function=lambda route: route.name,
     )
+    origins = [o.strip() for o in os.environ.get(CORS_ENV, "").split(",") if o.strip()]
+    if origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_methods=["GET", "POST"],
+            allow_headers=["Authorization", "Content-Type"],
+            expose_headers=["Retry-After"],
+        )
+
     api = APIRouter(prefix="/api")
 
     def _service() -> Service:
@@ -340,7 +240,7 @@ def create_app(
         ]
 
     @api.post("/score", response_model=ScoreResponse, dependencies=[metered])
-    def score(request: ScoreRequest) -> ScoreResponse:
+    def score(request: ShortlistRequest) -> ScoreResponse:
         return _service().score(request)
 
     from serve.explore.api import build_router

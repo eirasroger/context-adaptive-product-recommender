@@ -54,6 +54,7 @@ def opposed_pair(form: dict) -> dict:
     body = {
         "category": category["key"],
         "context": [category["default_context"]],
+        "stakeholders": [form["stakeholders"][0]["key"]],
         "alternatives": [
             {"id": "worse", "values": {**middle, field["key"]: worse}},
             {"id": "better", "values": {**middle, field["key"]: better}},

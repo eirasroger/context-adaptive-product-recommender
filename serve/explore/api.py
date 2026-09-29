@@ -4,14 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from core.encoding import AlternativeInput
-from serve import limits
-from serve.api import AlternativePayload
 from serve.explore import analysis, compare as compare_module
 from serve.explore.compare import Difference
+from serve.shortlist import ShortlistRequest, resolve
 
 
 class Level(BaseModel):
@@ -106,62 +104,9 @@ class Sensitivity(BaseModel):
     changes_winner: bool
 
 
-class ShortlistRequest(BaseModel):
-    category: str
-    context: list[str] = Field(default_factory=list)
-    stakeholders: list[str] = Field(default_factory=list)
-    alternatives: list[AlternativePayload] = Field(
-        default_factory=list, max_length=limits.MAX_ALTERNATIVES
-    )
-
-
-def build_router(service_getter, metered: Any | None = None) -> APIRouter:
+def build_router(service_getter, metered: Any) -> APIRouter:
     router = APIRouter(prefix="/explore", tags=["explore"])
-    if metered is None:
-        metered = Depends(limits.gate(limits.from_env()))
     costly = [metered]
-
-    def _resolve(request: ShortlistRequest):
-        service = service_getter()
-        registry = service.registry
-        try:
-            category = registry.category(request.category)
-        except LookupError:
-            raise HTTPException(
-                status_code=404, detail=f"unknown category {request.category!r}"
-            )
-
-        contexts = request.context or [category.default_context_key]
-        unavailable = [c for c in contexts if c not in category.available_contexts]
-        if unavailable:
-            raise HTTPException(
-                status_code=400,
-                detail=f"context(s) {unavailable} are not available for "
-                f"{request.category!r}",
-            )
-
-        stakeholders = request.stakeholders or [sorted(registry.stakeholders)[0]]
-        unknown = [s for s in stakeholders if s not in registry.stakeholders]
-        if unknown:
-            raise HTTPException(
-                status_code=400, detail=f"unknown stakeholder(s) {unknown}"
-            )
-
-        held = set(category.token_order)
-        alternatives = [
-            AlternativeInput(
-                key=a.id,
-                values={k: v for k, v in a.values.items() if k in held},
-                levels={k: v for k, v in a.levels.items() if k in held},
-            )
-            for a in request.alternatives
-        ]
-        if not alternatives:
-            alternatives = analysis.example_shortlist(
-                registry, request.category, contexts
-            )
-
-        return service, registry, contexts, stakeholders, alternatives
 
     @router.get("/form")
     def form() -> Form:
@@ -238,14 +183,11 @@ def build_router(service_getter, metered: Any | None = None) -> APIRouter:
     @router.post("/compare", dependencies=costly)
     def compare(request: ShortlistRequest) -> Comparison:
         """Why the leading alternative is ahead of each of the others."""
-        service, registry, contexts, stakeholders, alternatives = _resolve(request)
-        if len(alternatives) < 2:
-            raise HTTPException(
-                status_code=400, detail="a comparison needs at least two alternatives"
-            )
+        service = service_getter()
+        shortlist = resolve(service.registry, request)
         return compare_module.compare(
-            service.scorer, registry, request.category, alternatives,
-            contexts, stakeholders,
+            service.scorer, service.registry, shortlist.category_key,
+            shortlist.alternatives, shortlist.contexts, shortlist.stakeholders,
         )
 
     @router.get("/response", dependencies=costly)
@@ -297,16 +239,20 @@ def build_router(service_getter, metered: Any | None = None) -> APIRouter:
 
     @router.post("/context-sensitivity", dependencies=costly)
     def context_sensitivity(request: ShortlistRequest) -> Sensitivity:
-        service, registry, _, stakeholders, alternatives = _resolve(request)
+        service = service_getter()
+        shortlist = resolve(service.registry, request)
         return analysis.context_sensitivity(
-            service.scorer, registry, request.category, alternatives, stakeholders
+            service.scorer, service.registry, shortlist.category_key,
+            shortlist.alternatives, shortlist.stakeholders,
         )
 
     @router.post("/stakeholder-sensitivity", dependencies=costly)
     def stakeholder_sensitivity(request: ShortlistRequest) -> Sensitivity:
-        service, registry, contexts, _, alternatives = _resolve(request)
+        service = service_getter()
+        shortlist = resolve(service.registry, request)
         return analysis.stakeholder_sensitivity(
-            service.scorer, registry, request.category, alternatives, contexts
+            service.scorer, service.registry, shortlist.category_key,
+            shortlist.alternatives, shortlist.contexts,
         )
 
     return router

@@ -107,6 +107,7 @@ The API is served from the same address under `/api`, documented at
 curl -X POST https://context-adaptive-product-recommende.vercel.app/api/score \
   -H "Content-Type: application/json" \
   -d '{"category": "concrete", "context": ["acoustic_insulation"],
+       "stakeholders": ["balanced_optimizer"],
        "alternatives": [{"id": "a", "values": {"gwp": 0.18, "density": 2400}},
                         {"id": "b", "values": {"gwp": 0.12, "density": 1900}}]}'
 ```

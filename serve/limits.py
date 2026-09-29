@@ -1,4 +1,7 @@
-"""Per-process rate limits, per caller and in total; each serverless instance keeps its own."""
+"""Per-process rate limits, per caller and in total; each serverless instance keeps its own.
+
+A caller with a partner key is counted against its own limit, apart from the public one.
+"""
 
 from __future__ import annotations
 
@@ -6,13 +9,19 @@ import os
 import time
 from collections import OrderedDict, deque
 from threading import Lock
+from typing import Mapping
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from serve import partners
 
 WINDOW_SECONDS = 60.0
 PER_CLIENT = 10
 TOTAL = 40
+PER_PARTNER = 60
 MAX_TRACKED_CLIENTS = 256
+MIN_ALTERNATIVES = 2
 MAX_ALTERNATIVES = 5
 
 
@@ -94,10 +103,18 @@ def _env_float(name: str, fallback: float) -> float:
 
 
 def from_env() -> RateLimiter:
-    """Build the limiter from the environment; zero lifts a limit."""
+    """Build the public limiter from the environment; zero lifts a limit."""
     return RateLimiter(
         per_client=_env_int("RECOMMENDER_RATE_LIMIT", PER_CLIENT),
         total=_env_int("RECOMMENDER_RATE_LIMIT_TOTAL", TOTAL),
+        seconds=_env_float("RECOMMENDER_RATE_WINDOW", WINDOW_SECONDS),
+    )
+
+
+def partner_limiter_from_env() -> RateLimiter:
+    return RateLimiter(
+        per_client=_env_int("RECOMMENDER_PARTNER_RATE_LIMIT", PER_PARTNER),
+        total=0,
         seconds=_env_float("RECOMMENDER_RATE_WINDOW", WINDOW_SECONDS),
     )
 
@@ -109,21 +126,46 @@ def client_key(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def gate(limiter: RateLimiter):
+bearer = HTTPBearer(
+    auto_error=False,
+    description="A partner key. Calls without one share the public limit.",
+)
 
-    def dependency(request: Request) -> None:
-        if not limiter.enabled:
+PUBLIC_REFUSAL = (
+    "This deployment serves a limited number of scoring calls per minute. "
+    "Run it yourself for unmetered use; the repository carries the model."
+)
+PARTNER_REFUSAL = "This key has used its scoring calls for the current minute."
+
+
+def gate(public: RateLimiter, partner: RateLimiter, partner_by_digest: Mapping[str, str]):
+
+    def dependency(
+        request: Request,
+        credentials: HTTPAuthorizationCredentials | None = Security(bearer),
+    ) -> None:
+        if credentials is None:
+            _admit(public, client_key(request), PUBLIC_REFUSAL)
             return
-        wait = limiter.retry_after(client_key(request))
-        if wait > 0.0:
+        name = partner_by_digest.get(partners.digest(credentials.credentials))
+        if name is None:
             raise HTTPException(
-                status_code=429,
-                detail=(
-                    "This deployment serves a limited number of scoring calls "
-                    "per minute. Run it yourself for unmetered use; the "
-                    "repository carries the model."
-                ),
-                headers={"Retry-After": str(max(1, int(wait) + 1))},
+                status_code=401,
+                detail="unrecognised key",
+                headers={"WWW-Authenticate": "Bearer"},
             )
+        _admit(partner, name, PARTNER_REFUSAL)
 
     return dependency
+
+
+def _admit(limiter: RateLimiter, caller: str, refusal: str) -> None:
+    if not limiter.enabled:
+        return
+    wait = limiter.retry_after(caller)
+    if wait > 0.0:
+        raise HTTPException(
+            status_code=429,
+            detail=refusal,
+            headers={"Retry-After": str(max(1, int(wait) + 1))},
+        )
