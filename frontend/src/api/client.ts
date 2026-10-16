@@ -5,6 +5,7 @@ import type { components, paths } from "./schema";
 type Schemas = components["schemas"];
 
 export type Form = Schemas["Form"];
+export type Example = Schemas["Example"];
 export type FormCategory = Schemas["FormCategory"];
 export type FormField = Schemas["FormField"];
 export type ShortlistRequest = Schemas["ShortlistRequest"];

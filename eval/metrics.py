@@ -11,9 +11,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from core.prepare import Prepared
-
-#: Score difference below which two alternatives count as tied.
-TIE_EPSILON = 0.03
+from core.scoring import TIE_EPSILON
 
 
 @dataclass

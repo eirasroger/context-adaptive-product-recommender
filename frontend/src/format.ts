@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-export const fixed = (value: number, digits = 3) => value.toFixed(digits);
+export const fixed = (value: number, digits = 2) => value.toFixed(digits);
 
 export const seriesColour = (index: number) => `var(--series-${(index % 8) + 1})`;
 

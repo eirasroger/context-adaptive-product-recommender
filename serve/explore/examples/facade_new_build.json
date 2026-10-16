@@ -1,0 +1,139 @@
+{
+  "title": "Five facade systems for a new build in a mild climate",
+  "request": {
+    "category": "facade_system",
+    "context": [
+      "new_build_mild"
+    ],
+    "stakeholders": [
+      "balanced_optimizer"
+    ],
+    "alternatives": [
+      {
+        "id": "Brick cavity wall",
+        "values": {
+          "gwp": 95.0,
+          "wdp": 20.0,
+          "fwu": 0.4,
+          "circ_orig": 5.0,
+          "fu_recyc": 60.0,
+          "fu_incin": 2.0,
+          "fu_inert": 37.0,
+          "fu_haz": 0.1,
+          "cost_product": 95.0,
+          "cost_labour": 70.0,
+          "cost_maintenance": 15.0,
+          "u_value": 0.3,
+          "acoustic_reduction": 58.0,
+          "surface_mass": 420.0,
+          "heat_capacity": 120.0,
+          "thickness": 360.0
+        },
+        "levels": {
+          "health": "h3",
+          "fire_reaction": "a1"
+        }
+      },
+      {
+        "id": "Steel sandwich panel",
+        "values": {
+          "gwp": 35.0,
+          "wdp": 12.0,
+          "fwu": 0.2,
+          "circ_orig": 25.0,
+          "fu_recyc": 85.0,
+          "fu_incin": 5.0,
+          "fu_inert": 10.0,
+          "fu_haz": 0.2,
+          "cost_product": 85.0,
+          "cost_labour": 20.0,
+          "cost_maintenance": 8.0,
+          "u_value": 0.15,
+          "acoustic_reduction": 30.0,
+          "surface_mass": 28.0,
+          "heat_capacity": 8.0,
+          "thickness": 200.0
+        },
+        "levels": {
+          "health": "h3",
+          "fire_reaction": "b"
+        }
+      },
+      {
+        "id": "ETICS on concrete",
+        "values": {
+          "gwp": 85.0,
+          "wdp": 25.0,
+          "fwu": 0.5,
+          "circ_orig": 5.0,
+          "fu_recyc": 30.0,
+          "fu_incin": 10.0,
+          "fu_inert": 59.0,
+          "fu_haz": 0.5,
+          "cost_product": 90.0,
+          "cost_labour": 55.0,
+          "cost_maintenance": 35.0,
+          "u_value": 0.2,
+          "acoustic_reduction": 54.0,
+          "surface_mass": 450.0,
+          "heat_capacity": 210.0,
+          "thickness": 340.0
+        },
+        "levels": {
+          "health": "h3",
+          "fire_reaction": "a2"
+        }
+      },
+      {
+        "id": "Timber ventilated facade",
+        "values": {
+          "gwp": -15.0,
+          "wdp": 8.0,
+          "fwu": 0.2,
+          "circ_orig": 20.0,
+          "fu_recyc": 75.0,
+          "fu_incin": 20.0,
+          "fu_inert": 5.0,
+          "fu_haz": 0.1,
+          "cost_product": 120.0,
+          "cost_labour": 45.0,
+          "cost_maintenance": 30.0,
+          "u_value": 0.18,
+          "acoustic_reduction": 44.0,
+          "surface_mass": 70.0,
+          "heat_capacity": 35.0,
+          "thickness": 160.0
+        },
+        "levels": {
+          "health": "h5",
+          "fire_reaction": "d"
+        }
+      },
+      {
+        "id": "Precast concrete element",
+        "values": {
+          "gwp": 140.0,
+          "wdp": 30.0,
+          "fwu": 0.6,
+          "circ_orig": 10.0,
+          "fu_recyc": 70.0,
+          "fu_incin": 0.0,
+          "fu_inert": 30.0,
+          "fu_haz": 0.1,
+          "cost_product": 150.0,
+          "cost_labour": 25.0,
+          "cost_maintenance": 10.0,
+          "u_value": 0.25,
+          "acoustic_reduction": 60.0,
+          "surface_mass": 520.0,
+          "heat_capacity": 190.0,
+          "thickness": 300.0
+        },
+        "levels": {
+          "health": "h4",
+          "fire_reaction": "a1"
+        }
+      }
+    ]
+  }
+}

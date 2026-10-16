@@ -167,6 +167,22 @@ def test_a_category_trained_on_synthetic_labels_is_shown_as_a_preview(client, re
     }
 
 
+def test_the_page_marks_ties_with_the_tolerance_the_evaluation_uses(client):
+    from eval.metrics import TIE_EPSILON
+
+    assert client.get("/api/explore/form").json()["tie_epsilon"] == TIE_EPSILON
+
+
+def test_every_example_is_a_complete_shortlist_the_api_accepts(client):
+    examples = client.get("/api/explore/form").json()["examples"]
+    assert examples, "the page has no example to offer"
+    for example in examples:
+        scored = client.post("/api/score", json=example["request"])
+        assert scored.status_code == 200, (example["title"], scored.json())
+        missing = {r["id"]: r["missing_indicators"] for r in scored.json()["results"]}
+        assert not any(missing.values()), (example["title"], missing)
+
+
 def test_the_sensitivity_endpoints_name_their_rows(client, registry, category_key):
     payload = _payload(registry, category_key)
     by_context = client.post("/api/explore/context-sensitivity", json=payload).json()

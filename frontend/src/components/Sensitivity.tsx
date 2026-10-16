@@ -1,5 +1,8 @@
+import type { CSSProperties } from "react";
+
 import type { Form, FormCategory, Sensitivity as Matrix } from "../api/client";
-import { fixed, seriesColour } from "../format";
+import { fixed, seriesColour, stagger } from "../format";
+import { jointLeaders } from "../ranking";
 import type { Shortlist } from "../shortlist";
 
 export type Axis = "context" | "stakeholder";
@@ -12,6 +15,7 @@ type Props = {
   scored: Shortlist;
   byContext: Matrix | null;
   byStakeholder: Matrix | null;
+  epsilon: number;
 };
 
 const AXES: { key: Axis; label: string }[] = [
@@ -19,7 +23,16 @@ const AXES: { key: Axis; label: string }[] = [
   { key: "stakeholder", label: "By priorities" },
 ];
 
-export function Sensitivity({ axis, onAxis, form, category, scored, byContext, byStakeholder }: Props) {
+export function Sensitivity({
+  axis,
+  onAxis,
+  form,
+  category,
+  scored,
+  byContext,
+  byStakeholder,
+  epsilon,
+}: Props) {
   const colourOf = (index: number) => scored.columns[index]?.colour ?? index;
   const matrix = axis === "context" ? byContext : byStakeholder;
   const names = new Map<string, string>(
@@ -36,7 +49,13 @@ export function Sensitivity({ axis, onAxis, form, category, scored, byContext, b
     <section className="card">
       <div className="card-head">
         <h2>How the ranking moves</h2>
-        <div className="segmented" role="tablist" aria-label="Vary">
+        <div
+          className="segmented"
+          role="tablist"
+          aria-label="Vary"
+          style={{ "--at": AXES.findIndex((a) => a.key === axis) } as CSSProperties}
+        >
+          <span className="thumb" aria-hidden="true" />
           {AXES.map((a) => (
             <button
               key={a.key}
@@ -52,7 +71,10 @@ export function Sensitivity({ axis, onAxis, form, category, scored, byContext, b
       </div>
 
       {!matrix ? (
-        <p className="msg">Scoring the shortlist under every {axis === "context" ? "application" : "archetype"}.</p>
+        <Skeleton
+          rows={axis === "context" ? category.contexts.length : form.stakeholders.length}
+          label={`Scoring the shortlist under every ${axis === "context" ? "application" : "archetype"}.`}
+        />
       ) : (
         <>
           {!matrix.changes_winner && <p className="summary">{steadyLeader(axis, matrix)}</p>}
@@ -70,24 +92,31 @@ export function Sensitivity({ axis, onAxis, form, category, scored, byContext, b
                 </tr>
               </thead>
               <tbody>
-                {matrix.rows.map((row) => (
-                  <tr key={row.label} className={isCurrent(row.label) ? "current" : undefined}>
+                {matrix.rows.map((row, position) => {
+                  const leaders = jointLeaders(row.scores, epsilon);
+                  return (
+                  <tr
+                    key={row.label}
+                    className={isCurrent(row.label) ? "current enter" : "enter"}
+                    style={stagger(position)}
+                  >
                     <th scope="row">
                       {names.get(row.label) ?? row.label}
                       {isCurrent(row.label) && <span className="tag">chosen</span>}
                     </th>
                     {row.scores.map((value, index) => (
-                      <td key={index} className={index === row.winner ? "win" : undefined}>
+                      <td key={index} className={leaders.has(index) ? "win" : undefined}>
                         <span className="meter">
                           <span
                             style={{ width: `${Math.max(2, value * 100)}%`, background: seriesColour(colourOf(index)) }}
                           />
                         </span>
-                        <span className="num">{fixed(value, 2)}</span>
+                        <span className="num">{fixed(value)}</span>
                       </td>
                     ))}
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -102,4 +131,14 @@ function steadyLeader(axis: Axis, matrix: Matrix): string {
   return axis === "context"
     ? `${leader} leads in every application.`
     : `${leader} leads for every set of priorities.`;
+}
+
+function Skeleton({ rows, label }: { rows: number; label: string }) {
+  return (
+    <div className="skeleton" role="status" aria-label={label}>
+      {Array.from({ length: rows }, (_, row) => (
+        <span key={row} className="shimmer" style={stagger(row)} />
+      ))}
+    </div>
+  );
 }

@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
-import { api, type Comparison, type Form, unwrap } from "./api/client";
+import { api, type Comparison, type Example, type Form, unwrap } from "./api/client";
 import { Grid } from "./components/Grid";
 import { Result } from "./components/Result";
 import { type Axis, Sensitivity } from "./components/Sensitivity";
 import { Setup } from "./components/Setup";
 import { Tip, type TipContent } from "./components/Tip";
 import { type Draft, isStale, switchCategory, unscored } from "./drafts";
-import { decodeLink, encodeLink, restore, snapshotOf } from "./link";
+import { unitText } from "./format";
+import { decodeLink, encodeLink, restore, snapshotOf, snapshotOfRequest } from "./link";
 import {
   blankColumns,
   type Column,
@@ -17,7 +18,6 @@ import {
   scoreRequest,
   type Shortlist,
 } from "./shortlist";
-import { toggleTheme } from "./theme";
 
 type Status = { text: string; error: boolean };
 
@@ -38,7 +38,11 @@ export function App() {
   const [status, setStatus] = useState(quiet);
   const [linkNotice, setLinkNotice] = useState<Status>(quiet);
   const [tip, setTip] = useState<TipContent | null>(null);
+  const [introducing, setIntroducing] = useState(false);
+  const [filling, setFilling] = useState(false);
   const latest = useRef(0);
+  const outcome = useRef<HTMLDivElement>(null);
+  const alternatives = useRef<HTMLElement>(null);
 
   const patch = useCallback((scored: Shortlist, change: Partial<Draft>) => {
     setDraft((d) => (d && d.scored === scored ? { ...d, ...change } : d));
@@ -149,11 +153,23 @@ export function App() {
       .catch((err) => setStatus(failure(messageOf(err))));
   }, [needsStakeholders, scored, patch]);
 
+  const runScore = useRef(() => {});
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        runScore.current();
+      }
+    };
+    addEventListener("keydown", onKey);
+    return () => removeEventListener("keydown", onKey);
+  }, []);
+
   const category = form?.categories.find((c) => c.key === draft?.shortlist.category);
   if (!form || !draft || !category) {
     return (
       <div className="wrap">
-        <Header />
+        <Header form={null} />
         <div className={status.error ? "msg error" : "msg"}>{status.text}</div>
       </div>
     );
@@ -181,13 +197,38 @@ export function App() {
     setLinkNotice(quiet);
   };
 
-  const runScore = () => {
+  runScore.current = () => {
+    if (scoring) return;
     if (!isScorable(draft.shortlist)) {
       setStatus(failure("Fill in at least two alternatives before scoring."));
       return;
     }
     void score(draft.shortlist);
   };
+
+  const loadExample = async (example: Example) => {
+    const restored = restore(snapshotOfRequest(example.request, form.registry_version), form);
+    if (!restored) {
+      setStatus(failure("The example no longer matches the registry."));
+      return;
+    }
+    const still = stillMotion();
+    setIntroducing(true);
+    latest.current++;
+    await withTransition(() => {
+      setParked(new Map());
+      setDraft(unscored(restored.shortlist));
+      setLinkNotice(quiet);
+      setStatus(quiet);
+      setFilling(!still);
+    });
+    glideTo(alternatives.current, still);
+    await Promise.all([score(restored.shortlist), still || delay(FILL_MS)]);
+    setFilling(false);
+    setIntroducing(false);
+    requestAnimationFrame(() => glideTo(outcome.current, still));
+  };
+  const [example] = form.examples;
 
   const copyLink = async () => {
     const url = `${location.origin}${location.pathname}#${await encodeLink(
@@ -204,9 +245,35 @@ export function App() {
 
   return (
     <div className="wrap">
-      <Header />
+      <Header form={form} />
       {linkNotice.text && (
         <div className={linkNotice.error ? "msg error" : "msg"}>{linkNotice.text}</div>
+      )}
+
+      {example && (
+        <button
+          type="button"
+          className={introducing ? "example-strip busy" : "example-strip enter"}
+          disabled={introducing}
+          onClick={() => void loadExample(example)}
+        >
+          <span className="spark" aria-hidden="true">
+            <svg viewBox="0 0 16 16">
+              <path d="M5 3.5v9l7.5-4.5z" fill="currentColor" />
+            </svg>
+          </span>
+          <span className="example-text">
+            <strong>Try an example</strong>
+            <span>{example.title}</span>
+          </span>
+          <span className="go" aria-hidden="true">
+            <span className="spinner" />
+            {introducing ? "Filling in" : "Fill in"}
+            <svg viewBox="0 0 16 16">
+              <path d="M3 8h9M8.5 4.5L12 8l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+            </svg>
+          </span>
+        </button>
       )}
 
       <Setup
@@ -219,13 +286,21 @@ export function App() {
         onStakeholders={(stakeholders) => edit({ stakeholders })}
       />
 
-      <section className="card">
-        <h2>Alternatives</h2>
+      <section className="card" ref={alternatives}>
+        <div className="card-head">
+          <div>
+            <h2>Alternatives</h2>
+            <p className="card-sub">
+              Values per {unitText(category.functional_unit_symbol)}. Leave a field blank when unknown.
+            </p>
+          </div>
+        </div>
         <div className="gridwrap">
           <Grid
             category={category}
             families={form.families}
             columns={draft.shortlist.columns}
+            filling={filling}
             onColumns={(columns: Column[]) => edit({ columns })}
             onTip={setTip}
           />
@@ -238,9 +313,16 @@ export function App() {
             Copy link
           </button>
           <span className="spacer" />
-          <span className="hint">Leave a field blank to say the value is unknown.</span>
-          <button className="primary" type="button" disabled={scoring} onClick={runScore}>
-            {scoring ? "Scoring" : "Score"}
+          <button
+            className={scoring ? "primary busy" : "primary"}
+            type="button"
+            disabled={scoring}
+            aria-keyshortcuts="Control+Enter Meta+Enter"
+            onClick={() => runScore.current()}
+          >
+            <span className="spinner" aria-hidden="true" />
+            <span>{scoring ? "Scoring" : "Score"}</span>
+            <kbd>{shortcutKey()} ↵</kbd>
           </button>
         </div>
       </section>
@@ -250,7 +332,11 @@ export function App() {
       </div>
 
       {draft.result && draft.scored && (
-        <div className={isStale(draft) ? "outcome enter stale" : "outcome enter"} key={category.key}>
+        <div
+          ref={outcome}
+          className={isStale(draft) ? "outcome enter stale" : "outcome enter"}
+          key={category.key}
+        >
           {isStale(draft) && (
             <p className="stale-note">The inputs have changed since this score. Score again to update it.</p>
           )}
@@ -259,6 +345,7 @@ export function App() {
             colours={draft.scored.columns.map((c) => c.colour)}
             wins={draft.wins}
             preview={category.preview}
+            epsilon={form.tie_epsilon}
           />
           <Sensitivity
             axis={axis}
@@ -268,6 +355,7 @@ export function App() {
             scored={draft.scored}
             byContext={draft.byContext}
             byStakeholder={draft.byStakeholder}
+            epsilon={form.tie_epsilon}
           />
         </div>
       )}
@@ -278,29 +366,50 @@ export function App() {
   );
 }
 
-/** Cross-fades the page between states where the browser can, and applies the change at once elsewhere. */
-function withTransition(change: () => void) {
-  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (still || typeof document.startViewTransition !== "function") {
+/** Long enough for the fill wave in the stylesheet to reach the last cell. */
+const FILL_MS = 1800;
+
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const glideTo = (element: Element | null, still: boolean) =>
+  element?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" });
+
+const stillMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Cross-fades the page between states where the browser can, and applies the change at once elsewhere; settles once the change is applied. */
+function withTransition(change: () => void): Promise<void> {
+  if (stillMotion() || typeof document.startViewTransition !== "function") {
     change();
-    return;
+    return Promise.resolve();
   }
-  document.startViewTransition(() => flushSync(change));
+  return document.startViewTransition(() => flushSync(change)).updateCallbackDone;
 }
 
-function Header() {
+function Header({ form }: { form: Form | null }) {
   return (
     <header className="masthead">
-      <h1>Product Comparison</h1>
-      <button type="button" className="icon" aria-label="Switch colour theme" onClick={toggleTheme}>
-        <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-          <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="1.6" />
-          <path d="M10 3a7 7 0 0 1 0 14z" fill="currentColor" />
+      <div className="brand">
+        <svg className="mark" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="9" fill="currentColor" />
+          <path d="M9 21.5h4.2V17H9zM14 21.5h4.2v-8H14zM19 21.5h4.2V10.5H19z" fill="var(--ink-contrast)" />
         </svg>
-      </button>
+        <div className="brand-text">
+          <h1>Product Comparison</h1>
+          <span className="tagline">Context-adaptive ranking of building products</span>
+        </div>
+      </div>
+      <span className="spacer" />
+      {form && (
+        <span className="status-pill" title={`Snapshot ${form.snapshot ?? "unknown"}`}>
+          <span className="live" aria-hidden="true" />
+          Model live · registry {form.registry_version ?? "unknown"}
+        </span>
+      )}
     </header>
   );
 }
+
+const shortcutKey = () => (/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl");
 
 function Footer({ form }: { form: Form }) {
   return (

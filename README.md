@@ -80,25 +80,16 @@ address contains the whole comparison, so it can be shared as a link.
 
 Five facade systems, entered per square metre:
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="media/inputs-dark.png">
-  <img alt="Setup and the five facade systems entered for comparison" src="media/inputs-light.png">
-</picture>
+<img alt="Setup and the five facade systems entered for comparison" src="media/inputs.png">
 
 The ranking for a new build in a mild climate, and how the winner changes
 with the application:
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="media/ranking-by-application-dark.png">
-  <img alt="Ranked result and the ranking under each application" src="media/ranking-by-application-light.png">
-</picture>
+<img alt="Ranked result and the ranking under each application" src="media/ranking-by-application.png">
 
 And with whose priorities count:
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="media/ranking-by-priorities-dark.png">
-  <img alt="The ranking under each stakeholder's priorities" src="media/ranking-by-priorities-light.png">
-</picture>
+<img alt="The ranking under each stakeholder's priorities" src="media/ranking-by-priorities.png">
 
 The API is served from the same address under `/api`, documented at
 [`/api/docs`](https://context-adaptive-product-recommende.vercel.app/api/docs):

@@ -85,6 +85,9 @@ export function Setup({
                   aria-pressed={stakeholders.includes(s.key)}
                   onClick={() => toggle(s.key)}
                 >
+                  <svg className="tick" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" strokeWidth="2" />
+                  </svg>
                   {s.display_name}
                 </button>
               ))}

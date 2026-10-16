@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import type { Form } from "./api/client";
-import { decodeLink, encodeLink, restore, type Snapshot, snapshotOf } from "./link";
+import type { Form, ShortlistRequest } from "./api/client";
+import { decodeLink, encodeLink, restore, type Snapshot, snapshotOf, snapshotOfRequest } from "./link";
 
 const form: Form = {
   registry_version: "1.0",
   snapshot: "abc",
+  tie_epsilon: 0.03,
+  examples: [],
   families: { measure: "measure" },
   stakeholders: [
     { key: "thrifty", display_name: "Thrifty", definition: "" },
@@ -179,5 +181,27 @@ describe("restoring against the current registry", () => {
   it("says when the link was made under another registry", () => {
     const restored = restore({ ...snapshot, registry: "0.9" }, form)!;
     expect(restored.notes).toEqual(["This link was made under registry 0.9; the page runs 1.0."]);
+  });
+});
+
+describe("an example", () => {
+  it("restores in full, with every value as its field shows it", () => {
+    const request: ShortlistRequest = {
+      category: "widget",
+      context: ["quiet"],
+      stakeholders: ["green"],
+      alternatives: [
+        { id: "First", values: { alpha: 0.1 }, levels: { grade: "g2" } },
+        { id: "Second", values: { alpha: 0.0001 }, levels: {} },
+      ],
+    };
+    const restored = restore(snapshotOfRequest(request, "1.0"), form)!;
+
+    expect(restored.notes).toEqual([]);
+    expect(restored.shortlist.context).toBe("quiet");
+    expect(restored.shortlist.columns.map((c) => [c.name, c.values, c.levels])).toEqual([
+      ["First", { alpha: "0.1" }, { grade: "g2" }],
+      ["Second", { alpha: "0.0001" }, {}],
+    ]);
   });
 });

@@ -4,10 +4,8 @@ import { createRoot } from "react-dom/client";
 
 import { withoutFragment } from "./analytics";
 import { App } from "./App";
+import "@fontsource-variable/inter";
 import "./styles.css";
-import { restoreTheme } from "./theme";
-
-restoreTheme();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

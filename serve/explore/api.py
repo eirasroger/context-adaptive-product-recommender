@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from core.scoring import TIE_EPSILON
 from serve.explore import analysis, compare as compare_module
 from serve.explore.compare import Difference
 from serve.shortlist import ShortlistRequest, resolve
@@ -61,11 +63,30 @@ class FormStakeholder(BaseModel):
     definition: str
 
 
+EXAMPLES = Path(__file__).parent / "examples"
+
+
+class Example(BaseModel):
+    title: str
+    request: ShortlistRequest
+
+
+def examples() -> list[Example]:
+    return [
+        Example.model_validate_json(path.read_text(encoding="utf-8"))
+        for path in sorted(EXAMPLES.glob("*.json"))
+    ]
+
+
 class Form(BaseModel):
     registry_version: str | None
     snapshot: str | None
+    tie_epsilon: float = Field(
+        description="Score difference below which two alternatives count as tied."
+    )
     categories: list[FormCategory]
     stakeholders: list[FormStakeholder]
+    examples: list[Example] = Field(description="Worked shortlists the page offers to load.")
     families: dict[str, str]
 
 
@@ -168,6 +189,7 @@ def build_router(service_getter, metered: Any) -> APIRouter:
         return {
             "registry_version": service.registry_version,
             "snapshot": service.snapshot_hash,
+            "tie_epsilon": TIE_EPSILON,
             "categories": categories,
             "stakeholders": [
                 {
@@ -178,6 +200,7 @@ def build_router(service_getter, metered: Any) -> APIRouter:
                 for key, stakeholder in sorted(registry.stakeholders.items())
             ],
             "families": {key: key.replace("_", " ") for key in registry.families},
+            "examples": examples(),
         }
 
     @router.post("/compare", dependencies=costly)

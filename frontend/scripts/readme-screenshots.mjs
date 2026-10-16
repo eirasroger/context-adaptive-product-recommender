@@ -1,7 +1,6 @@
-// Regenerates the README screenshots from readme-scenario.json against a running app.
+// Regenerates the README screenshots from the page's first example, against a running app.
 // Usage: npm run screenshots   (the app must be serving at SCREENSHOT_URL, default the Vite dev server)
 
-import { readFileSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,11 +14,20 @@ const BASE = process.env.SCREENSHOT_URL ?? "http://localhost:5173";
 const WIDTH = 1240;
 const MARGIN = 20;
 
-const scenario = JSON.parse(readFileSync(join(here, "readme-scenario.json"), "utf8"));
-
 async function link() {
   const form = await (await fetch(`${BASE}/api/explore/form`)).json();
-  const snapshot = { registry: form.registry_version, ...scenario };
+  const { request } = form.examples[0];
+  const snapshot = {
+    registry: form.registry_version,
+    category: request.category,
+    context: request.context[0],
+    stakeholders: request.stakeholders,
+    alternatives: request.alternatives.map((a) => ({
+      name: a.id,
+      values: Object.fromEntries(Object.entries(a.values).map(([key, value]) => [key, String(value)])),
+      levels: a.levels,
+    })),
+  };
   const packed = deflateRawSync(Buffer.from(JSON.stringify(snapshot)));
   return `v1.${packed.toString("base64url")}`;
 }
@@ -53,11 +61,10 @@ async function frame(page, selectors, file) {
   console.log(`wrote media/${file}`);
 }
 
-async function shoot(browser, code, theme) {
+async function shoot(browser, code) {
   const page = await browser.newPage({
     viewport: { width: WIDTH, height: 900 },
     deviceScaleFactor: 2,
-    colorScheme: theme,
     reducedMotion: "reduce",
   });
   await page.goto(`${BASE}/#${code}`);
@@ -80,14 +87,14 @@ async function shoot(browser, code, theme) {
     if (!cut) return;
     for (let row = cut; row; row = row.nextElementSibling) row.style.display = "none";
   });
-  await frame(page, ["#shot-setup", "#shot-alternatives"], `inputs-${theme}.png`);
+  await frame(page, ["#shot-setup", "#shot-alternatives"], "inputs.png");
   await page.evaluate(() => {
     for (const row of document.querySelectorAll("#shot-alternatives tbody tr")) row.style.display = "";
   });
-  await frame(page, ["#shot-result", "#shot-ranking"], `ranking-by-application-${theme}.png`);
+  await frame(page, ["#shot-result", "#shot-ranking"], "ranking-by-application.png");
   await page.getByRole("tab", { name: "By priorities" }).click();
   await page.waitForFunction(() => document.querySelectorAll("table.matrix tbody tr").length > 6);
-  await frame(page, ["#shot-ranking"], `ranking-by-priorities-${theme}.png`);
+  await frame(page, ["#shot-ranking"], "ranking-by-priorities.png");
   await page.close();
 }
 
@@ -95,7 +102,7 @@ await mkdir(OUT, { recursive: true });
 const code = await link();
 const browser = await chromium.launch({ channel: "chrome" });
 try {
-  for (const theme of ["light", "dark"]) await shoot(browser, code, theme);
+  await shoot(browser, code);
 } finally {
   await browser.close();
 }

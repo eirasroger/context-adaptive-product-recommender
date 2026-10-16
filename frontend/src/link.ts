@@ -1,4 +1,4 @@
-import type { Form } from "./api/client";
+import type { Form, ShortlistRequest } from "./api/client";
 import { blankColumn, column, MAX_COLUMNS, MIN_COLUMNS, type Shortlist } from "./shortlist";
 
 const FORMAT = "v1";
@@ -24,6 +24,19 @@ export const snapshotOf = (shortlist: Shortlist, registry: string | null): Snaps
   context: shortlist.context,
   stakeholders: shortlist.stakeholders,
   alternatives: shortlist.columns.map(({ name, values, levels }) => ({ name, values, levels })),
+});
+
+/** A score request as the page holds it: values become the text of their fields. */
+export const snapshotOfRequest = (request: ShortlistRequest, registry: string | null): Snapshot => ({
+  registry,
+  category: request.category,
+  context: request.context?.[0] ?? "",
+  stakeholders: request.stakeholders,
+  alternatives: request.alternatives.map((a) => ({
+    name: a.id,
+    values: Object.fromEntries(Object.entries(a.values ?? {}).map(([key, value]) => [key, String(value)])),
+    levels: a.levels ?? {},
+  })),
 });
 
 export async function encodeLink(snapshot: Snapshot): Promise<string> {

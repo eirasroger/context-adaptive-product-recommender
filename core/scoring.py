@@ -23,6 +23,9 @@ MODEL_INPUTS = (
 )
 SCORES = "scores"
 
+#: Score difference below which two alternatives count as tied.
+TIE_EPSILON = 0.03
+
 #: Metadata keys an exported model carries beside its weights.
 REGISTRY_BLOB = "registry_blob"
 REGISTRY_VERSION = "registry_version"

@@ -14,12 +14,14 @@ type Props = {
   columns: Column[];
   onColumns: (columns: Column[]) => void;
   onTip: (tip: TipContent | null) => void;
+  /** Plays the wave that shows values arriving in every cell. */
+  filling?: boolean;
 };
 
 /** A removed column's content fades for this long before its width starts to close. */
 const FADE_MS = 110;
 
-export function Grid({ category, families, columns, onColumns, onTip }: Props) {
+export function Grid({ category, families, columns, onColumns, onTip, filling = false }: Props) {
   const table = useRef<HTMLTableElement>(null);
   const addButton = useRef<HTMLButtonElement>(null);
   const names = useRef(new Map<number, HTMLTextAreaElement>());
@@ -75,7 +77,11 @@ export function Grid({ category, families, columns, onColumns, onTip }: Props) {
     id === leaving ? " col-leave" : id === arriving ? " col-enter" : "";
 
   return (
-    <table className="grid" ref={table} style={{ "--n": columns.length } as CSSProperties}>
+    <table
+      className={filling ? "grid filling" : "grid"}
+      ref={table}
+      style={{ "--n": columns.length } as CSSProperties}
+    >
       <colgroup>
         <col className="col-rowhead" />
         {columns.map((column) => (
@@ -87,7 +93,7 @@ export function Grid({ category, families, columns, onColumns, onTip }: Props) {
         <tr>
           <th className="rowhead" />
           {columns.map((column, index) => (
-            <th key={column.id} className={`colhead${motion(column.id)}`}>
+            <th key={column.id} className={`colhead${motion(column.id)}`} style={columnIndex(index)}>
               <div className="bar" style={{ background: seriesColour(column.colour) }} />
               <div className="colname">
                 <NameField
@@ -168,7 +174,7 @@ export function Grid({ category, families, columns, onColumns, onTip }: Props) {
                 {field.unit && <div className="unit">{unitText(field.unit)}</div>}
               </th>
               {columns.map((column, index) => (
-                <td key={column.id} className={`cell${motion(column.id)}`}>
+                <td key={column.id} className={`cell${motion(column.id)}`} style={columnIndex(index)}>
                   <Cell
                     field={field}
                     column={column}
@@ -184,6 +190,8 @@ export function Grid({ category, families, columns, onColumns, onTip }: Props) {
     </table>
   );
 }
+
+const columnIndex = (index: number) => ({ "--col": index }) as CSSProperties;
 
 type NameFieldProps = {
   ref: (element: HTMLTextAreaElement | null) => void | (() => void);

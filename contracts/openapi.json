@@ -147,6 +147,23 @@
         "title": "Difference",
         "type": "object"
       },
+      "Example": {
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/ShortlistRequest"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "request"
+        ],
+        "title": "Example",
+        "type": "object"
+      },
       "Form": {
         "properties": {
           "categories": {
@@ -154,6 +171,14 @@
               "$ref": "#/components/schemas/FormCategory"
             },
             "title": "Categories",
+            "type": "array"
+          },
+          "examples": {
+            "description": "Worked shortlists the page offers to load.",
+            "items": {
+              "$ref": "#/components/schemas/Example"
+            },
+            "title": "Examples",
             "type": "array"
           },
           "families": {
@@ -191,13 +216,20 @@
             },
             "title": "Stakeholders",
             "type": "array"
+          },
+          "tie_epsilon": {
+            "description": "Score difference below which two alternatives count as tied.",
+            "title": "Tie Epsilon",
+            "type": "number"
           }
         },
         "required": [
           "registry_version",
           "snapshot",
+          "tie_epsilon",
           "categories",
           "stakeholders",
+          "examples",
           "families"
         ],
         "title": "Form",
