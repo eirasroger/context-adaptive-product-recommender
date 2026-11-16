@@ -13,6 +13,8 @@ CANDIDATES = Path("data/facade/epd/candidates.csv")
 
 SURFACE_RESISTANCES = 0.17
 HEALTH_WEIGHTS = {"h0": 0.05, "h1": 0.35, "h2": 0.35, "h3": 0.10, "h4": 0.08, "h5": 0.05, "h6": 0.02}
+#: Share of products whose health status is unknown, so labels and the model see missing values often.
+HEALTH_MISSING_SHARE = 0.2
 
 #: Product rules for groups that match a facade term but are another product.
 OFF_SCOPE_PCR = ("windows and doors", "technical - chemical", "technical-chemical", "werkmörtel", "dübel")
@@ -448,9 +450,13 @@ TYPOLOGIES = {
 }
 
 
+def health_status(rng: random.Random) -> str | None:
+    return None if rng.random() < HEALTH_MISSING_SHARE else _pick(rng, HEALTH_WEIGHTS)
+
+
 def product(library: Library, rng: random.Random, typology: str, key: str) -> dict:
     build, performance = TYPOLOGIES[typology](library, rng)
-    values = {**build.indicators(), **performance, "health": _pick(rng, HEALTH_WEIGHTS)}
+    values = {**build.indicators(), **performance, "health": health_status(rng)}
     kept = {
         name: value if isinstance(value, str) else round(value, 4)
         for name, value in values.items()
