@@ -256,9 +256,7 @@ context:
       or Csb), with Lden below 65 dB at the facade, away from wildland or in a
       region of low fire danger, with reference ground acceleration below
       0.1 g, the top of the facade at most 18 m above ground, and the facade
-      free to grow outwards. Every alternative is assumed compliant, so
-      thermal and acoustic margins matter moderately and the decision turns
-      mostly on environmental impact, cost and circularity.
+      free to grow outwards.
     declarations:
       - {indicator_key: u_value, direction: -1, priority: 0.50}
       - {indicator_key: acoustic_reduction, direction: 1, priority: 0.30}

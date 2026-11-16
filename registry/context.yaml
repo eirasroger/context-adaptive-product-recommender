@@ -21,7 +21,7 @@ context:
   is_active: 1
 - key: new_build_mild
   display_name: New build, temperate climate
-  definition_text: 'Baseline for facades: a new building in a temperate climate (Köppen Cfb or Csb), with Lden below 65 dB at the facade, away from wildland or in a region of low fire danger, with reference ground acceleration below 0.1 g, the top of the facade at most 18 m above ground, and the facade free to grow outwards. Every alternative is assumed compliant, so thermal and acoustic margins matter moderately and the decision turns mostly on environmental impact, cost and circularity.'
+  definition_text: 'Baseline for facades: a new building in a temperate climate (Köppen Cfb or Csb), with Lden below 65 dB at the facade, away from wildland or in a region of low fire danger, with reference ground acceleration below 0.1 g, the top of the facade at most 18 m above ground, and the facade free to grow outwards.'
   is_baseline: 1
   is_active: 1
 - key: no_room_outwards

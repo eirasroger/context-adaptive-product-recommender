@@ -1,7 +1,7 @@
 import type { Form, FormCategory } from "../api/client";
-import { baselineOf, switchable, toggle as toggleContext } from "../contexts";
-import { stagger, unitText } from "../format";
+import { unitText } from "../format";
 import { CategoryPicker } from "./CategoryPicker";
+import { ContextPicker } from "./ContextPicker";
 
 type Props = {
   form: Form;
@@ -26,11 +26,6 @@ export function Setup({
     if (!stakeholders.includes(key)) onStakeholders([...stakeholders, key]);
     else if (stakeholders.length > 1) onStakeholders(stakeholders.filter((s) => s !== key));
   };
-  const groups = switchable(category);
-  const baseline = baselineOf(category);
-  const chosen = category.contexts.filter((c) => contexts.includes(c.key));
-  const full = contexts.length >= category.max_contexts;
-  let index = 0;
 
   return (
     <section className="card">
@@ -57,46 +52,8 @@ export function Setup({
           <div className="field">
             <span className="label" id="context-label">
               Situation
-              <span className="label-hint">
-                {" "}
-                · up to {category.max_contexts}; none means {baseline?.display_name.toLowerCase() ?? "the baseline"}
-              </span>
             </span>
-            <div className="context-groups" role="group" aria-labelledby="context-label" key={category.key}>
-              {groups.map((group) => (
-                <div className="context-group" key={group.theme ?? "all"}>
-                  {group.theme && <span className="context-theme">{group.theme}</span>}
-                  <div className="chips">
-                    {group.contexts.map((c) => {
-                      const on = contexts.includes(c.key);
-                      return (
-                        <button
-                          key={c.key}
-                          type="button"
-                          className="chip enter"
-                          style={stagger(index++)}
-                          title={c.definition}
-                          aria-pressed={on}
-                          disabled={!on && full}
-                          onClick={() => onContexts(toggleContext(contexts, c.key, category.max_contexts))}
-                        >
-                          <svg className="tick" viewBox="0 0 16 16" aria-hidden="true">
-                            <path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" strokeWidth="2" />
-                          </svg>
-                          {c.display_name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {chosen.length === 0 && baseline && <p className="definition">{baseline.definition}</p>}
-            {chosen.map((c) => (
-              <p className="definition" key={c.key}>
-                <strong>{c.display_name}.</strong> {c.definition}
-              </p>
-            ))}
+            <ContextPicker key={category.key} category={category} contexts={contexts} onContexts={onContexts} />
           </div>
 
           <div className="field">

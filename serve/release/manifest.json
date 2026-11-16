@@ -41,12 +41,12 @@
       "top1_agreement": 0.9141830890204834
     }
   },
-  "model_bytes": 2469259,
-  "model_sha256": "7890b3b910d59d893a48d966fd1e569af318a8ce881943b640ff45eec854808d",
+  "model_bytes": 2467787,
+  "model_sha256": "882c90c9fd107fa3f7cb6619aa82f66ae06b56069c7f73ddcfc4a9a4356ede02",
   "notes": "Facade contexts redefined and presented per category; 200 facade labels from Sonnet 5.5 agents. Regression gate overridden: the old facade data was discarded, and the concrete drift (gap 0.046 to 0.051) was accepted.",
   "promoted_at": "2026-11-16T14:51:50.723690+00:00",
-  "registry_content_hash": "3752faa4b576d10ae2d724cd2ce309812fe4b0acc0e3c96e44cf591e44ca2ab0",
-  "registry_version": "0.6.0",
+  "registry_content_hash": "28a2f4d1f77c80c1fd5778119441e41cee871afb81fda32eccf546279d9cb38b",
+  "registry_version": "0.6.1",
   "run": "baseline-20261116T144421Z",
   "snapshot_hash": "99a79b11bc747303cb314bf5714d3c20e87cee6bfcd8e4b7f2bfff4acef131df",
   "split_key": "default"

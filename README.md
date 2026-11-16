@@ -55,7 +55,7 @@ experts.
 
 <!-- results:start -->
 The model in `serve/release/` comes from run `baseline-20261116T144421Z` and
-carries registry 0.6.0. On 10,301 test shortlists it scores:
+carries registry 0.6.1. On 10,301 test shortlists it scores:
 
 | Gap fidelity | Band placement | Top-1 agreement | Tie-tolerant rank correlation | Behavioural assertions |
 |---|---|---|---|---|
