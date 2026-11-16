@@ -27,8 +27,14 @@ embedding_slot:
   entity_key: high_rise
   slot: 6
 - table_name: context
-  entity_key: retrofit
+  entity_key: wildfire_edge
   slot: 7
+- table_name: context
+  entity_key: seismic
+  slot: 8
+- table_name: context
+  entity_key: no_room_outwards
+  slot: 9
 - table_name: indicator
   entity_key: gwp
   slot: 0

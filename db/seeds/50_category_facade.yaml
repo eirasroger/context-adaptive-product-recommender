@@ -32,10 +32,12 @@ indicator:
     unit: dB
     default_direction: 1
     definition_text: >-
-      Weighted airborne sound reduction index of the system, RA or Rw as
-      declared or catalogued. Higher is better. A product property, distinct
-      from the building's facade insulation D2m,nT,Atr, which also depends on
-      windows and room geometry.
+      Airborne sound reduction of the system weighted for traffic noise,
+      RA,tr (approximately Rw + Ctr per EN ISO 717-1), as declared or
+      catalogued. Higher is better. A product property, distinct from the
+      building's facade insulation D2m,nT,Atr, which also depends on windows
+      and room geometry. Corpus values are mass-law estimates until declared
+      values are collected.
 
   - key: surface_mass
     display_name: Surface mass
@@ -121,9 +123,9 @@ indicator:
     unit: mm
     default_direction: -1
     definition_text: >-
-      Overall thickness of the installed system. Lower is better, weakly in new
-      build, where it costs floor area, and strongly in retrofit, where it
-      projects past the building line or eats into existing rooms.
+      Overall thickness of the installed system. Lower is better: weakly where
+      the facade is free to grow outwards, strongly where its outer face is
+      fixed and every millimetre is taken from the rooms.
 
 functional_unit:
   - key: m2_installed
@@ -216,15 +218,19 @@ range_source_note: >-
   where biogenic carbon is stored. Provisional until real products are
   collected.
 
+# Selection and definitions: docs/CONTEXTS.md; record in experiments/context_screening.yaml.
 context:
   - key: new_build_mild
-    display_name: New build, mild climate
+    display_name: New build, temperate climate
     is_baseline: true
     definition_text: >-
-      Baseline for building envelopes: new construction in a mild climate on a
-      quiet site. Every alternative is assumed compliant, so thermal and
-      acoustic margins matter moderately and the decision turns mostly on
-      environmental impact, cost and circularity.
+      Baseline for facades: a new building in a temperate climate (Köppen Cfb
+      or Csb), with Lden below 65 dB at the facade, away from wildland or in a
+      region of low fire danger, with reference ground acceleration below
+      0.1 g, the top of the facade at most 18 m above ground, and the facade
+      free to grow outwards. Every alternative is assumed compliant, so
+      thermal and acoustic margins matter moderately and the decision turns
+      mostly on environmental impact, cost and circularity.
     declarations:
       - {indicator_key: u_value, direction: -1, priority: 0.50}
       - {indicator_key: acoustic_reduction, direction: 1, priority: 0.30}
@@ -242,30 +248,56 @@ context:
   - key: hot_summer
     display_name: Hot summer
     definition_text: >-
-      Cooling dominates. Thermal mass on the room side of the insulation damps
-      daily temperature swings, so internal heat capacity counts strongly;
-      insulation still helps, less than in a cold climate.
+      The mean temperature of the warmest month is at least 22 °C (Köppen
+      subtype a: Csa, Cfa, Dsa, Dfa, and the hot semi-arid BSk and BSh), as in
+      most of Iberia and Italy, Greece, Mediterranean France, the Po valley and
+      the Pannonian plain. Thermal mass on the room side of the insulation
+      absorbs daytime gains and releases them at night, so internal heat
+      capacity counts moderately.
     declarations:
-      - {indicator_key: heat_capacity, direction: 1, priority: 0.80}
-      - {indicator_key: u_value, direction: -1, priority: 0.50}
+      - {indicator_key: heat_capacity, direction: 1, priority: 0.50}
 
   - key: high_rise
     display_name: High rise
     definition_text: >-
-      Tall buildings, above about 18 m. Fire risk grows with height and the
-      class above the code minimum is priced by insurers, so reaction to fire
-      counts strongly. Heavy systems load the structure and the fixings.
+      The top of the facade is more than 18 m above ground. Fire spreading up
+      a tall facade outruns external firefighting and lengthens evacuation, and
+      owners and insurers value non-combustibility above the minimum class, so
+      reaction to fire counts strongly. The facade's own weight sizes its
+      anchors and accumulates floor by floor on the columns and foundations,
+      a structural cost outside the facade's own cost, so a lighter system
+      counts moderately.
     declarations:
       - {indicator_key: fire_reaction, direction: 1, priority: 0.90}
       - {indicator_key: surface_mass, direction: -1, priority: 0.50}
 
-  - key: retrofit
-    display_name: Retrofit
+  - key: wildfire_edge
+    display_name: Wildfire edge
     definition_text: >-
-      A system added to an existing building. Lowering heat loss is the purpose;
-      thickness projects past the building line or eats into rooms; the
-      existing structure limits the weight it can carry.
+      The building is within 100 m of continuous forest or shrubland, in a
+      region with a high fire-danger season on the EFFIS maps, as at the edges
+      of Mediterranean towns. Embers and radiant heat attack the facade from
+      outside, and the code minimum ignores wildfire exposure, so reaction to
+      fire counts strongly.
     declarations:
-      - {indicator_key: u_value, direction: -1, priority: 0.80}
-      - {indicator_key: thickness, direction: -1, priority: 0.80}
-      - {indicator_key: surface_mass, direction: -1, priority: 0.80}
+      - {indicator_key: fire_reaction, direction: 1, priority: 0.90}
+
+  - key: seismic
+    display_name: Seismic zone
+    definition_text: >-
+      The reference peak ground acceleration is at least 0.1 g at a 475-year
+      return period on the 2020 European Seismic Hazard Model, as in Italy,
+      Greece, Romania, the Balkans and south-east Iberia. Seismic force is
+      proportional to mass, and a heavy facade adds mass at height to the
+      structure and its anchors, so a lighter system counts moderately.
+    declarations:
+      - {indicator_key: surface_mass, direction: -1, priority: 0.50}
+
+  - key: no_room_outwards
+    display_name: No room outwards
+    definition_text: >-
+      The outer face of the facade is fixed, on the street line, the plot
+      boundary or a protected street front, so any extra thickness is taken
+      from the rooms. Thickness becomes lost floor area and counts strongly.
+    declarations:
+      - {indicator_key: thickness, direction: -1, priority: 0.90}

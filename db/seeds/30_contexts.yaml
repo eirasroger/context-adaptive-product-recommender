@@ -24,9 +24,12 @@ context:
   - key: acoustic_insulation
     display_name: Acoustic insulation
     definition_text: >-
-      Sound insulation is a primary goal. Mass is the governing mechanism, so
-      denser options are preferred where a density indicator exists; categories
-      that declare a measured acoustic reduction figure instead will prefer that
+      Sound insulation is a primary goal. For concrete, mass is the governing
+      mechanism, so denser options are preferred. For a facade, the site is
+      noisy: the day-evening-night level Lden is at least 65 dB at the most
+      exposed facade on the strategic noise maps of the Environmental Noise
+      Directive, typically a building fronting a main road or a railway line,
+      or under an airport approach; the measured sound reduction is preferred
       directly. Among alternatives at a similar acoustic level, the decision
       falls back to sustainability, health and cost.
     declarations:
@@ -36,10 +39,13 @@ context:
   - key: thermal_insulation
     display_name: Thermal insulation
     definition_text: >-
-      Thermal resistance and reduced dead load matter. Lower density is
-      preferred, which is the exact inverse of the acoustic case over the same
-      indicator -- the pair is the sharpest available test that the model has
-      learned context rather than memorised a direction.
+      Thermal performance is a primary goal. For concrete, thermal resistance
+      and reduced dead load matter, so lower density is preferred: the exact
+      inverse of the acoustic case over the same indicator, and the sharpest
+      available test that the model has learned context and memorised no
+      direction. For a facade, the building is in a cold-winter climate, Köppen
+      group D or E (mean temperature of the coldest month below 0 °C), and lower
+      thermal transmittance is preferred strongly.
     declarations:
       - {indicator_key: density, direction: -1, priority: 0.90}
       - {indicator_key: compressive_strength, direction: 1, priority: 0.30}

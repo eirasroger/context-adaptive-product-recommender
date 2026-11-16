@@ -1,7 +1,7 @@
 context:
 - key: acoustic_insulation
   display_name: Acoustic insulation
-  definition_text: Sound insulation is a primary goal. Mass is the governing mechanism, so denser options are preferred where a density indicator exists; categories that declare a measured acoustic reduction figure instead will prefer that directly. Among alternatives at a similar acoustic level, the decision falls back to sustainability, health and cost.
+  definition_text: 'Sound insulation is a primary goal. For concrete, mass is the governing mechanism, so denser options are preferred. For a facade, the site is noisy: the day-evening-night level Lden is at least 65 dB at the most exposed facade on the strategic noise maps of the Environmental Noise Directive, typically a building fronting a main road or a railway line, or under an airport approach; the measured sound reduction is preferred directly. Among alternatives at a similar acoustic level, the decision falls back to sustainability, health and cost.'
   is_baseline: 0
   is_active: 1
 - key: architectural_finish
@@ -11,22 +11,27 @@ context:
   is_active: 1
 - key: high_rise
   display_name: High rise
-  definition_text: Tall buildings, above about 18 m. Fire risk grows with height and the class above the code minimum is priced by insurers, so reaction to fire counts strongly. Heavy systems load the structure and the fixings.
+  definition_text: The top of the facade is more than 18 m above ground. Fire spreading up a tall facade outruns external firefighting and lengthens evacuation, and owners and insurers value non-combustibility above the minimum class, so reaction to fire counts strongly. The facade's own weight sizes its anchors and accumulates floor by floor on the columns and foundations, a structural cost outside the facade's own cost, so a lighter system counts moderately.
   is_baseline: 0
   is_active: 1
 - key: hot_summer
   display_name: Hot summer
-  definition_text: Cooling dominates. Thermal mass on the room side of the insulation damps daily temperature swings, so internal heat capacity counts strongly; insulation still helps, less than in a cold climate.
+  definition_text: 'The mean temperature of the warmest month is at least 22 °C (Köppen subtype a: Csa, Cfa, Dsa, Dfa, and the hot semi-arid BSk and BSh), as in most of Iberia and Italy, Greece, Mediterranean France, the Po valley and the Pannonian plain. Thermal mass on the room side of the insulation absorbs daytime gains and releases them at night, so internal heat capacity counts moderately.'
   is_baseline: 0
   is_active: 1
 - key: new_build_mild
-  display_name: New build, mild climate
-  definition_text: 'Baseline for building envelopes: new construction in a mild climate on a quiet site. Every alternative is assumed compliant, so thermal and acoustic margins matter moderately and the decision turns mostly on environmental impact, cost and circularity.'
+  display_name: New build, temperate climate
+  definition_text: 'Baseline for facades: a new building in a temperate climate (Köppen Cfb or Csb), with Lden below 65 dB at the facade, away from wildland or in a region of low fire danger, with reference ground acceleration below 0.1 g, the top of the facade at most 18 m above ground, and the facade free to grow outwards. Every alternative is assumed compliant, so thermal and acoustic margins matter moderately and the decision turns mostly on environmental impact, cost and circularity.'
   is_baseline: 1
   is_active: 1
-- key: retrofit
-  display_name: Retrofit
-  definition_text: A system added to an existing building. Lowering heat loss is the purpose; thickness projects past the building line or eats into rooms; the existing structure limits the weight it can carry.
+- key: no_room_outwards
+  display_name: No room outwards
+  definition_text: The outer face of the facade is fixed, on the street line, the plot boundary or a protected street front, so any extra thickness is taken from the rooms. Thickness becomes lost floor area and counts strongly.
+  is_baseline: 0
+  is_active: 1
+- key: seismic
+  display_name: Seismic zone
+  definition_text: The reference peak ground acceleration is at least 0.1 g at a 475-year return period on the 2020 European Seismic Hazard Model, as in Italy, Greece, Romania, the Balkans and south-east Iberia. Seismic force is proportional to mass, and a heavy facade adds mass at height to the structure and its anchors, so a lighter system counts moderately.
   is_baseline: 0
   is_active: 1
 - key: standard_structural
@@ -36,6 +41,11 @@ context:
   is_active: 1
 - key: thermal_insulation
   display_name: Thermal insulation
-  definition_text: Thermal resistance and reduced dead load matter. Lower density is preferred, which is the exact inverse of the acoustic case over the same indicator -- the pair is the sharpest available test that the model has learned context rather than memorised a direction.
+  definition_text: 'Thermal performance is a primary goal. For concrete, thermal resistance and reduced dead load matter, so lower density is preferred: the exact inverse of the acoustic case over the same indicator, and the sharpest available test that the model has learned context and memorised no direction. For a facade, the building is in a cold-winter climate, Köppen group D or E (mean temperature of the coldest month below 0 °C), and lower thermal transmittance is preferred strongly.'
+  is_baseline: 0
+  is_active: 1
+- key: wildfire_edge
+  display_name: Wildfire edge
+  definition_text: The building is within 100 m of continuous forest or shrubland, in a region with a high fire-danger season on the EFFIS maps, as at the edges of Mediterranean towns. Embers and radiant heat attack the facade from outside, and the code minimum ignores wildfire exposure, so reaction to fire counts strongly.
   is_baseline: 0
   is_active: 1

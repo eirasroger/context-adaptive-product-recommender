@@ -4,7 +4,7 @@ indicator:
   family_key: performance
   value_type: continuous
   unit: dB
-  definition_text: Weighted airborne sound reduction index of the system, RA or Rw as declared or catalogued. Higher is better. A product property, distinct from the building's facade insulation D2m,nT,Atr, which also depends on windows and room geometry.
+  definition_text: Airborne sound reduction of the system weighted for traffic noise, RA,tr (approximately Rw + Ctr per EN ISO 717-1), as declared or catalogued. Higher is better. A product property, distinct from the building's facade insulation D2m,nT,Atr, which also depends on windows and room geometry. Corpus values are mass-law estimates until declared values are collected.
   default_direction: 1
   nominal_justification: null
   is_derived: 0
@@ -234,7 +234,7 @@ indicator:
   family_key: performance
   value_type: continuous
   unit: mm
-  definition_text: Overall thickness of the installed system. Lower is better, weakly in new build, where it costs floor area, and strongly in retrofit, where it projects past the building line or eats into existing rooms.
+  definition_text: 'Overall thickness of the installed system. Lower is better: weakly where the facade is free to grow outwards, strongly where its outer face is fixed and every millimetre is taken from the rooms.'
   default_direction: -1
   nominal_justification: null
   is_derived: 0

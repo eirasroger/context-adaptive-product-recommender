@@ -99,14 +99,6 @@ context_declaration:
   indicator_key: heat_capacity
   category_key: '*'
   direction: 1
-  priority: 0.8
-  is_required: 0
-  ideal_value: null
-  note: null
-- context_key: hot_summer
-  indicator_key: u_value
-  category_key: '*'
-  direction: -1
   priority: 0.5
   is_required: 0
   ideal_value: null
@@ -143,27 +135,19 @@ context_declaration:
   is_required: 0
   ideal_value: null
   note: null
-- context_key: retrofit
-  indicator_key: surface_mass
-  category_key: '*'
-  direction: -1
-  priority: 0.8
-  is_required: 0
-  ideal_value: null
-  note: null
-- context_key: retrofit
+- context_key: no_room_outwards
   indicator_key: thickness
   category_key: '*'
   direction: -1
-  priority: 0.8
+  priority: 0.9
   is_required: 0
   ideal_value: null
   note: null
-- context_key: retrofit
-  indicator_key: u_value
+- context_key: seismic
+  indicator_key: surface_mass
   category_key: '*'
   direction: -1
-  priority: 0.8
+  priority: 0.5
   is_required: 0
   ideal_value: null
   note: null
@@ -243,6 +227,14 @@ context_declaration:
   indicator_key: u_value
   category_key: '*'
   direction: -1
+  priority: 0.9
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: wildfire_edge
+  indicator_key: fire_reaction
+  category_key: '*'
+  direction: 1
   priority: 0.9
   is_required: 0
   ideal_value: null
