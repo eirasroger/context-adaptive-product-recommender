@@ -20,7 +20,8 @@ LLM_LABELS_FILE = "llm_labelled_dataset.json"
 
 PRODUCTS_PER_TYPOLOGY = 2_000
 WITHIN_TYPOLOGY_SHARE = 0.75
-SECOND_CONTEXT_SHARE = 0.25
+#: How many contexts beside the baseline a set carries; zero means the baseline alone.
+CONTEXT_COUNT_WEIGHTS = {0: 0.2, 1: 0.55, 2: 0.25}
 STAKEHOLDER_COUNT_WEIGHTS = {1: 0.6, 2: 0.3, 3: 0.1}
 MIN_ALTS, MAX_ALTS = 2, 5
 
@@ -90,6 +91,12 @@ def rule_labels(utilities: Sequence[float], rng: random.Random) -> list[float]:
     return labels
 
 
+def situation(rng: random.Random, baseline: str, others: Sequence[str]) -> list[str]:
+    """The baseline alone, or one or two other contexts drawn uniformly; the baseline never joins another."""
+    count = _pick(rng, CONTEXT_COUNT_WEIGHTS)
+    return [baseline] if count == 0 else rng.sample(list(others), count)
+
+
 def shortlist(rng: random.Random, pools: dict[str, list[dict]]) -> tuple[str, list[dict]]:
     size = rng.randint(MIN_ALTS, MAX_ALTS)
     if rng.random() < WITHIN_TYPOLOGY_SHARE:
@@ -118,14 +125,14 @@ def synthesise(
         ]
         for typology in compose.TYPOLOGIES
     }
-    contexts = sorted(registry.category(CATEGORY_KEY).available_contexts)
+    category = registry.category(CATEGORY_KEY)
+    baseline = category.default_context_key
+    others = sorted(category.available_contexts - {baseline})
     stakeholders = sorted(registry.stakeholders)
 
     scenarios, labels = [], []
     for index in range(sets):
-        chosen_contexts = [rng.choice(contexts)]
-        if rng.random() < SECOND_CONTEXT_SHARE:
-            chosen_contexts.append(rng.choice([c for c in contexts if c != chosen_contexts[0]]))
+        chosen_contexts = situation(rng, baseline, others)
         chosen_stakeholders = rng.sample(stakeholders, _pick(rng, STAKEHOLDER_COUNT_WEIGHTS))
         kind, alternatives = shortlist(rng, pools)
 

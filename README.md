@@ -122,7 +122,7 @@ python -m db.release 0.1.0
 
 python -m ingest.adapters.concrete_v1 <scenarios.json> <labels.json>   # concrete
 python -m ingest.split
-python -m ingest.facade.build <version>   # facades, into the joint corpus
+python -m ingest.facade.build <version> "<note>"   # facades, into the joint corpus
 
 python -m train.run --config train/configs/default.yaml   # train and evaluate
 python -m serve.release runs/<run>                         # promote to serve/release/

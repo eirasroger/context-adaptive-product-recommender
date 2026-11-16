@@ -34,6 +34,7 @@ def copy_corpus(source: Path, target: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("release", help="registry version to cut, e.g. 0.3.0")
+    parser.add_argument("note", help="what this release changes, recorded with it")
     parser.add_argument("--sets", type=int, default=16_000, help="synthetic shortlists")
     parser.add_argument("--control-count", type=int, default=800, help="control cases per indicator")
     parser.add_argument("--seed", type=int, default=0)
@@ -68,9 +69,7 @@ def main() -> None:
         print(f"control cases: {written['comparison_sets']:,}")
 
         print(f"folds: {split.assign(session, replace=True)}")
-        digest, _ = release.create_release(
-            session, args.release, "Facade systems added as a preview on synthetic data."
-        )
+        digest, _ = release.create_release(session, args.release, args.note)
         print(f"registry {args.release}  {digest[:12]}")
 
 
