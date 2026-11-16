@@ -130,16 +130,6 @@ def test_the_readme_describes_the_shipped_release(shipped):
     )
 
 
-def test_the_analysis_figures_describe_the_shipped_model(shipped):
-    from experiments import attribution
-
-    summary = attribution.OUTPUT / attribution.SUMMARY
-    assert summary.exists(), "no analysis figures; run python -m experiments.attribution"
-    recorded = json.loads(summary.read_text(encoding="utf-8"))
-    if recorded["model_sha256"] != serve_release.digest(SHIPPED):
-        pytest.skip("the figures describe an earlier checkpoint; refresh with python -m experiments.attribution")
-
-
 def test_the_shipped_checkpoint_passes_the_behavioural_suite():
 
     if not SHIPPED.exists():

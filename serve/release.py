@@ -16,6 +16,7 @@ MANIFEST_FILE = "manifest.json"
 METRICS_FILE = "metrics.json"
 FIXTURE_DIR = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "snapshot"
 README = Path(__file__).resolve().parents[1] / "README.md"
+FIGURES_DIR = Path(__file__).resolve().parents[1] / "experiments" / "figures"
 RESULTS_START = "<!-- results:start -->"
 RESULTS_END = "<!-- results:end -->"
 #: Promotion is refused when a stratum is this much worse than the release, relative to its gap,
@@ -154,7 +155,9 @@ def promote(
     fixture_dir: Path = FIXTURE_DIR,
     snapshot_root: Path | None = None,
     readme: Path = README,
+    figures: Path | None = FIGURES_DIR,
 ) -> dict:
+    """Install a run as the served release with every artefact that describes it; figures=None leaves the figures alone."""
     run_dir = Path(run_dir)
     checkpoint = run_dir / "model.pt"
     if not checkpoint.exists():
@@ -232,6 +235,10 @@ def promote(
     )
     if (release_dir / METRICS_FILE).exists():
         refresh_readme(release_dir, readme)
+    if figures is not None:
+        from experiments import attribution
+
+        attribution.run(checkpoint=release_dir / MODEL_FILE, snapshot_dir=fixture_dir, out=figures)
     return manifest
 
 

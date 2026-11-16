@@ -22,6 +22,8 @@ PRODUCTS_PER_TYPOLOGY = 2_000
 WITHIN_TYPOLOGY_SHARE = 0.75
 #: How many contexts beside the baseline a set carries; zero means the baseline alone.
 CONTEXT_COUNT_WEIGHTS = {0: 0.2, 1: 0.55, 2: 0.25}
+#: Sets appended for situations where three or four contexts genuinely combine.
+COMBINED_CONTEXT_WEIGHTS = {3: 2 / 3, 4: 1 / 3}
 STAKEHOLDER_COUNT_WEIGHTS = {1: 0.6, 2: 0.3, 3: 0.1}
 MIN_ALTS, MAX_ALTS = 2, 5
 
@@ -91,9 +93,11 @@ def rule_labels(utilities: Sequence[float], rng: random.Random) -> list[float]:
     return labels
 
 
-def situation(rng: random.Random, baseline: str, others: Sequence[str]) -> list[str]:
-    """The baseline alone, or one or two other contexts drawn uniformly; the baseline never joins another."""
-    count = _pick(rng, CONTEXT_COUNT_WEIGHTS)
+def situation(
+    rng: random.Random, baseline: str, others: Sequence[str], counts: dict[int, float] = CONTEXT_COUNT_WEIGHTS
+) -> list[str]:
+    """The baseline alone, or other contexts drawn uniformly; the baseline never joins another."""
+    count = _pick(rng, counts)
     return [baseline] if count == 0 else rng.sample(list(others), count)
 
 
@@ -135,28 +139,58 @@ def synthesise(
         chosen_contexts = situation(rng, baseline, others)
         chosen_stakeholders = rng.sample(stakeholders, _pick(rng, STAKEHOLDER_COUNT_WEIGHTS))
         kind, alternatives = shortlist(rng, pools)
-
-        external_id = f"synthetic_{index + 1:06d}"
-        scenarios.append(
-            {
-                "id": external_id,
-                "shortlist": kind,
-                "contexts": chosen_contexts,
-                "stakeholders": chosen_stakeholders,
-                "alternatives": alternatives,
-            }
+        scenario, label = _scenario(
+            registry, rng, f"synthetic_{index + 1:06d}", kind, alternatives, chosen_contexts, chosen_stakeholders
         )
-        utilities = [utility(registry, alt, chosen_contexts, chosen_stakeholders) for alt in alternatives]
-        labels.append(
-            {
-                "id": external_id,
-                "labelled_alternatives": [
-                    {"id_prod": alt["id_prod"], "pref": pref, "conf": LABEL_CONFIDENCE, "reason": "Synthetic rule label."}
-                    for alt, pref in zip(alternatives, rule_labels(utilities, rng))
-                ],
-            }
-        )
+        scenarios.append(scenario)
+        labels.append(label)
     return scenarios, labels
+
+
+def _scenario(
+    registry: Registry, rng: random.Random, external_id: str, kind: str, alternatives: list[dict],
+    contexts: list[str], stakeholders: list[str],
+) -> tuple[dict, dict]:
+    utilities = [utility(registry, alt, contexts, stakeholders) for alt in alternatives]
+    return (
+        {"id": external_id, "shortlist": kind, "contexts": contexts, "stakeholders": stakeholders,
+         "alternatives": alternatives},
+        {
+            "id": external_id,
+            "labelled_alternatives": [
+                {"id_prod": alt["id_prod"], "pref": pref, "conf": LABEL_CONFIDENCE, "reason": "Synthetic rule label."}
+                for alt, pref in zip(alternatives, rule_labels(utilities, rng))
+            ],
+        },
+    )
+
+
+def extend(registry: Registry, directory: Path, sets: int, seed: int, counts: dict[int, float]) -> int:
+    """Append sets drawn from the products already in the dataset, leaving every existing set as it was."""
+    scenarios_path, labels_path = directory / SCENARIOS_FILE, directory / LABELS_FILE
+    scenarios = json.loads(scenarios_path.read_text(encoding="utf-8"))
+    labels = json.loads(labels_path.read_text(encoding="utf-8"))
+    pools: dict[str, dict[str, dict]] = {}
+    for scenario in scenarios:
+        for alternative in scenario["alternatives"]:
+            pools.setdefault(alternative["typology"], {})[alternative["id_prod"]] = alternative
+    products = {typology: list(found.values()) for typology, found in sorted(pools.items())}
+
+    category = registry.category(CATEGORY_KEY)
+    others = sorted(category.available_contexts - {category.default_context_key})
+    stakeholders = sorted(registry.stakeholders)
+    rng = random.Random(seed)
+    first = 1 + max(int(s["id"].rsplit("_", 1)[1]) for s in scenarios)
+    for index in range(first, first + sets):
+        contexts = situation(rng, category.default_context_key, others, counts)
+        chosen = rng.sample(stakeholders, _pick(rng, STAKEHOLDER_COUNT_WEIGHTS))
+        kind, alternatives = shortlist(rng, products)
+        scenario, label = _scenario(registry, rng, f"synthetic_{index:06d}", kind, alternatives, contexts, chosen)
+        scenarios.append(scenario)
+        labels.append(label)
+    scenarios_path.write_text(json.dumps(scenarios), encoding="utf-8")
+    labels_path.write_text(json.dumps(labels), encoding="utf-8")
+    return sets
 
 
 def write(
@@ -168,3 +202,26 @@ def write(
     scenarios_path.write_text(json.dumps(scenarios), encoding="utf-8")
     labels_path.write_text(json.dumps(labels), encoding="utf-8")
     return scenarios_path, labels_path
+
+
+def main() -> None:
+    import argparse
+
+    from core import registry as registry_module
+    from db.session import create_db_engine, session_scope
+    from ingest.facade.build import JOINT_DB
+
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    commands = parser.add_subparsers(dest="command", required=True)
+    more = commands.add_parser("extend", help="append sets where three or four contexts combine")
+    more.add_argument("--sets", type=int, required=True)
+    more.add_argument("--seed", type=int, required=True)
+    args = parser.parse_args()
+    with session_scope(create_db_engine(JOINT_DB)) as session:
+        registry = registry_module.from_session(session)
+    added = extend(registry, DATASET_DIR, args.sets, args.seed, COMBINED_CONTEXT_WEIGHTS)
+    print(f"appended {added} sets to {DATASET_DIR / SCENARIOS_FILE}")
+
+
+if __name__ == "__main__":
+    main()

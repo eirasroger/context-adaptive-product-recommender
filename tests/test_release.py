@@ -93,6 +93,7 @@ def _promote(run_dir, tmp_path, **kwargs):
     kwargs.setdefault("fixture_dir", tmp_path / "fixture")
     kwargs.setdefault("snapshot_root", _snapshot(tmp_path / "snapshots").parent)
     kwargs.setdefault("readme", _readme(tmp_path))
+    kwargs.setdefault("figures", None)
     return release_module.promote(run_dir, **kwargs)
 
 

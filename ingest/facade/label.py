@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import random
@@ -77,6 +78,12 @@ def payload(registry: Registry, scenario: dict) -> tuple[dict, dict[str, str]]:
     }, letters
 
 
+def fingerprint(scenario: dict) -> str:
+    """What a labeller judged: the situation, the stakeholders and every product's values."""
+    judged = {k: scenario[k] for k in ("contexts", "stakeholders", "alternatives")}
+    return hashlib.sha256(json.dumps(judged, sort_keys=True).encode()).hexdigest()[:16]
+
+
 def labelled_ids() -> set[str]:
     """Scenarios with labels returned in any output file, whatever round they came from."""
     done: set[str] = set()
@@ -106,7 +113,7 @@ def next_chunk_number(paths: list[Path]) -> int:
 def write_chunks(registry: Registry, sets: int, chunks: int, seed: int, resend: bool = False) -> None:
     """A new round of chunks, numbered after the existing ones: fresh scenarios, or pending ones with resend."""
     scenarios = json.loads((DATASET_DIR / SCENARIOS_FILE).read_text(encoding="utf-8"))
-    index: dict[str, dict[str, str]] = json.loads(INDEX_FILE.read_text(encoding="utf-8")) if INDEX_FILE.exists() else {}
+    index: dict[str, dict] = json.loads(INDEX_FILE.read_text(encoding="utf-8")) if INDEX_FILE.exists() else {}
     done = labelled_ids()
     pool = (
         [s for s in scenarios if s["id"] in index and s["id"] not in done]
@@ -124,7 +131,7 @@ def write_chunks(registry: Registry, sets: int, chunks: int, seed: int, resend: 
         for scenario in chosen[offset * size:(offset + 1) * size]:
             shown, letters = payload(registry, scenario)
             part.append(shown)
-            index[scenario["id"]] = letters
+            index[scenario["id"]] = {"letters": letters, "fingerprint": fingerprint(scenario)}
         path = CHUNKS_DIR / f"chunk_{first + offset:02d}.json"
         path.write_text(json.dumps({"scenarios": part}, ensure_ascii=False, indent=1), encoding="utf-8")
     INDEX_FILE.write_text(json.dumps(index), encoding="utf-8")
@@ -133,13 +140,18 @@ def write_chunks(registry: Registry, sets: int, chunks: int, seed: int, resend: 
 
 def collect() -> None:
     index = json.loads(INDEX_FILE.read_text(encoding="utf-8"))
+    scenarios = {s["id"]: s for s in json.loads((DATASET_DIR / SCENARIOS_FILE).read_text(encoding="utf-8"))}
     labelled, problems = [], []
     for path in sorted(OUT_DIR.glob("chunk_*.json")):
         for scenario_id, rows in json.loads(path.read_text(encoding="utf-8"))["labels"].items():
-            letters = index.get(scenario_id)
-            if letters is None:
+            sent = index.get(scenario_id)
+            if sent is None:
                 problems.append(f"{path.name}: unknown scenario {scenario_id}")
                 continue
+            if scenario_id not in scenarios or fingerprint(scenarios[scenario_id]) != sent["fingerprint"]:
+                problems.append(f"{path.name}: {scenario_id} changed since it was labelled")
+                continue
+            letters = sent["letters"]
             by_letter = {row.get("id_prod"): row for row in rows}
             valid = set(by_letter) == set(letters) and all(
                 0 <= float(row["pref"]) <= 1 and 0 <= float(row["conf"]) <= 1 for row in rows
