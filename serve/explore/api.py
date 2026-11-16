@@ -5,13 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from core.scoring import TIE_EPSILON
 from serve.explore import analysis, compare as compare_module
 from serve.explore.compare import Difference
-from serve.shortlist import ShortlistRequest, resolve
+from serve.shortlist import ShortlistRequest, checked_contexts, resolve
 
 
 class Level(BaseModel):
@@ -41,6 +41,7 @@ class FormContext(BaseModel):
     key: str
     display_name: str
     definition: str
+    theme: str | None = Field(description="The group the page shows this context under.")
 
 
 class FormCategory(BaseModel):
@@ -53,7 +54,8 @@ class FormCategory(BaseModel):
     functional_unit_symbol: str
     eligibility_precondition: str
     default_context: str
-    contexts: list[FormContext]
+    max_contexts: int = Field(description="Most contexts one request may combine.")
+    contexts: list[FormContext] = Field(description="In display order.")
     fields: list[FormField]
 
 
@@ -174,13 +176,15 @@ def build_router(service_getter, metered: Any) -> APIRouter:
                     "functional_unit_symbol": category.functional_unit_symbol,
                     "eligibility_precondition": category.eligibility_precondition_text,
                     "default_context": category.default_context_key,
+                    "max_contexts": service.max_contexts[key],
                     "contexts": [
                         {
                             "key": context_key,
-                            "display_name": registry.contexts[context_key].display_name,
-                            "definition": registry.contexts[context_key].definition_text,
+                            "display_name": shown.display_name,
+                            "definition": shown.definition_text,
+                            "theme": shown.theme,
                         }
-                        for context_key in sorted(category.available_contexts)
+                        for context_key, shown in category.context_presentation.items()
                     ],
                     "fields": fields,
                 }
@@ -207,7 +211,7 @@ def build_router(service_getter, metered: Any) -> APIRouter:
     def compare(request: ShortlistRequest) -> Comparison:
         """Why the leading alternative is ahead of each of the others."""
         service = service_getter()
-        shortlist = resolve(service.registry, request)
+        shortlist = resolve(service.registry, request, service.max_contexts)
         return compare_module.compare(
             service.scorer, service.registry, shortlist.category_key,
             shortlist.alternatives, shortlist.contexts, shortlist.stakeholders,
@@ -217,7 +221,9 @@ def build_router(service_getter, metered: Any) -> APIRouter:
     def response(
         category: str,
         indicator: str,
-        context: str | None = None,
+        context: str | None = Query(
+            None, description="Comma-separated context keys; empty means the baseline."
+        ),
         stakeholders: str | None = None,
         steps: int = analysis.DEFAULT_STEPS,
     ) -> dict[str, Any]:
@@ -233,11 +239,9 @@ def build_router(service_getter, metered: Any) -> APIRouter:
                 detail=f"{category!r} has no indicator {indicator!r}",
             )
 
-        contexts = [context] if context else [spec.default_context_key]
-        if contexts[0] not in spec.available_contexts:
-            raise HTTPException(
-                status_code=400, detail=f"context {contexts[0]!r} is not available"
-            )
+        contexts = checked_contexts(
+            spec, [c for c in (context or "").split(",") if c], service.max_contexts[category]
+        )
 
         chosen = (
             [s for s in stakeholders.split(",") if s]
@@ -263,7 +267,7 @@ def build_router(service_getter, metered: Any) -> APIRouter:
     @router.post("/context-sensitivity", dependencies=costly)
     def context_sensitivity(request: ShortlistRequest) -> Sensitivity:
         service = service_getter()
-        shortlist = resolve(service.registry, request)
+        shortlist = resolve(service.registry, request, service.max_contexts)
         return analysis.context_sensitivity(
             service.scorer, service.registry, shortlist.category_key,
             shortlist.alternatives, shortlist.stakeholders,
@@ -272,7 +276,7 @@ def build_router(service_getter, metered: Any) -> APIRouter:
     @router.post("/stakeholder-sensitivity", dependencies=costly)
     def stakeholder_sensitivity(request: ShortlistRequest) -> Sensitivity:
         service = service_getter()
-        shortlist = resolve(service.registry, request)
+        shortlist = resolve(service.registry, request, service.max_contexts)
         return analysis.stakeholder_sensitivity(
             service.scorer, service.registry, shortlist.category_key,
             shortlist.alternatives, shortlist.contexts,

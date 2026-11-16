@@ -279,10 +279,10 @@ export function App() {
       <Setup
         form={form}
         category={category}
-        context={draft.shortlist.context}
+        contexts={draft.shortlist.contexts}
         stakeholders={draft.shortlist.stakeholders}
         onCategory={chooseCategory}
-        onContext={(context) => edit({ context })}
+        onContexts={(contexts) => edit({ contexts })}
         onStakeholders={(stakeholders) => edit({ stakeholders })}
       />
 
@@ -432,7 +432,7 @@ function Footer({ form }: { form: Form }) {
 function shortlistFor(form: Form, key: string, stakeholders: string[]): Shortlist {
   const category = form.categories.find((c) => c.key === key);
   if (!category) throw new Error(`the registry has no category ${key}`);
-  return { category: key, context: category.default_context, stakeholders, columns: blankColumns() };
+  return { category: key, contexts: [], stakeholders, columns: blankColumns() };
 }
 
 function defaultShortlist(form: Form): Shortlist {

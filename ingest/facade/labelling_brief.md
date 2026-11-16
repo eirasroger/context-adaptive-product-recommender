@@ -47,15 +47,15 @@ Every value is per square metre of installed facade. A null means unknown. A 0 i
 - health: material health status, from worst to best:
   Hazardous substances present; Undocumented; No listed substances, uncertified; Material Health Bronze; Silver; Gold; Platinum.
   "Hazardous substances present" means the product should essentially never be chosen: give it a preference near 0 whatever else it offers. "Undocumented" is a real weakness against a screened or certified product. The step from Undocumented to screened is large; the steps between certification tiers are small.
-- fire_reaction: Euroclass reaction to fire of the system, from worst to best: Class F, E, D, C, B, A2, A1. A1 and A2 are non-combustible; the step from A2 down to B is the largest on the scale, and each step below B is a real safety cost. Every option already meets the minimum for its building, so outside a high-rise context fire class is a secondary differentiator, weighted most by health-and-safety and regulatory stakeholders.
+- fire_reaction: Euroclass reaction to fire of the system, from worst to best: Class F, E, D, C, B, A2, A1. A1 and A2 are non-combustible; the step from A2 down to B is the largest on the scale, and each step below B is a real safety cost. Every option already meets the minimum for its building, so outside the high rise and wildfire edge applications fire class is a secondary differentiator, weighted most by health-and-safety and regulatory stakeholders.
 
 ## Building physics
 
 - u_value: thermal transmittance, W/m²K. Lower is better: it sets heating and cooling energy for 50 years. Typical 0.15 to 0.45. A difference of 0.05 is meaningful; 0.02 is not.
 - acoustic_reduction: airborne sound reduction of the system, dB. Higher is better. Typical: 24 to 34 for light panels, 45 to 57 for heavy walls. Every 3 dB is a clearly audible difference; 10 dB halves perceived loudness.
-- surface_mass: kg per m². It carries no preference on its own: the acoustic and thermal-mass benefits of weight are already measured by acoustic_reduction and heat_capacity. It matters only where load matters: on tall buildings and in retrofit, where lighter is better. Range 10 to 650.
-- heat_capacity: internal areal heat capacity, kJ/m²K, the thermal mass on the room side of the insulation. Higher damps daily temperature swings. Valuable only where summer overheating is the risk; otherwise a minor factor. Typical 5 to 15 for panels, 40 to 100 for masonry cavity walls, 100 to 215 for heavy walls insulated on the outside.
-- thickness: overall thickness, mm. Lower is better. In new build it costs a little floor area; in retrofit it projects past the building line or eats into rooms and matters a great deal. Typical 60 to 450.
+- surface_mass: kg per m², the weight the system adds to the building. It carries no preference on its own: the acoustic and thermal-mass benefits of weight are already measured by acoustic_reduction and heat_capacity, so never count them again through mass. Lighter is better only where an application says so. Range 10 to 650.
+- heat_capacity: internal areal heat capacity, kJ/m²K, the thermal mass on the room side of the insulation. Higher damps daily indoor temperature swings. Typical 5 to 15 for panels, 40 to 100 for masonry cavity walls, 100 to 215 for heavy walls insulated on the outside.
+- thickness: overall thickness, mm. Lower is better: mildly where the facade is free to grow outwards, strongly where an application says every millimetre is taken from the rooms. Typical 60 to 450.
 
 # 2. Stakeholder archetypes
 
@@ -74,12 +74,14 @@ Treat archetypes as priorities that shift weights, not as rules that override ev
 
 Use the application to re-weight indicators; do not discard alternatives because they are not ideal for it. A clearly better option on sustainability, cost and health can still outrank one that is marginally better on the application's key indicator.
 
-1. New build, mild climate: the baseline. A new building in a mild climate on a quiet site. All options are compliant, so thermal and acoustic margins matter moderately and the decision turns mostly on environmental impact, cost, circularity and health. u_value matters moderately; acoustic_reduction, fire_reaction and thickness mildly.
-2. Acoustic insulation: the building stands on a noisy site, such as a main road, railway or airport. acoustic_reduction is the primary goal and a strong preference: light panels in the 24 to 34 dB range are at a clear disadvantage against heavy walls above 45 dB. Among options with similar sound reduction, decide on sustainability, health and cost.
-3. Thermal insulation: a cold, heating-dominated climate. u_value is the primary goal and a strong preference: heating energy over 50 years outweighs moderate differences in embodied impact. Among options with similar u_value, decide on sustainability, health and cost.
-4. Hot summer: a cooling-dominated climate. heat_capacity is a strong preference, because thermal mass on the room side damps overheating; u_value still matters, moderately. Light panels with little internal mass are at a disadvantage.
-5. High rise: a tall building, above about 18 m. fire_reaction is a strong preference: non-combustible A1 or A2 is clearly favoured, and combustible classes C to F are marked down firmly. Lower surface_mass is a moderate preference, since heavy systems load the structure and the fixings.
-6. Retrofit: a system added to an existing building. Lowering u_value is the purpose (strong); thickness is a strong preference, since every millimetre projects past the building line or eats into rooms; surface_mass is a strong preference, since the existing structure limits the added load. Heavy, thick systems are at a clear disadvantage.
+1. New build, temperate climate: the baseline. A new building of a few storeys in a temperate climate, on a quiet site, away from wildfire and seismic hazards, with the facade free to grow outwards. All options are compliant, so the decision turns mostly on environmental impact, cost, circularity and health. u_value matters moderately; acoustic_reduction, fire_reaction and thickness mildly; surface_mass and heat_capacity not at all.
+2. Cold winter: the building is in a cold-winter climate, where the coldest month averages below 0 °C (Köppen D or E: Scandinavia, the Baltic states, Poland, Romania, mountain areas). u_value is the primary goal and a strong preference: heating energy over 50 years outweighs moderate differences in embodied impact. heat_capacity does not matter here. Among options with similar u_value, decide on sustainability, health and cost.
+3. Hot summer: the warmest month averages 22 °C or more (most of Iberia and Italy, Greece, Mediterranean France). heat_capacity is a moderate preference, because thermal mass on the room side of the insulation absorbs daytime heat and releases it at night. u_value keeps its baseline weight. Light panels with little internal mass are at a moderate disadvantage.
+4. Noisy site: the site is noisy, with a day-evening-night level of 65 dB or more at the facade, typically fronting a main road or railway or under an airport approach. acoustic_reduction is the primary goal and a strong preference: light panels in the 24 to 34 dB range are at a clear disadvantage against heavy walls above 45 dB. Mass itself earns nothing extra. Among options with similar sound reduction, decide on sustainability, health and cost.
+5. Wildfire edge: the building is within 100 m of forest or scrubland in a region with frequent summer wildfires. fire_reaction is a strong preference, because embers and radiant heat attack the facade from outside: non-combustible A1 or A2 is clearly favoured, and combustible classes C to F are marked down firmly.
+6. Seismic zone: the site has moderate to high earthquake hazard (Italy, Greece, Romania, the Balkans, south-east Iberia). Lower surface_mass is a moderate preference, because earthquake forces on the facade and on the structure grow with the facade's weight.
+7. High rise: the top of the facade is more than 18 m above ground. fire_reaction is a strong preference: non-combustible A1 or A2 is clearly favoured, and combustible classes C to F are marked down firmly. Lower surface_mass is a moderate preference, because the facade's weight loads its anchors and accumulates floor by floor on the columns and foundations.
+8. No room outwards: the facade's outer face is fixed by the street line or the plot boundary, so every extra millimetre is taken from the rooms. thickness is a strong preference: lost floor area has a direct value.
 
 When two applications are active, apply both.
 
@@ -102,7 +104,7 @@ Relative spacing matters more than absolute values: an option that is clearly wo
 - 0.50 to 0.84: some missing indicators, or real trade-offs that make the ranking plausible but not obvious.
 - Below 0.50: many key indicators missing, alternatives nearly identical, or trade-offs very hard to resolve.
 
-Never fill in or infer a missing value. Missing data lowers confidence and, for data-sensitive stakeholders such as the regulatory-aligned builder, may lower preference slightly.
+Never fill in or infer a missing value. A null means the value is unknown to us, which is different from a poor value: judge the product on the indicators it does have, as if the unknown one were typical, and lower confidence. In particular, a null health is not "Undocumented" and not "Hazardous substances present". Only data-sensitive stakeholders such as the regulatory-aligned builder may lower preference for a null, and only slightly.
 
 # 6. Reasoning and output
 

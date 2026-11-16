@@ -11,6 +11,7 @@ from db import slots
 from db.models import (
     Category,
     CategoryContextOverride,
+    CategoryContextPresentation,
     CategoryIndicator,
     CategoryProvenanceWeight,
     Context,
@@ -309,6 +310,34 @@ def check(session: Session) -> list[Problem]:
         if row.context_key not in contexts:
             problems.append(
                 Problem("override_context", f"override names unknown context {row.context_key}")
+            )
+
+    presented: dict[str, set[str]] = {}
+    for row in _all(session, CategoryContextPresentation):
+        if row.category_key not in categories or row.context_key not in contexts:
+            problems.append(
+                Problem(
+                    "presentation_unknown",
+                    f"presentation names unknown {row.category_key}/{row.context_key}",
+                )
+            )
+            continue
+        presented.setdefault(row.category_key, set()).add(row.context_key)
+    for category_key, shown in presented.items():
+        offered = available_contexts(session, category_key)
+        for extra in sorted(shown - offered):
+            problems.append(
+                Problem(
+                    "presentation_unavailable",
+                    f"{category_key} presents {extra}, which it does not offer",
+                )
+            )
+        for missing in sorted(offered - shown):
+            problems.append(
+                Problem(
+                    "presentation_incomplete",
+                    f"{category_key} presents some contexts but not {missing}",
+                )
             )
 
     for row in _all(session, StakeholderPriority):

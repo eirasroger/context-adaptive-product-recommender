@@ -2,7 +2,7 @@
 # the judgements are written by hand. Keys follow the brief's indicator list.
 
 examples:
-  - applications: [Retrofit]
+  - applications: [No room outwards]
     stakeholders: [Cost-conscious developer]
     alternatives:
       - {id_prod: A, gwp: 21.6, wdp: 49.5, fwu: null, circ_orig: 0.06, fu_recyc: 98.2, fu_incin: 0.0, fu_inert: 1.8, fu_haz: 0.01,
@@ -15,11 +15,11 @@ examples:
          cost_product: 120.8, cost_labour: 60.5, cost_maintenance: 34.1, health: "Undocumented", u_value: 0.17,
          acoustic_reduction: 46.3, surface_mass: 248, heat_capacity: 147, fire_reaction: "Class B", thickness: 343}
     labels:
-      - {id_prod: A, pref: 0.62, conf: 0.7, reason: "Lowest total cost (204 against 215) and the lowest GWP, but the heaviest and thickest option, which weighs against it in a retrofit where added load and projection matter."}
-      - {id_prod: B, pref: 0.78, conf: 0.7, reason: "Thinnest and among the lightest, with a good U-value at a total cost within 5% of the cheapest; the best retrofit fit for a cost-led developer despite higher GWP."}
-      - {id_prod: C, pref: 0.74, conf: 0.6, reason: "Best U-value and lightest, which serves the retrofit's purpose, at the same total cost as B; several environmental values are unknown, so confidence is lower."}
+      - {id_prod: A, pref: 0.60, conf: 0.7, reason: "Lowest total cost (204 against 215) and the lowest GWP, but at 366 mm the thickest option, and with no room outwards those extra millimetres come out of the rooms."}
+      - {id_prod: B, pref: 0.80, conf: 0.7, reason: "Thinnest at 317 mm with a good U-value, at a total cost within 5% of the cheapest; the best fit when floor area is at stake, despite higher GWP."}
+      - {id_prod: C, pref: 0.70, conf: 0.6, reason: "Best U-value at the same total cost as B, but 26 mm thicker; several environmental values are unknown, so confidence is lower."}
 
-  - applications: [Acoustic insulation]
+  - applications: [Noisy site]
     stakeholders: [Sustainability maximalist, Occupant comfort focused]
     alternatives:
       - {id_prod: A, gwp: 26.3, wdp: 4.07, fwu: 0.21, circ_orig: 1.78, fu_recyc: 0.0, fu_incin: 0.0, fu_inert: 100.0, fu_haz: 0.0,

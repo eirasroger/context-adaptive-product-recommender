@@ -238,6 +238,7 @@
       "FormCategory": {
         "properties": {
           "contexts": {
+            "description": "In display order.",
             "items": {
               "$ref": "#/components/schemas/FormContext"
             },
@@ -275,6 +276,11 @@
             "title": "Key",
             "type": "string"
           },
+          "max_contexts": {
+            "description": "Most contexts one request may combine.",
+            "title": "Max Contexts",
+            "type": "integer"
+          },
           "preview": {
             "description": "Trained partly on synthetic labels; scores restate the declared rules.",
             "title": "Preview",
@@ -289,6 +295,7 @@
           "functional_unit_symbol",
           "eligibility_precondition",
           "default_context",
+          "max_contexts",
           "contexts",
           "fields"
         ],
@@ -308,12 +315,25 @@
           "key": {
             "title": "Key",
             "type": "string"
+          },
+          "theme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The group the page shows this context under.",
+            "title": "Theme"
           }
         },
         "required": [
           "key",
           "display_name",
-          "definition"
+          "definition",
+          "theme"
         ],
         "title": "FormContext",
         "type": "object"
@@ -717,7 +737,7 @@
             "type": "string"
           },
           "context": {
-            "description": "Active application contexts. Defaults to the category's baseline context when empty.",
+            "description": "Active application contexts, at most the category's max_contexts from /api/explore/form. Empty means the category's baseline, which never combines with another context.",
             "items": {
               "type": "string"
             },
@@ -1004,6 +1024,7 @@
             }
           },
           {
+            "description": "Comma-separated context keys; empty means the baseline.",
             "in": "query",
             "name": "context",
             "required": false,
@@ -1016,6 +1037,7 @@
                   "type": "null"
                 }
               ],
+              "description": "Comma-separated context keys; empty means the baseline.",
               "title": "Context"
             }
           },

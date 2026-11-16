@@ -199,6 +199,34 @@ category:
       - {indicator_key: heat_capacity, ref_low: 5.0, ref_high: 300.0, scale: log}
       - {indicator_key: thickness, ref_low: 30.0, ref_high: 600.0}
 
+    # Listed in display order. Shared contexts take facade wording here.
+    context_presentation:
+      - {context_key: new_build_mild, theme: Baseline}
+      - context_key: thermal_insulation
+        theme: Climate
+        display_name: Cold winter
+        definition_text: >-
+          The mean temperature of the coldest month is below 0 °C (Köppen group
+          D or E), as in Scandinavia, the Baltic states, Poland, Romania and
+          mountain areas. Heat loss through the wall is proportional to its
+          transmittance, and over 50 years of long heating seasons it outweighs
+          moderate differences in embodied impact, so lower U counts strongly.
+      - {context_key: hot_summer, theme: Climate}
+      - context_key: acoustic_insulation
+        theme: Site hazards
+        display_name: Noisy site
+        definition_text: >-
+          The day-evening-night level Lden is at least 65 dB at the most exposed
+          facade on the strategic noise maps of the Environmental Noise
+          Directive, typically a building fronting a main road or a railway
+          line, or under an airport approach. The facade's margin above the
+          minimum decides how quiet the rooms are, so sound reduction counts
+          strongly.
+      - {context_key: wildfire_edge, theme: Site hazards}
+      - {context_key: seismic, theme: Site hazards}
+      - {context_key: high_rise, theme: Building}
+      - {context_key: no_room_outwards, theme: Building}
+
     context_overrides:
       - context_key: architectural_finish
         is_applicable: false

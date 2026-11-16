@@ -54,12 +54,12 @@ experts.
 ## Results
 
 <!-- results:start -->
-The model in `serve/release/` comes from run `baseline-20260927T061242Z` and
-carries registry 0.5.0. On 10,901 test shortlists it scores:
+The model in `serve/release/` comes from run `baseline-20261116T144421Z` and
+carries registry 0.6.0. On 10,301 test shortlists it scores:
 
 | Gap fidelity | Band placement | Top-1 agreement | Tie-tolerant rank correlation | Behavioural assertions |
 |---|---|---|---|---|
-| 0.040 | 0.016 | 0.922 | 0.922 | 1200 of 1200 pass |
+| 0.043 | 0.017 | 0.914 | 0.919 | 1440 of 1440 pass |
 <!-- results:end -->
 
 The behavioural assertions check that the model responds to each indicator in
@@ -82,10 +82,10 @@ Five facade systems, entered per square metre:
 
 <img alt="Setup and the five facade systems entered for comparison" src="media/inputs.png">
 
-The ranking for a new build in a mild climate, and how the winner changes
-with the application:
+The ranking for a new build in a temperate climate, and how the winner changes
+with the situation:
 
-<img alt="Ranked result and the ranking under each application" src="media/ranking-by-application.png">
+<img alt="Ranked result and the ranking under each situation" src="media/ranking-by-application.png">
 
 And with whose priorities count:
 

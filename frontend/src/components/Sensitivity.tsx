@@ -19,7 +19,7 @@ type Props = {
 };
 
 const AXES: { key: Axis; label: string }[] = [
-  { key: "context", label: "By application" },
+  { key: "context", label: "By situation" },
   { key: "stakeholder", label: "By priorities" },
 ];
 
@@ -42,7 +42,7 @@ export function Sensitivity({
   );
   const isCurrent = (label: string) =>
     axis === "context"
-      ? label === scored.context
+      ? label === (scored.contexts.length === 0 ? category.default_context : scored.contexts.join())
       : scored.stakeholders.length === 1 && scored.stakeholders[0] === label;
 
   return (
@@ -73,7 +73,7 @@ export function Sensitivity({
       {!matrix ? (
         <Skeleton
           rows={axis === "context" ? category.contexts.length : form.stakeholders.length}
-          label={`Scoring the shortlist under every ${axis === "context" ? "application" : "archetype"}.`}
+          label={`Scoring the shortlist under every ${axis === "context" ? "situation" : "archetype"}.`}
         />
       ) : (
         <>
@@ -129,7 +129,7 @@ export function Sensitivity({
 function steadyLeader(axis: Axis, matrix: Matrix): string {
   const leader = matrix.alternatives[matrix.rows[0]?.winner ?? 0] ?? "The same option";
   return axis === "context"
-    ? `${leader} leads in every application.`
+    ? `${leader} leads in every situation.`
     : `${leader} leads for every set of priorities.`;
 }
 

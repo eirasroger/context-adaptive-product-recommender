@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import warnings
 from pathlib import Path
 from typing import Mapping
@@ -136,6 +137,7 @@ def export(checkpoint: Path, out: Path) -> Path:
             scoring.REGISTRY_CONTENT_HASH: meta.registry_content_hash or "",
             scoring.SNAPSHOT_HASH: meta.snapshot_hash or "",
             scoring.SOURCE_SHA256: release.digest(checkpoint),
+            scoring.MAX_CONTEXTS: json.dumps(meta.max_contexts, sort_keys=True),
         },
     )
     onnx.save(exported, str(out))

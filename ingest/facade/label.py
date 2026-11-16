@@ -71,7 +71,7 @@ def payload(registry: Registry, scenario: dict) -> tuple[dict, dict[str, str]]:
         alternatives.append(row)
     return {
         "scenario_id": scenario["id"],
-        "applications": [registry.contexts[k].display_name for k in scenario["contexts"]],
+        "applications": [category.context_presentation[k].display_name for k in scenario["contexts"]],
         "stakeholders": [registry.stakeholders[k].display_name for k in scenario["stakeholders"]],
         "alternatives": alternatives,
     }, letters

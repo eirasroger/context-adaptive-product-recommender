@@ -8,7 +8,7 @@
     "encoder_heads": 4,
     "ffn_factor": 4.0,
     "n_categories": 2,
-    "n_contexts": 8,
+    "n_contexts": 10,
     "n_families": 5,
     "n_indicators": 27,
     "n_levels": 14,
@@ -22,7 +22,7 @@
       "monotonicity": {
         "fail": 0,
         "no_response": 0,
-        "pass": 1192
+        "pass": 1432
       },
       "sign_flip": {
         "fail": 0,
@@ -31,23 +31,23 @@
       }
     },
     "overall": {
-      "band_placement": 0.01566267626901885,
-      "gap_fidelity": 0.0402838243488495,
-      "gap_fidelity_se": 0.0006710936380086208,
-      "n_alternatives": 38084,
-      "n_sets": 10901,
-      "pointwise_mae": 0.027714557945728302,
-      "tie_tolerant_tau": 0.9218903710699249,
-      "top1_agreement": 0.9221172369507384
+      "band_placement": 0.0169259192523835,
+      "gap_fidelity": 0.04287647173234505,
+      "gap_fidelity_se": 0.0007202911308306205,
+      "n_alternatives": 35937,
+      "n_sets": 10301,
+      "pointwise_mae": 0.0297623872756958,
+      "tie_tolerant_tau": 0.9193629295209431,
+      "top1_agreement": 0.9141830890204834
     }
   },
-  "model_bytes": 2464907,
-  "model_sha256": "b48bfb4f39d41b925f84d9fe904c40920e0067681feed2b84dcc60dd37b158dc",
-  "notes": "Concrete and facade systems; facade labels from language-model agents.",
-  "promoted_at": "2026-09-27T06:25:18.384242+00:00",
-  "registry_content_hash": "c1e6b50863de56bc075224b11e99f532d74a3405b655c91b6cd62b0cb38fd19d",
-  "registry_version": "0.5.0",
-  "run": "baseline-20260927T061242Z",
-  "snapshot_hash": "b3eb0c57028bcbc8a702fd961300b70672b4194b45f20d224bab27e736934c6c",
+  "model_bytes": 2469259,
+  "model_sha256": "7890b3b910d59d893a48d966fd1e569af318a8ce881943b640ff45eec854808d",
+  "notes": "Facade contexts redefined and presented per category; 200 facade labels from Sonnet 5.5 agents. Regression gate overridden: the old facade data was discarded, and the concrete drift (gap 0.046 to 0.051) was accepted.",
+  "promoted_at": "2026-11-16T14:51:50.723690+00:00",
+  "registry_content_hash": "3752faa4b576d10ae2d724cd2ce309812fe4b0acc0e3c96e44cf591e44ca2ab0",
+  "registry_version": "0.6.0",
+  "run": "baseline-20261116T144421Z",
+  "snapshot_hash": "99a79b11bc747303cb314bf5714d3c20e87cee6bfcd8e4b7f2bfff4acef131df",
   "split_key": "default"
 }

@@ -67,7 +67,7 @@ describe("scoreRequest", () => {
   it("gives a blank-named option a free letter, never one another option uses", () => {
     const request = scoreRequest({
       category: "widget",
-      context: "everyday",
+      contexts: [],
       stakeholders: ["anyone"],
       columns: [column("Option B", 0), column("", 1), column("Option A", 2)],
     });

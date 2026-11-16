@@ -5,7 +5,7 @@ import { blankColumns, column, type Shortlist } from "./shortlist";
 
 const start = (category: string): Shortlist => ({
   category,
-  context: `${category}-default`,
+  contexts: [],
   stakeholders: ["someone"],
   columns: blankColumns(),
 });
@@ -22,7 +22,6 @@ describe("switchCategory", () => {
     const current = unscored({ ...start("first"), stakeholders: ["advocate", "developer"] });
     const { next } = switchCategory(new Map(), current, "second", start);
     expect(next.shortlist.category).toBe("second");
-    expect(next.shortlist.context).toBe("second-default");
     expect(next.shortlist.stakeholders).toEqual(["advocate", "developer"]);
     expect(next.result).toBeNull();
   });
@@ -33,7 +32,7 @@ describe("isStale", () => {
     const shortlist = start("first");
     const scored = { ...unscored(shortlist), scored: shortlist };
     expect(isStale(scored)).toBe(false);
-    expect(isStale({ ...scored, shortlist: { ...shortlist, context: "other" } })).toBe(true);
+    expect(isStale({ ...scored, shortlist: { ...shortlist, contexts: ["other"] } })).toBe(true);
     expect(isStale(unscored(shortlist))).toBe(false);
   });
 });

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Mapping
 
@@ -38,3 +39,9 @@ class ServedModel:
             version=self.registry_version,
             content_hash=carried[scoring.REGISTRY_CONTENT_HASH] or None,
         )
+        self.max_contexts: dict[str, int] = json.loads(carried.get(scoring.MAX_CONTEXTS) or "{}")
+        unrecorded = sorted(set(self.registry.categories) - set(self.max_contexts))
+        if unrecorded:
+            raise ValueError(
+                f"{path} records no context limit for {unrecorded}; export it from a checkpoint trained since the limit was recorded"
+            )

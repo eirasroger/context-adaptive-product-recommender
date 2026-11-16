@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -25,6 +25,8 @@ class CheckpointMeta:
     created_at: str
     metrics: dict[str, Any]
     notes: str = ""
+    #: per category, the most contexts any training set combined; empty in checkpoints older than the record
+    max_contexts: dict[str, int] = field(default_factory=dict)
 
 
 def save(

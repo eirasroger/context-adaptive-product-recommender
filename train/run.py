@@ -108,6 +108,18 @@ def main() -> None:
             promote_on_pass(run_dir, config.notes)
 
 
+def trained_context_limits(prepared) -> dict[str, int]:
+    """Per category, the most contexts any training set combined."""
+    limits: dict[str, int] = {}
+    for index, fold in enumerate(prepared.set_fold):
+        if fold != "train":
+            continue
+        category = prepared.category_keys[int(prepared.set_category[index])]
+        combined = len(prepared.combo_context_slots[int(prepared.set_combo[index])])
+        limits[category] = max(limits.get(category, 0), combined)
+    return limits
+
+
 def execute(config: TrainConfig, behavioural_suite: bool = True) -> tuple[Path, dict]:
     """Train, evaluate and save one run; the run directory and its results."""
     config.db = str(config.db or db_path())
@@ -151,6 +163,7 @@ def execute(config: TrainConfig, behavioural_suite: bool = True) -> tuple[Path, 
             split_key=config.split_key,
             created_at=checkpoint_module.now(),
             metrics={},
+            max_contexts=trained_context_limits(prepared),
             notes=config.notes,
         ),
     )
@@ -201,6 +214,7 @@ def execute(config: TrainConfig, behavioural_suite: bool = True) -> tuple[Path, 
             split_key=config.split_key,
             created_at=checkpoint_module.now(),
             metrics=results.get("overall", {}),
+            max_contexts=trained_context_limits(prepared),
             notes=config.notes,
         ),
     )

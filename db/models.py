@@ -328,6 +328,25 @@ class CategoryContextOverride(Base):
     justification: Mapped[str] = mapped_column(Text, nullable=False)
 
 
+class CategoryContextPresentation(Base):
+    """How a category names, explains, groups and orders a context it offers."""
+
+    __tablename__ = "category_context_presentation"
+    __table_args__ = _strict()
+
+    category_key: Mapped[str] = mapped_column(
+        Text, ForeignKey("category.key"), primary_key=True
+    )
+    context_key: Mapped[str] = mapped_column(
+        Text, ForeignKey("context.key"), primary_key=True
+    )
+    theme: Mapped[str] = mapped_column(Text, nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False)
+    #: Null falls back to the context's own name and definition.
+    display_name: Mapped[str | None] = mapped_column(Text)
+    definition_text: Mapped[str | None] = mapped_column(Text)
+
+
 class Stakeholder(Base):
     """A decision-maker archetype with a learned embedding."""
 

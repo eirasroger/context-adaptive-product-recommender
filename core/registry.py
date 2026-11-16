@@ -120,6 +120,16 @@ class StakeholderSpec:
 
 
 @dataclass(frozen=True, slots=True)
+class ContextPresentation:
+    """How one category shows a context: its name, explanation, theme and place."""
+
+    display_name: str
+    definition_text: str
+    theme: str | None
+    sort_order: int
+
+
+@dataclass(frozen=True, slots=True)
 class CategorySpec:
     key: str
     slot: int
@@ -134,6 +144,8 @@ class CategorySpec:
     available_contexts: frozenset[str]
     #: indicator keys in slot order, stable because slots are append-only
     token_order: tuple[str, ...]
+    #: available context key -> how this category shows it, in display order
+    context_presentation: Mapping[str, ContextPresentation]
 
     def indicator_unit(self, unit: str | None) -> str | None:
         """An indicator's unit in this category's terms, as in kg CO2-eq per m2."""
@@ -399,10 +411,19 @@ def from_document(
             row["is_applicable"]
         )
 
+    shown_by_category: dict[str, dict[str, dict]] = {}
+    for row in document.get("category_context_presentation", []):
+        shown_by_category.setdefault(row["category_key"], {})[row["context_key"]] = row
+
     categories: dict[str, CategorySpec] = {}
     for row in document["category"]:
         key = row["key"]
         members = members_by_category.get(key, {})
+        available = frozenset(
+            _derive_available(
+                key, set(members), contexts, row["default_context_key"], overrides.get(key, {})
+            )
+        )
         order = tuple(
             sorted(members, key=lambda indicator_key: indicators[indicator_key].slot)
         )
@@ -417,16 +438,9 @@ def from_document(
             default_context_key=row["default_context_key"],
             members=members,
             provenance_weights=weights_by_category.get(key, {}),
-            available_contexts=frozenset(
-                _derive_available(
-                    key,
-                    set(members),
-                    contexts,
-                    row["default_context_key"],
-                    overrides.get(key, {}),
-                )
-            ),
+            available_contexts=available,
             token_order=order,
+            context_presentation=_presentation(available, contexts, shown_by_category.get(key, {})),
         )
 
     table_sizes = {
@@ -444,6 +458,23 @@ def from_document(
         table_sizes=table_sizes,
         provenances=tuple(sorted(row["key"] for row in document.get("provenance", []))),
     )
+
+
+def _presentation(
+    available: frozenset[str], contexts: Mapping[str, ContextSpec], shown: Mapping[str, dict]
+) -> dict[str, ContextPresentation]:
+    """Declared presentation where the category gives one, the context's own text by key otherwise."""
+    unordered = len(shown)
+    entries = {}
+    for key in sorted(available):
+        row = shown.get(key, {})
+        entries[key] = ContextPresentation(
+            display_name=row.get("display_name") or contexts[key].display_name,
+            definition_text=row.get("definition_text") or contexts[key].definition_text,
+            theme=row.get("theme"),
+            sort_order=row["sort_order"] if row else unordered,
+        )
+    return dict(sorted(entries.items(), key=lambda kv: kv[1].sort_order))
 
 
 def _derive_available(

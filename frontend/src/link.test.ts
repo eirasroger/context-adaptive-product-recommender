@@ -22,9 +22,10 @@ const form: Form = {
       functional_unit_symbol: "widget",
       eligibility_precondition: "",
       default_context: "plain",
+      max_contexts: 2,
       contexts: [
-        { key: "plain", display_name: "Plain", definition: "" },
-        { key: "quiet", display_name: "Quiet", definition: "" },
+        { key: "plain", display_name: "Plain", definition: "", theme: null },
+        { key: "quiet", display_name: "Quiet", definition: "", theme: null },
       ],
       fields: [
         {
@@ -60,7 +61,7 @@ const form: Form = {
 const snapshot: Snapshot = {
   registry: "1.0",
   category: "widget",
-  context: "quiet",
+  contexts: ["quiet"],
   stakeholders: ["green", "thrifty"],
   alternatives: [
     { name: "First", values: { alpha: "0.10" }, levels: { grade: "g2" } },
@@ -81,8 +82,8 @@ describe("a link", () => {
 
   it("is safe to put in a URL fragment, whatever its length", async () => {
     for (let extra = 0; extra < 6; extra++) {
-      const link = await encodeLink({ ...snapshot, context: "q".repeat(extra) });
-      expect(link).toMatch(/^v1\.[A-Za-z0-9_-]+$/);
+      const link = await encodeLink({ ...snapshot, contexts: ["q".repeat(extra)] });
+      expect(link).toMatch(/^v2\.[A-Za-z0-9_-]+$/);
     }
   });
 
@@ -93,12 +94,27 @@ describe("a link", () => {
   });
 });
 
+describe("a link shared before contexts combined", () => {
+  it("opens with its one context as the list", async () => {
+    const { contexts, ...rest } = snapshot;
+    const old = { ...rest, context: contexts[0] };
+    const packed = (await encodeLink(old as unknown as Snapshot)).replace(/^v2\./, "v1.");
+    expect(await decodeLink(packed)).toEqual(snapshot);
+  });
+
+  it("opens a baseline link as no context switched on", async () => {
+    const { contexts: _, ...rest } = snapshot;
+    const packed = (await encodeLink({ ...rest, context: "plain" } as unknown as Snapshot)).replace(/^v2\./, "v1.");
+    expect(restore((await decodeLink(packed))!, form)!.shortlist.contexts).toEqual([]);
+  });
+});
+
 describe("a damaged link", () => {
   it.each([
     ["an empty fragment", ""],
     ["a bare format marker", "#v1."],
     ["characters outside base64url", "#v1.!!!"],
-    ["a format this page does not read", "#v2.AAAA"],
+    ["a format this page does not read", "#v3.AAAA"],
     ["bytes that are not compressed", `#v1.${btoa("plain text")}`],
   ])("is refused: %s", async (_, fragment) => {
     expect(await decodeLink(fragment)).toBeNull();
@@ -131,7 +147,7 @@ describe("restoring against the current registry", () => {
     const restored = restore(
       {
         ...snapshot,
-        context: "retired",
+        contexts: ["retired"],
         stakeholders: ["green", "gone"],
         alternatives: [
           {
@@ -145,7 +161,7 @@ describe("restoring against the current registry", () => {
       form,
     )!;
 
-    expect(restored.shortlist.context).toBe("plain");
+    expect(restored.shortlist.contexts).toEqual([]);
     expect(restored.shortlist.stakeholders).toEqual(["green"]);
     expect(restored.shortlist.columns.map((c) => [c.values, c.levels])).toEqual([
       [{ alpha: "0.5" }, {}],
@@ -198,7 +214,7 @@ describe("an example", () => {
     const restored = restore(snapshotOfRequest(request, "1.0"), form)!;
 
     expect(restored.notes).toEqual([]);
-    expect(restored.shortlist.context).toBe("quiet");
+    expect(restored.shortlist.contexts).toEqual(["quiet"]);
     expect(restored.shortlist.columns.map((c) => [c.name, c.values, c.levels])).toEqual([
       ["First", { alpha: "0.1" }, { grade: "g2" }],
       ["Second", { alpha: "0.0001" }, {}],

@@ -1,0 +1,49 @@
+category_context_presentation:
+- category_key: facade_system
+  context_key: acoustic_insulation
+  theme: Site hazards
+  sort_order: 3
+  display_name: Noisy site
+  definition_text: The day-evening-night level Lden is at least 65 dB at the most exposed facade on the strategic noise maps of the Environmental Noise Directive, typically a building fronting a main road or a railway line, or under an airport approach. The facade's margin above the minimum decides how quiet the rooms are, so sound reduction counts strongly.
+- category_key: facade_system
+  context_key: high_rise
+  theme: Building
+  sort_order: 6
+  display_name: null
+  definition_text: null
+- category_key: facade_system
+  context_key: hot_summer
+  theme: Climate
+  sort_order: 2
+  display_name: null
+  definition_text: null
+- category_key: facade_system
+  context_key: new_build_mild
+  theme: Baseline
+  sort_order: 0
+  display_name: null
+  definition_text: null
+- category_key: facade_system
+  context_key: no_room_outwards
+  theme: Building
+  sort_order: 7
+  display_name: null
+  definition_text: null
+- category_key: facade_system
+  context_key: seismic
+  theme: Site hazards
+  sort_order: 5
+  display_name: null
+  definition_text: null
+- category_key: facade_system
+  context_key: thermal_insulation
+  theme: Climate
+  sort_order: 1
+  display_name: Cold winter
+  definition_text: The mean temperature of the coldest month is below 0 °C (Köppen group D or E), as in Scandinavia, the Baltic states, Poland, Romania and mountain areas. Heat loss through the wall is proportional to its transmittance, and over 50 years of long heating seasons it outweighs moderate differences in embodied impact, so lower U counts strongly.
+- category_key: facade_system
+  context_key: wildfire_edge
+  theme: Site hazards
+  sort_order: 4
+  display_name: null
+  definition_text: null

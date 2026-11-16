@@ -17,6 +17,7 @@ from db import slots, validate
 from db.models import (
     Category,
     CategoryContextOverride,
+    CategoryContextPresentation,
     CategoryIndicator,
     CategoryProvenanceWeight,
     Context,
@@ -165,6 +166,12 @@ EXPORT_SPEC: tuple[tuple[str, Any, tuple[str, ...], tuple[str, ...]], ...] = (
         "category_context_override",
         CategoryContextOverride,
         ("category_key", "context_key", "is_applicable", "display_name", "justification"),
+        ("category_key", "context_key"),
+    ),
+    (
+        "category_context_presentation",
+        CategoryContextPresentation,
+        ("category_key", "context_key", "theme", "sort_order", "display_name", "definition_text"),
         ("category_key", "context_key"),
     ),
     (

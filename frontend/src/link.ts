@@ -1,7 +1,10 @@
 import type { Form, ShortlistRequest } from "./api/client";
+import { keepOffered } from "./contexts";
 import { blankColumn, column, MAX_COLUMNS, MIN_COLUMNS, type Shortlist } from "./shortlist";
 
-const FORMAT = "v1";
+const FORMAT = "v2";
+/** Links shared before contexts combined carry one context as a string. */
+const SINGLE_CONTEXT_FORMAT = "v1";
 const MAX_LINK_LENGTH = 8_000;
 const MAX_DECODED_BYTES = 64_000;
 const MAX_ALTERNATIVES_READ = 20;
@@ -11,7 +14,7 @@ type Entries = Record<string, string>;
 export type Snapshot = {
   registry: string | null;
   category: string;
-  context: string;
+  contexts: string[];
   stakeholders: string[];
   alternatives: { name: string; values: Entries; levels: Entries }[];
 };
@@ -21,7 +24,7 @@ export type Restored = { shortlist: Shortlist; notes: string[] };
 export const snapshotOf = (shortlist: Shortlist, registry: string | null): Snapshot => ({
   registry,
   category: shortlist.category,
-  context: shortlist.context,
+  contexts: shortlist.contexts,
   stakeholders: shortlist.stakeholders,
   alternatives: shortlist.columns.map(({ name, values, levels }) => ({ name, values, levels })),
 });
@@ -30,7 +33,7 @@ export const snapshotOf = (shortlist: Shortlist, registry: string | null): Snaps
 export const snapshotOfRequest = (request: ShortlistRequest, registry: string | null): Snapshot => ({
   registry,
   category: request.category,
-  context: request.context?.[0] ?? "",
+  contexts: request.context ?? [],
   stakeholders: request.stakeholders,
   alternatives: request.alternatives.map((a) => ({
     name: a.id,
@@ -47,15 +50,24 @@ export async function encodeLink(snapshot: Snapshot): Promise<string> {
 
 export async function decodeLink(fragment: string): Promise<Snapshot | null> {
   const code = fragment.replace(/^#/, "");
-  if (!code.startsWith(`${FORMAT}.`) || code.length > MAX_LINK_LENGTH) return null;
+  const [format, body] = code.split(".", 2);
+  if (!body || (format !== FORMAT && format !== SINGLE_CONTEXT_FORMAT) || code.length > MAX_LINK_LENGTH) {
+    return null;
+  }
   try {
-    const packed = fromBase64Url(code.slice(FORMAT.length + 1));
-    const json = await transform(packed, new DecompressionStream("deflate-raw"), MAX_DECODED_BYTES);
+    const json = await transform(fromBase64Url(body), new DecompressionStream("deflate-raw"), MAX_DECODED_BYTES);
     const parsed: unknown = JSON.parse(new TextDecoder().decode(json));
-    return isSnapshot(parsed) ? parsed : null;
+    const snapshot = format === SINGLE_CONTEXT_FORMAT ? withContextList(parsed) : parsed;
+    return isSnapshot(snapshot) ? snapshot : null;
   } catch {
     return null;
   }
+}
+
+function withContextList(parsed: unknown): unknown {
+  if (typeof parsed !== "object" || parsed === null) return parsed;
+  const { context, ...rest } = parsed as Record<string, unknown>;
+  return { ...rest, contexts: typeof context === "string" ? [context] : context };
 }
 
 export function restore(snapshot: Snapshot, form: Form): Restored | null {
@@ -66,11 +78,8 @@ export function restore(snapshot: Snapshot, form: Form): Restored | null {
   const dropped: string[] = [];
   const quoted = JSON.stringify;
 
-  let context = snapshot.context;
-  if (!category.contexts.some((c) => c.key === context)) {
-    dropped.push(`context ${quoted(context)}`);
-    context = category.default_context;
-  }
+  const { contexts, dropped: unkept } = keepOffered(category, snapshot.contexts);
+  for (const key of unkept) dropped.push(`context ${quoted(key)}`);
 
   const known = new Set(form.stakeholders.map((s) => s.key));
   let stakeholders = [...new Set(snapshot.stakeholders)].filter((key) => {
@@ -107,7 +116,7 @@ export function restore(snapshot: Snapshot, form: Form): Restored | null {
   }
   if (dropped.length > 0) notes.push(`Left out as unrecognised: ${dropped.join(", ")}.`);
 
-  return { shortlist: { category: category.key, context, stakeholders, columns }, notes };
+  return { shortlist: { category: category.key, contexts, stakeholders, columns }, notes };
 }
 
 const isNumber = (text: string) => text.trim() !== "" && Number.isFinite(Number(text));
@@ -124,7 +133,8 @@ function isSnapshot(value: unknown): value is Snapshot {
   return (
     (s.registry === null || typeof s.registry === "string") &&
     typeof s.category === "string" &&
-    typeof s.context === "string" &&
+    Array.isArray(s.contexts) &&
+    s.contexts.every((key) => typeof key === "string") &&
     Array.isArray(s.stakeholders) &&
     s.stakeholders.every((key) => typeof key === "string") &&
     Array.isArray(s.alternatives) &&

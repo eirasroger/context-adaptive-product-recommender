@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, Mapping, Sequence
 
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
@@ -32,8 +32,9 @@ class ShortlistRequest(BaseModel):
     category: str
     context: list[str] = Field(
         default_factory=list,
-        description="Active application contexts. Defaults to the category's "
-        "baseline context when empty.",
+        description="Active application contexts, at most the category's "
+        "max_contexts from /api/explore/form. Empty means the category's "
+        "baseline, which never combines with another context.",
     )
     stakeholders: list[str] = Field(
         min_length=1,
@@ -57,7 +58,9 @@ class Shortlist:
     disqualifying: list[list[str]]
 
 
-def resolve(registry: Registry, request: ShortlistRequest) -> Shortlist:
+def resolve(
+    registry: Registry, request: ShortlistRequest, max_contexts: Mapping[str, int]
+) -> Shortlist:
     try:
         category = registry.category(request.category)
     except LookupError:
@@ -69,8 +72,7 @@ def resolve(registry: Registry, request: ShortlistRequest) -> Shortlist:
             ),
         )
 
-    contexts = request.context or [category.default_context_key]
-    _refuse_unlisted("context(s)", contexts, category.available_contexts, request.category)
+    contexts = checked_contexts(category, request.context, max_contexts[request.category])
     _refuse_unlisted("stakeholder(s)", request.stakeholders, registry.stakeholders, request.category)
 
     held = set(category.token_order)
@@ -96,6 +98,28 @@ def resolve(registry: Registry, request: ShortlistRequest) -> Shortlist:
         missing=[sorted(held - given - derived) for given in supplied],
         disqualifying=[_disqualifying(registry, a.levels) for a in request.alternatives],
     )
+
+
+def checked_contexts(category: CategorySpec, given: Sequence[str], limit: int) -> list[str]:
+    """The contexts to score under: the baseline when none are given, otherwise as trained."""
+    if not given:
+        return [category.default_context_key]
+    _refuse_unlisted("context(s)", given, category.available_contexts, category.key)
+    if len(set(given)) < len(given):
+        raise HTTPException(status_code=400, detail=f"a context is repeated: {list(given)}")
+    if category.default_context_key in given and len(given) > 1:
+        raise HTTPException(
+            status_code=400,
+            detail=f"the baseline {category.default_context_key!r} stands alone; "
+            "leave the context list empty for it",
+        )
+    if len(given) > limit:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{category.key!r} combines at most {limit} context(s), the most "
+            f"its training data combined; got {len(given)}",
+        )
+    return list(given)
 
 
 def _refuse_unlisted(

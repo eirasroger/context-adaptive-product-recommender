@@ -14,7 +14,8 @@ export type Column = {
 
 export type Shortlist = {
   category: string;
-  context: string;
+  /** Switched-on contexts; empty means the category's baseline. */
+  contexts: string[];
   stakeholders: string[];
   columns: Column[];
 };
@@ -75,7 +76,7 @@ export function scoreRequest(shortlist: Shortlist): components["schemas"]["Short
   const taken = shortlist.columns.map((c) => c.name);
   return {
     category: shortlist.category,
-    context: [shortlist.context],
+    context: shortlist.contexts,
     stakeholders: shortlist.stakeholders,
     alternatives: shortlist.columns.map((column) => {
       const id = column.name || freeName(taken);

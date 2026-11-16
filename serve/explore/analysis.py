@@ -163,7 +163,7 @@ def context_sensitivity(
 ) -> dict:
     """The same shortlist scored under every context the category allows."""
     category = registry.category(category_key)
-    contexts = sorted(category.available_contexts)
+    contexts = list(category.context_presentation)
     rows = _matrix(
         scorer,
         registry,

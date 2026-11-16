@@ -14,6 +14,7 @@ from db import slots
 from db.models import (
     Category,
     CategoryContextOverride,
+    CategoryContextPresentation,
     CategoryIndicator,
     CategoryProvenanceWeight,
     Context,
@@ -292,6 +293,19 @@ def _load_categories(session: Session, doc: dict) -> None:
                 is_applicable=_bool(override["is_applicable"]),
                 display_name=override.get("display_name"),
                 justification=override["justification"].strip(),
+            )
+
+        for position, shown in enumerate(row.get("context_presentation", [])):
+            _upsert(
+                session,
+                CategoryContextPresentation,
+                (key, shown["context_key"]),
+                category_key=key,
+                context_key=shown["context_key"],
+                theme=shown["theme"],
+                sort_order=position,
+                display_name=shown.get("display_name"),
+                definition_text=(shown.get("definition_text") or "").strip() or None,
             )
 
 

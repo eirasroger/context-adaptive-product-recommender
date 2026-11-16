@@ -60,6 +60,7 @@ def checkpoint(registry, seeded, tmp_path_factory):
             split_key="default",
             created_at=checkpoint_module.now(),
             metrics={},
+            max_contexts={key: 2 for key in registry.categories},
         ),
     )
     return path
