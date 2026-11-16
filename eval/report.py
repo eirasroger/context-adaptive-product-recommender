@@ -38,6 +38,9 @@ def evaluate_all(
         "stratified": metrics_module.stratified(
             predictions, prepared, registry=registry
         ),
+        "judged": metrics_module.stratified(
+            metrics_module.judged(predictions, prepared), prepared, registry=registry
+        ),
         "by_family": metrics_module.family_breakdown(predictions, prepared, registry),
     }
 
@@ -48,7 +51,7 @@ class Thresholds:
 
     max_gap_fidelity: float | None = None
     max_band_placement: float | None = None
-    #: How much worse, as a fraction of its previous gap, any stratum may get against the previous release.
+    #: How much worse, as a fraction of its previous gap, any judged stratum may get against the previous release.
     max_stratum_regression: float | None = None
     #: Strata with fewer sets are reported and never gated: a handful of sets moves their gap.
     min_stratum_sets: int = 0
@@ -99,8 +102,10 @@ def gate(
             reasons.append(f"{len(failures)} behavioural assertion(s) failed")
 
     if baseline and thresholds.max_stratum_regression is not None:
-        for kind, cells in results.get("stratified", {}).items():
-            previous = baseline.get("stratified", {}).get(kind, {})
+        if "judged" not in baseline:
+            reasons.append("the baseline holds no judged strata to compare; rescore it with this code")
+        for kind, cells in results.get("judged", {}).items():
+            previous = baseline.get("judged", {}).get(kind, {})
             for label, cell in cells.items():
                 before = previous.get(label, {}).get("gap_fidelity")
                 after = cell.get("gap_fidelity")
@@ -111,7 +116,7 @@ def gate(
                 allowed = _allowed_gap(before, previous[label], cell, thresholds)
                 if after > allowed:
                     reasons.append(
-                        f"{kind}/{label} gap fidelity worsened "
+                        f"judged {kind}/{label} gap fidelity worsened "
                         f"{before:.4f} -> {after:.4f} ({after / before - 1:+.0%}; up to {allowed:.4f} allowed)"
                     )
 

@@ -31,23 +31,23 @@
       }
     },
     "overall": {
-      "band_placement": 0.0169259192523835,
-      "gap_fidelity": 0.04287647173234505,
-      "gap_fidelity_se": 0.0007202911308306205,
-      "n_alternatives": 35937,
-      "n_sets": 10301,
-      "pointwise_mae": 0.0297623872756958,
-      "tie_tolerant_tau": 0.9193629295209431,
-      "top1_agreement": 0.9141830890204834
+      "band_placement": 0.017610592803499196,
+      "gap_fidelity": 0.04282829013287664,
+      "gap_fidelity_se": 0.0007038575060242037,
+      "n_alternatives": 36204,
+      "n_sets": 10376,
+      "pointwise_mae": 0.030212651938199997,
+      "tie_tolerant_tau": 0.9206754205820732,
+      "top1_agreement": 0.9163454124903624
     }
   },
-  "model_bytes": 2467787,
-  "model_sha256": "882c90c9fd107fa3f7cb6619aa82f66ae06b56069c7f73ddcfc4a9a4356ede02",
-  "notes": "Facade contexts redefined and presented per category; 200 facade labels from Sonnet 5.5 agents. Regression gate overridden: the old facade data was discarded, and the concrete drift (gap 0.046 to 0.051) was accepted.",
-  "promoted_at": "2026-11-16T14:51:50.723690+00:00",
+  "model_bytes": 2469067,
+  "model_sha256": "158f52ac2bdac08f5abf9e0fa8ebac540c4fceaf5af90b3daf419181a0df2e55",
+  "notes": "700 facade labels; context limit 4; facade control gap 0.0087 to 0.0101 as LLM labels take more weight, behavioural 1,440 of 1,440",
+  "promoted_at": "2026-11-16T18:53:57.382634+00:00",
   "registry_content_hash": "28a2f4d1f77c80c1fd5778119441e41cee871afb81fda32eccf546279d9cb38b",
-  "registry_version": "0.6.1",
-  "run": "baseline-20261116T144421Z",
-  "snapshot_hash": "99a79b11bc747303cb314bf5714d3c20e87cee6bfcd8e4b7f2bfff4acef131df",
+  "registry_version": "0.6.0",
+  "run": "baseline-20261116T184045Z",
+  "snapshot_hash": "9e53cb7a98f9a1bf5c0b361b6c8b333b262ac12a2cf3613568f6eff45988c405",
   "split_key": "default"
 }

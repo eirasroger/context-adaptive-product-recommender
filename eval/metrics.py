@@ -27,6 +27,15 @@ class Predictions:
     def __len__(self) -> int:
         return len(self.predicted)
 
+    def take(self, rows) -> "Predictions":
+        return Predictions(
+            set_index=self.set_index[rows],
+            position=self.position[rows],
+            predicted=self.predicted[rows],
+            actual=self.actual[rows],
+            confidence=self.confidence[rows],
+        )
+
 
 @torch.no_grad()
 def predict(model, loader: DataLoader, device: str | torch.device = "cpu") -> Predictions:
@@ -184,6 +193,8 @@ def compute(predictions: Predictions) -> MetricSet:
 
 STRATA = ("category", "provenance", "category_provenance", "context", "stakeholder", "set_size", "shortlist")
 
+CONTROL_PROVENANCE = "control"
+
 SHORTLIST_ACROSS = "across"
 SHORTLIST_WITHIN = "within"
 
@@ -237,16 +248,19 @@ def stratified(
 
         report[kind] = {}
         for label, rows in sorted(buckets.items()):
-            subset = Predictions(
-                set_index=predictions.set_index[rows],
-                position=predictions.position[rows],
-                predicted=predictions.predicted[rows],
-                actual=predictions.actual[rows],
-                confidence=predictions.confidence[rows],
-            )
-            report[kind][label] = compute(subset).as_dict()
+            report[kind][label] = compute(predictions.take(rows)).as_dict()
 
     return report
+
+
+def judged(predictions: Predictions, prepared: Prepared) -> Predictions:
+    """The rows of sets labelled by judgement (LLM or expert), without the control cases."""
+    keep = [
+        row
+        for row, index in enumerate(predictions.set_index)
+        if prepared.set_provenance[int(index)] != CONTROL_PROVENANCE
+    ]
+    return predictions.take(np.asarray(keep, dtype=np.int64))
 
 
 def _slot_names(registry) -> dict[str, str]:
@@ -274,12 +288,5 @@ def family_breakdown(
 
     out = {}
     for family, rows in sorted(rows_by_family.items()):
-        subset = Predictions(
-            set_index=predictions.set_index[rows],
-            position=predictions.position[rows],
-            predicted=predictions.predicted[rows],
-            actual=predictions.actual[rows],
-            confidence=predictions.confidence[rows],
-        )
-        out[family] = compute(subset).as_dict()
+        out[family] = compute(predictions.take(rows)).as_dict()
     return out

@@ -1,7 +1,9 @@
 import random
 from types import SimpleNamespace
 
-from eval.metrics import strata_of
+import numpy as np
+
+from eval.metrics import Predictions, judged, strata_of
 from ingest.facade.synthesise import shortlist
 
 
@@ -29,3 +31,11 @@ def test_every_synthesised_shortlist_lands_in_the_stratum():
     for _ in range(200):
         generator, _ = shortlist(rng, pools)
         assert _shortlist_strata(generator)
+
+
+def test_judged_strata_leave_out_control_cases():
+    prepared = SimpleNamespace(set_provenance=("control", "llm", "expert"))
+    set_index = np.array([0, 0, 1, 1, 2, 2])
+    predictions = Predictions(set_index, np.zeros(6), np.zeros(6), np.zeros(6), np.ones(6))
+
+    assert judged(predictions, prepared).set_index.tolist() == [1, 1, 2, 2]

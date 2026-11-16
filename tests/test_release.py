@@ -115,6 +115,7 @@ def _metrics(passed: bool = True, gap: float = 0.05) -> dict:
             "tie_tolerant_tau": 0.9, "n_sets": 1234,
         },
         "stratified": {"context": {"standard": {"gap_fidelity": gap}}},
+        "judged": {"context": {"standard": {"gap_fidelity": gap}}},
         "behavioural": {"passed": passed, "failures": [] if passed else ["x"]},
     }
 
@@ -377,7 +378,7 @@ def _gate_one_stratum(before: float, after: float, sets: int, se: float | None =
         cell = {"gap_fidelity": gap, "n_sets": sets}
         if se is not None:
             cell["gap_fidelity_se"] = se
-        return {"stratified": {"provenance": {"expert": cell}}}
+        return {"judged": {"provenance": {"expert": cell}}}
 
     return report_module.gate(
         metrics(after),
@@ -413,6 +414,40 @@ def test_a_small_stratum_worse_beyond_its_noise_is_refused():
 
 def test_a_large_precise_stratum_is_still_held_to_the_relative_limit():
     assert not _gate_one_stratum(0.0460, 0.0520, sets=8000, se=0.0005).passed
+
+
+def _regression_gate(results: dict, baseline: dict):
+    from eval import report as report_module
+
+    return report_module.gate(
+        results,
+        report_module.Thresholds(
+            max_stratum_regression=release_module.MAX_STRATUM_REGRESSION,
+            min_stratum_sets=release_module.MIN_STRATUM_SETS,
+            stratum_noise_sigmas=release_module.STRATUM_NOISE_SIGMAS,
+            require_behavioural=False,
+        ),
+        baseline,
+    )
+
+
+def test_control_cases_drifting_never_block_a_promotion():
+    judged = {"provenance": {"llm": {"gap_fidelity": 0.10, "n_sets": 500}}}
+
+    def metrics(control_gap):
+        cell = {"gap_fidelity": control_gap, "n_sets": 2000}
+        return {"stratified": {"provenance": {"control": cell}}, "judged": judged}
+
+    assert _regression_gate(metrics(0.0200), metrics(0.0087)).passed
+
+
+def test_a_baseline_without_judged_strata_is_refused():
+    cell = {"gap_fidelity": 0.05, "n_sets": 500}
+    recorded_before_the_split = {"stratified": {"provenance": {"llm": cell}}}
+
+    verdict = _regression_gate({"judged": {"provenance": {"llm": cell}}}, recorded_before_the_split)
+
+    assert not verdict.passed
 
 
 def test_a_regression_can_be_forced_and_says_so(tmp_path, registry):
