@@ -26,7 +26,7 @@ Every value is per square metre of installed facade. A null means unknown. A 0 i
 - wdp: water deprivation potential, m³ world-equivalent per m², scarcity weighted. Typical values: 2 to 60.
 - fwu: net freshwater use, m³ per m². Typical values: 0.1 to 1. Treat differences below a factor of two as minor.
 
-## Circularity and end of life
+## Circularity
 
 - circ_orig (%): share of the system's mass from secondary material. Higher is better. Most facades sit below 10%; values above 30% (recycled steel, recycled aggregates) are a genuine strength.
 - End-of-life shares of the system's mass, which together approximately make 100%. Use them as given:

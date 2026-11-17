@@ -22,7 +22,6 @@ SNAPSHOT = ROOT / "tests" / "fixtures" / "snapshot"
 CHECKPOINT = ROOT / "serve" / "release" / "model.pt"
 OUTPUT = ROOT / "experiments" / "figures"
 SUMMARY = "summary.json"
-FLOOR = 0.05
 
 
 @dataclass(frozen=True)
@@ -251,40 +250,21 @@ def load_shortlists(
     ]
 
 
-def preference_floors(
-    registry: Registry, snapshot_dir: Path, threshold: float = FLOOR
-) -> dict[str, str]:
-    """Indicators where one value sinks a control case's preference to zero, with that value."""
-    import pandas as pd
-
-    sets = pd.read_parquet(snapshot_dir / "sets.parquet")
-    members = pd.read_parquet(snapshot_dir / "members.parquet")
-    values = pd.read_parquet(snapshot_dir / "values.parquet")
-
-    control = sets[sets["provenance_key"] == "control"][["set_id", "generator_key"]]
-    sunk = members.merge(control, on="set_id")
-    sunk = sunk[(sunk["pref"] < threshold) & sunk["generator_key"].isin(registry.indicators)]
-    held = sunk.merge(
-        values, left_on=["product_id", "generator_key"], right_on=["product_id", "indicator_key"]
-    )
-
-    floors: dict[str, str] = {}
-    for key, group in held.groupby("generator_key"):
-        levels = group["level_key"].dropna()
-        if len(levels):
-            floors[key] = registry.indicator(key).level(levels.mode()[0]).display_name
-        else:
-            floors[key] = f"{group['value_num'].min():g}"
-    return floors
+def vetoes(registry: Registry) -> dict[str, str]:
+    """Indicators with a level the registry declares never selectable, with that level's name."""
+    return {
+        key: ", ".join(level.display_name for level in indicator.levels if level.is_disqualifying)
+        for key, indicator in registry.indicators.items()
+        if any(level.is_disqualifying for level in indicator.levels)
+    }
 
 
 def masking_note(registry: Registry, masked: dict[str, str]) -> str:
     if not masked:
         return ""
     return "".join(
-        f" {registry.indicator(key).display_name} is masked: one value, "
-        f"{value.lower()}, sinks the preference to 0, and its effect would swamp "
-        "every other indicator."
+        f" {registry.indicator(key).display_name} is masked: {value.lower()} is "
+        "declared never selectable, and its effect would swamp every other indicator."
         for key, value in sorted(masked.items())
     )
 
@@ -370,8 +350,9 @@ def heatmap(
 
     import textwrap
 
-    fig, ax = plt.subplots(figsize=(3.0 + 1.05 * len(conditions), 2.4 + 0.26 * len(rows)))
-    fig.subplots_adjust(left=2.7 / (3.0 + 1.05 * len(conditions)), right=0.97, top=0.86, bottom=0.2)
+    width = 4.5 + 1.05 * len(conditions)
+    fig, ax = plt.subplots(figsize=(width, 2.4 + 0.26 * len(rows)))
+    fig.subplots_adjust(left=2.7 / width, right=1 - 1.5 / width, top=0.86, bottom=0.2)
     cmap = LinearSegmentedColormap.from_list("signed", [NEGATIVE, NEUTRAL, POSITIVE])
     mesh = ax.pcolormesh(
         grid, cmap=cmap, norm=TwoSlopeNorm(0.0, -limit, limit),
@@ -392,6 +373,18 @@ def heatmap(
     for index in range(1, len(rows)):
         if family_of[index] != family_of[index - 1]:
             ax.axhline(index, color=INK_MUTED, linewidth=0.8)
+
+    edge = len(conditions) + 0.2
+    start = 0
+    for end in range(1, len(rows) + 1):
+        if end < len(rows) and family_of[end] == family_of[start]:
+            continue
+        ax.plot([edge, edge], [start + 0.15, end - 0.15], color=INK_MUTED, linewidth=1, clip_on=False)
+        ax.text(
+            edge + 0.15, (start + end) / 2, families[family_of[start]].display_name,
+            ha="left", va="center", fontsize=8, color=INK_MUTED, clip_on=False,
+        )
+        start = end
 
     if declared:
         for (key, condition), sign in declared.items():
@@ -564,7 +557,7 @@ def run(
     registry = checkpoint_module.load_registry(checkpoint)
     families = family_table(checkpoint)
     everything = load_shortlists(Path(snapshot_dir))
-    masked = preference_floors(registry, Path(snapshot_dir))
+    masked = vetoes(registry)
     note = masking_note(registry, masked)
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)

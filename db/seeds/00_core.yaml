@@ -10,7 +10,7 @@ indicator_family:
       straight from an EPD's impact assessment results.
 
   - key: circularity
-    display_name: Circularity and end of life
+    display_name: Circularity
     sort_order: 2
     definition_text: >-
       Where the product's material came from and where it goes afterwards.

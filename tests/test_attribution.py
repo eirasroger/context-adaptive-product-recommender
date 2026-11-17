@@ -72,17 +72,6 @@ def test_the_committed_test_fold_loads_as_shortlists(registry):
     assert any(a.values for a in first.alternatives)
 
 
-def test_only_indicators_with_a_value_that_sinks_the_preference_to_zero_are_masked(registry):
-    """A mask on any other indicator would hide a real effect."""
-    import pandas as pd
-
-    floors = attribution.preference_floors(registry, attribution.SNAPSHOT)
-    assert floors
-
-    sets = pd.read_parquet(attribution.SNAPSHOT / "sets.parquet")
-    members = pd.read_parquet(attribution.SNAPSHOT / "members.parquet")
-    control = members.merge(sets[sets["provenance_key"] == "control"], on="set_id")
-    lowest = control.groupby("generator_key")["pref"].min()
-    for key, floor in lowest.items():
-        if key in registry.indicators:
-            assert (key in floors) == (floor < attribution.FLOOR), key
+def test_only_health_is_masked_as_a_veto(registry):
+    """A mask on any other indicator would hide a real effect from the figures."""
+    assert attribution.vetoes(registry) == {"health": "Hazardous substances present"}

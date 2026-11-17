@@ -177,6 +177,16 @@ def test_band_width_varies_by_stakeholder(registry, category_key):
     assert any(width > 0.05 for width in widths.values()), widths
 
 
+def test_a_context_stressing_an_indicator_widens_its_control_band(registry):
+    from ingest.generators.parametric import make_case
+
+    def spread(contexts):
+        case = make_case(registry, "facade_system", "fire_reaction", ["d", "a2"], contexts, "balanced_optimizer")
+        return max(case.prefs) - min(case.prefs)
+
+    assert spread(["wildfire_edge"]) > spread(["new_build_mild"]) > 0
+
+
 def test_a_few_training_steps_reduce_the_loss(corpus):
     registry, prepared, _ = corpus
     from model.loss import LossWeights, composite_loss

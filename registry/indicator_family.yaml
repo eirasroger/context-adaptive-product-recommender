@@ -1,6 +1,6 @@
 indicator_family:
 - key: circularity
-  display_name: Circularity and end of life
+  display_name: Circularity
   definition_text: 'Where the product''s material came from and where it goes afterwards. Covers secondary content at the input side and the distribution of mass over end-of-life treatment routes at the output side. Direction varies by member: recovery routes are preferred, disposal routes are not.'
   sort_order: 2
   is_active: 1

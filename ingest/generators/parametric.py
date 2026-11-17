@@ -13,6 +13,9 @@ from core.registry import Registry
 MIN_BAND = 0.12
 MAX_BAND = 0.55
 
+#: Width a context declaring an indicator at priority 1 widens the band towards.
+CONTEXT_MAX_BAND = 0.9
+
 #: Band ceiling when the best alternative is ideal.
 TOP_ANCHOR = 1.0
 
@@ -161,6 +164,11 @@ def band_width(
     return MIN_BAND + (MAX_BAND - MIN_BAND) * float(priority)
 
 
+def widened(width: float, context_priority: float) -> float:
+    """The stakeholder's band, widened towards CONTEXT_MAX_BAND in proportion to the context's priority for the indicator."""
+    return width + (CONTEXT_MAX_BAND - width) * context_priority
+
+
 def labels_for(
     qualities: Sequence[float], width: float
 ) -> tuple[float, ...]:
@@ -231,7 +239,8 @@ def make_case(
             quality_of(registry, category_key, indicator_key, value, context_keys)
         )
 
-    width = band_width(registry, stakeholder_key, indicator_key)
+    _, context_priority = registry.resolve_direction(category_key, indicator_key, context_keys)
+    width = widened(band_width(registry, stakeholder_key, indicator_key), context_priority)
     return ProbeCase(
         category_key=category_key,
         indicator_key=indicator_key,

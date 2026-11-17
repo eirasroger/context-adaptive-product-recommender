@@ -54,7 +54,7 @@ indicator_level:
   display_name: Hazardous substances present
   definition_text: Contains one or more substances on the ECHA Candidate List of substances of very high concern, or restricted under REACH Annex XVII.
   normalised_position: 0.0
-  is_disqualifying: 0
+  is_disqualifying: 1
 - indicator_key: health
   level_key: h1
   level_index: 1
