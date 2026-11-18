@@ -135,6 +135,16 @@ def top1_agreement(predictions: Predictions) -> float:
     return hits / total if total else float("nan")
 
 
+def top1_regret(predictions: Predictions) -> float:
+    """Label score lost by taking the model's first choice, averaged over sets; a miss between near-equal products costs little."""
+    losses = [
+        float(actual.max() - actual[int(np.argmax(predicted))])
+        for predicted, actual in _grouped(predictions).values()
+        if len(predicted) >= 2
+    ]
+    return float(np.mean(losses)) if losses else float("nan")
+
+
 def tie_tolerant_tau(predictions: Predictions, epsilon: float = TIE_EPSILON) -> float:
     """Rank correlation that skips pairs whose labels are within ``epsilon``."""
     concordant = discordant = 0
@@ -163,6 +173,7 @@ class MetricSet:
     band_placement: float
     pointwise_mae: float
     top1_agreement: float
+    top1_regret: float
     tie_tolerant_tau: float
 
     def as_dict(self) -> dict[str, float]:
@@ -174,6 +185,7 @@ class MetricSet:
             "band_placement": self.band_placement,
             "pointwise_mae": self.pointwise_mae,
             "top1_agreement": self.top1_agreement,
+            "top1_regret": self.top1_regret,
             "tie_tolerant_tau": self.tie_tolerant_tau,
         }
 
@@ -187,6 +199,7 @@ def compute(predictions: Predictions) -> MetricSet:
         band_placement=band_placement(predictions),
         pointwise_mae=pointwise_mae(predictions),
         top1_agreement=top1_agreement(predictions),
+        top1_regret=top1_regret(predictions),
         tie_tolerant_tau=tie_tolerant_tau(predictions),
     )
 

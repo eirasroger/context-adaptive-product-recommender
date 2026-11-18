@@ -138,6 +138,7 @@ HEADERS = (
     ("band_placement", "band"),
     ("pointwise_mae", "mae"),
     ("top1_agreement", "top1"),
+    ("top1_regret", "regret"),
     ("tie_tolerant_tau", "tau"),
 )
 
