@@ -145,6 +145,32 @@ def top1_regret(predictions: Predictions) -> float:
     return float(np.mean(losses)) if losses else float("nan")
 
 
+def _top_label_relevance(actual: np.ndarray, predicted: np.ndarray) -> np.ndarray:
+    """Relevance in the model's order: 1 for products holding the top label, the precursor study's binary target."""
+    order = np.argsort(-predicted, kind="stable")
+    return (actual[order] >= actual.max() - 1e-9).astype(float)
+
+
+def mean_reciprocal_rank(predictions: Predictions) -> float:
+    """Mean over sets of one over the model's rank of the first top-labelled product."""
+    ranks = [
+        1.0 / (1 + int(np.argmax(_top_label_relevance(actual, predicted))))
+        for predicted, actual in _grouped(predictions).values()
+    ]
+    return float(np.mean(ranks)) if ranks else float("nan")
+
+
+def ndcg(predictions: Predictions) -> float:
+    """Mean over sets of normalised discounted cumulative gain, with the top-labelled products as relevant."""
+    gains = []
+    for predicted, actual in _grouped(predictions).values():
+        relevance = _top_label_relevance(actual, predicted)
+        discounts = 1.0 / np.log2(np.arange(2, len(relevance) + 2))
+        ideal = np.sort(relevance)[::-1]
+        gains.append(float((relevance * discounts).sum() / (ideal * discounts).sum()))
+    return float(np.mean(gains)) if gains else float("nan")
+
+
 def tie_tolerant_tau(predictions: Predictions, epsilon: float = TIE_EPSILON) -> float:
     """Rank correlation that skips pairs whose labels are within ``epsilon``."""
     concordant = discordant = 0

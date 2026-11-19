@@ -16,7 +16,7 @@ from db.session import create_db_engine, db_path, session_scope
 from eval import behavioural, report as report_module
 from model import checkpoint as checkpoint_module
 from snapshot.build import SNAPSHOT_ROOT, build
-from train import machine
+from train import curves, machine
 from train.config import TrainConfig
 from train.trainer import EpochRecord, train, write_history
 
@@ -221,6 +221,8 @@ def execute(config: TrainConfig, behavioural_suite: bool = True) -> tuple[Path, 
 
     print()
     print(report_module.render(results, config.name))
+    figure = curves.plot_history(curves.read_history(run_dir), run_dir / curves.FIGURE, run_dir.name, config.optim.epochs)
+    print(f"curves {figure}")
     return run_dir, results
 
 

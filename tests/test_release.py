@@ -283,9 +283,9 @@ def test_every_third_party_import_is_declared():
 
     root = _root()
     first_party = {
-        "app", "core", "db", "eval", "experiments", "ingest", "model",
-        "registry", "serve", "snapshot", "tests", "train",
-    }
+        path.name for path in root.iterdir()
+        if path.is_dir() and not path.name.startswith(".") and any(path.rglob("*.py"))
+    } | {path.stem for path in root.glob("*.py")}
 
     def _normalise(name: str) -> str:
         return name.strip().lower().replace("_", ".").replace("-", ".")

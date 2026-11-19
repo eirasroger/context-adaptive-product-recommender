@@ -16,6 +16,10 @@ import torch
 from core.dataset import collate
 from core.encoding import AlternativeInput, encode_set
 from core.registry import Registry
+from eval.figure_style import (
+    GRID, INK, INK_MUTED, INK_SECONDARY, NEGATIVE, NEUTRAL, POSITIVE, SERIES, SURFACE,
+    pyplot, title as figure_title,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT = ROOT / "tests" / "fixtures" / "snapshot"
@@ -276,46 +280,6 @@ def shap_samples(shortlists: Sequence[Shortlist], size: int = 60) -> list[dict]:
     return random.Random(0).sample(rows, min(size, len(rows)))
 
 
-SURFACE = "#fcfcfb"
-INK = "#0b0b0b"
-INK_SECONDARY = "#52514e"
-INK_MUTED = "#898781"
-GRID = "#e1e0d9"
-POSITIVE = "#2a78d6"
-NEGATIVE = "#e34948"
-NEUTRAL = "#f0efec"
-SERIES = ("#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948")
-
-
-def _style():
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    plt.rcParams.update({
-        "font.family": "sans-serif",
-        "font.sans-serif": ["Segoe UI", "Helvetica Neue", "Arial", "DejaVu Sans"],
-        "font.size": 9,
-        "figure.facecolor": SURFACE,
-        "axes.facecolor": SURFACE,
-        "savefig.facecolor": SURFACE,
-        "text.color": INK,
-        "axes.labelcolor": INK_SECONDARY,
-        "xtick.color": INK_SECONDARY,
-        "ytick.color": INK_SECONDARY,
-        "axes.edgecolor": GRID,
-        "axes.spines.top": False,
-        "axes.spines.right": False,
-    })
-    return plt
-
-
-def _title(fig, title: str, subtitle: str) -> None:
-    fig.text(0.01, 0.985, title, fontsize=12, fontweight="semibold", va="top")
-    fig.text(0.01, 0.95, subtitle, fontsize=9, color=INK_SECONDARY, va="top", wrap=True)
-
-
 def _indicator_order(
     registry: Registry, families: dict[str, Family], keys: set[str]
 ) -> list[str]:
@@ -339,7 +303,7 @@ def heatmap(
     path: Path,
     declared: dict[tuple[str, str], int] | None = None,
 ) -> None:
-    plt = _style()
+    plt = pyplot()
     from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 
     rows = _indicator_order(registry, families, {e.indicator for e in effects})
@@ -401,7 +365,7 @@ def heatmap(
     bar.outline.set_visible(False)
     bar.ax.tick_params(length=0, labelsize=8)
     bar.set_label("higher values lower the score  ←   →  higher values raise it", fontsize=8)
-    _title(fig, title, subtitle)
+    figure_title(fig, title, subtitle)
     fig.savefig(path, dpi=200)
     plt.close(fig)
 
@@ -414,7 +378,7 @@ def family_shares(
     subtitle: str,
     path: Path,
 ) -> list[dict]:
-    plt = _style()
+    plt = pyplot()
 
     families = sorted(families_by_key, key=lambda k: families_by_key[k].sort_order)
     colours = dict(zip(families, SERIES))
@@ -462,7 +426,7 @@ def family_shares(
         loc="upper left", bbox_to_anchor=(0.01, 0.855), ncol=len(families),
         frameon=False, fontsize=8, handlelength=1.0, columnspacing=1.2,
     )
-    _title(fig, title, subtitle)
+    figure_title(fig, title, subtitle)
     fig.savefig(path, dpi=200)
     plt.close(fig)
     return rows_out
@@ -472,7 +436,7 @@ def agreement(
     registry: Registry, pairs: Sequence[dict], masked: dict[str, str], title: str, path: Path
 ) -> dict[str, float]:
     """Plot withholding against SHAP and return their rank correlation."""
-    plt = _style()
+    plt = pyplot()
 
     x = np.array([p["withholding"] for p in pairs])
     y = np.array([p["shap"] for p in pairs])
@@ -492,7 +456,7 @@ def agreement(
     ax.set_xlabel("Shift in score when the indicator is withheld")
     ax.set_ylabel("SHAP contribution")
     ax.tick_params(length=0)
-    _title(
+    figure_title(
         fig, title,
         f"One point per alternative and indicator ({int(shown.sum())} points). "
         f"Rank correlation {rho['unmasked']:.2f}." + masking_note(registry, masked),

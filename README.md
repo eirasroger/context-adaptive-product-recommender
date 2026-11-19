@@ -160,6 +160,7 @@ train/, eval/  training, metrics and the release gate
 serve/         the API and the shipped release
 frontend/      the comparison page
 experiments/   offline analyses
+baselines/     the 2025 concrete-only model, kept for comparison
 tests/         the test suite
 ```
 
