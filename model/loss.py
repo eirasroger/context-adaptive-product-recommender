@@ -52,8 +52,9 @@ def combine_by_group(
         return per_set.sum() * 0.0
 
     buckets: dict[tuple[str, str], list[int]] = {}
-    for index, (category, source) in enumerate(zip(category_keys, provenance)):
-        if bool(counted[index]):
+    # One transfer: reading counted[index] per set waits on the GPU once per set (2026-11-19: a third of each step).
+    for index, (category, source, is_counted) in enumerate(zip(category_keys, provenance, counted.tolist())):
+        if is_counted:
             buckets.setdefault((category, source), []).append(index)
 
     if not buckets:
@@ -220,12 +221,13 @@ def composite_loss(
 
     # Unweighted, to show how well each provenance is fitted.
     per_set, counted = pointwise_per_set(scores, pref, conf, mask)
+    counted_rows = counted.tolist()
     by_provenance: dict[str, float] = {}
     for source in sorted(set(provenance)):
         rows = [
             index
             for index, key in enumerate(provenance)
-            if key == source and bool(counted[index])
+            if key == source and counted_rows[index]
         ]
         if rows:
             index = torch.tensor(rows, device=scores.device, dtype=torch.long)

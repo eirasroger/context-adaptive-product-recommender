@@ -40,35 +40,37 @@ class Predictions:
 @torch.no_grad()
 def predict(model, loader: DataLoader, device: str | torch.device = "cpu") -> Predictions:
     model.eval()
-    set_index, position, predicted, actual, confidence = [], [], [], [], []
-
+    parts = []
     for batch in loader:
         batch = batch.to(device)
-        scores = model(batch).cpu().numpy()
-        pref = batch.pref.cpu().numpy()
-        conf = batch.conf.cpu().numpy()
-        mask = batch.alternative_mask.cpu().numpy()
-        indices = batch.set_indices.cpu().numpy()
+        parts.append(batch_predictions(batch, model(batch)))
+    return concatenate(parts)
 
-        valid = mask & ~np.isnan(pref)
-        rows, cols = np.nonzero(valid)
-        set_index.append(indices[rows])
-        position.append(cols)
-        predicted.append(scores[rows, cols])
-        actual.append(pref[rows, cols])
-        confidence.append(conf[rows, cols])
 
-    if not predicted:
+def batch_predictions(batch, scores: torch.Tensor) -> Predictions:
+    """One batch's scores beside its labels, over the labelled alternatives."""
+    scores = scores.detach().cpu().numpy()
+    pref = batch.pref.cpu().numpy()
+    conf = batch.conf.cpu().numpy()
+    valid = batch.alternative_mask.cpu().numpy() & ~np.isnan(pref)
+    rows, cols = np.nonzero(valid)
+    return Predictions(
+        set_index=batch.set_indices.cpu().numpy()[rows],
+        position=cols,
+        predicted=scores[rows, cols],
+        actual=pref[rows, cols],
+        confidence=conf[rows, cols],
+    )
+
+
+def concatenate(parts: list[Predictions]) -> Predictions:
+    if not parts:
         empty = np.array([], dtype=np.float64)
         return Predictions(empty, empty, empty, empty, empty)
-
-    return Predictions(
-        set_index=np.concatenate(set_index),
-        position=np.concatenate(position),
-        predicted=np.concatenate(predicted),
-        actual=np.concatenate(actual),
-        confidence=np.concatenate(confidence),
-    )
+    return Predictions(*(
+        np.concatenate([getattr(part, name) for part in parts])
+        for name in ("set_index", "position", "predicted", "actual", "confidence")
+    ))
 
 
 def _grouped(predictions: Predictions) -> dict[int, tuple[np.ndarray, np.ndarray]]:

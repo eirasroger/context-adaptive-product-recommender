@@ -49,7 +49,9 @@ def test_every_job_runs_and_reports_its_exit_code(tmp_path):
         for i in range(3)
     ]
     finished = []
-    _, exits = concurrent.run_jobs(jobs, "cpu", parallel=2, on_finish=lambda job, code: finished.append(job.name))
+    _, exits = concurrent.run_jobs(
+        jobs, "cpu", parallel=2, on_finish=lambda job, code: finished.append(job.name), poll_seconds=0.1,
+    )
 
     assert exits == {"job0": 0, "job1": 1, "job2": 2}
     assert sorted(finished) == ["job0", "job1", "job2"]

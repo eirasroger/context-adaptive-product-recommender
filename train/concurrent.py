@@ -130,6 +130,7 @@ def run_jobs(
     device: str,
     parallel: int | None = None,
     on_finish: Callable[[Job, int], None] | None = None,
+    poll_seconds: float = 5.0,
 ) -> tuple[dict, dict[str, int]]:
     """Run every job, sized to the machine from the first one; the sizing and each job's exit code.
 
@@ -157,7 +158,7 @@ def run_jobs(
     while waiting or running:
         while waiting and len(running) < sizing["parallel"]:
             start(waiting.pop(0))
-        time.sleep(5)
+        time.sleep(poll_seconds)
         for name, (job, process, started) in list(running.items()):
             if process.poll() is None:
                 continue

@@ -124,9 +124,11 @@ def _schedule(step: int, warmup: int, total: int) -> float:
 
 
 @torch.no_grad()
-def evaluate(model, loader, weights, device) -> tuple[float, metrics_module.MetricSet]:
+@torch.no_grad()
+def evaluate(model, loader, weights, device) -> tuple[float, float, float]:
+    """Validation loss, gap fidelity and band placement, from one pass over the loader."""
     model.eval()
-    total, batches = 0.0, 0
+    total, parts = 0.0, []
     for batch in loader:
         batch = batch.to(device)
         scores = model(batch)
@@ -140,9 +142,10 @@ def evaluate(model, loader, weights, device) -> tuple[float, metrics_module.Metr
             weights,
         )
         total += float(breakdown.total)
-        batches += 1
-    predictions = metrics_module.predict(model, loader, device)
-    return total / max(1, batches), metrics_module.compute(predictions)
+        parts.append(metrics_module.batch_predictions(batch, scores))
+    predictions = metrics_module.concatenate(parts)
+    loss = total / max(1, len(parts))
+    return loss, metrics_module.gap_fidelity(predictions), metrics_module.band_placement(predictions)
 
 
 def train(
@@ -210,15 +213,15 @@ def train(
                 provenance_totals.setdefault(key, []).append(value)
             batches += 1
 
-        val_loss, val_metrics = evaluate(model, val_loader, weights, device)
+        val_loss, val_gap, val_band = evaluate(model, val_loader, weights, device)
         record = EpochRecord(
             epoch=epoch,
             train_loss=totals["total"] / max(1, batches),
             train_pointwise=totals["pointwise"] / max(1, batches),
             train_pairwise=totals["pairwise"] / max(1, batches),
             val_loss=val_loss,
-            val_gap_fidelity=val_metrics.gap_fidelity,
-            val_band_placement=val_metrics.band_placement,
+            val_gap_fidelity=val_gap,
+            val_band_placement=val_band,
             learning_rate=optimizer.param_groups[0]["lr"],
             seconds=time.time() - started,
             by_provenance={
