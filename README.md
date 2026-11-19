@@ -54,12 +54,12 @@ experts.
 ## Results
 
 <!-- results:start -->
-The model in `serve/release/` comes from run `baseline-20261118T080023Z` and
-carries registry 0.6.2. On 10,721 test shortlists it scores:
+The model in `serve/release/` comes from run `baseline-20261119T073306Z` and
+carries registry 0.6.2. On 10,871 test shortlists it scores:
 
 | Gap fidelity | Band placement | Top-1 agreement | Tie-tolerant rank correlation | Behavioural assertions |
 |---|---|---|---|---|
-| 0.042 | 0.016 | 0.918 | 0.921 | 1456 of 1456 pass |
+| 0.041 | 0.016 | 0.919 | 0.923 | 1456 of 1456 pass |
 <!-- results:end -->
 
 The behavioural assertions check that the model responds to each indicator in
