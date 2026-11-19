@@ -539,9 +539,9 @@ def run(
         pool = [s for s in everything if s.category_key == category_key]
         chosen = random.Random(seed).sample(pool, min(sets, len(pool)))
         category = registry.category(category_key)
-        contexts = sorted(category.available_contexts)
+        contexts = list(category.context_presentation)
         stakeholders = sorted(registry.stakeholders)
-        context_names = {k: registry.contexts[k].display_name for k in contexts}
+        context_names = {k: shown.display_name for k, shown in category.context_presentation.items()}
         stakeholder_names = {k: registry.stakeholders[k].display_name for k in stakeholders}
         basis = f"{len(chosen)} test shortlists labelled by a language model or an expert"
 

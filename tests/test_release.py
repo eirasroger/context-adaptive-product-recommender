@@ -110,14 +110,15 @@ def _readme(tmp_path):
 
 
 def _metrics(passed: bool = True, gap: float = 0.05) -> dict:
+    scored = MetricSet(
+        n_sets=1234, n_alternatives=4321, gap_fidelity=gap, gap_fidelity_se=0.001,
+        band_placement=0.02, pointwise_mae=0.03, top1_agreement=0.9,
+        top1_regret=0.01, tie_tolerant_tau=0.9,
+    ).as_dict()
     return {
-        "overall": MetricSet(
-            n_sets=1234, n_alternatives=4321, gap_fidelity=gap, gap_fidelity_se=0.001,
-            band_placement=0.02, pointwise_mae=0.03, top1_agreement=0.9,
-            top1_regret=0.01, tie_tolerant_tau=0.9,
-        ).as_dict(),
+        "overall": scored,
         "stratified": {"context": {"standard": {"gap_fidelity": gap}}},
-        "judged": {"context": {"standard": {"gap_fidelity": gap}}},
+        "judged": {"context": {"standard": {"gap_fidelity": gap}}, "category": {"concrete": scored}},
         "behavioural": {"passed": passed, "failures": [] if passed else ["x"]},
     }
 
@@ -510,8 +511,7 @@ def test_promoting_rewrites_the_readme_results(tmp_path, registry):
     _promote(run_dir, tmp_path, readme=readme)
 
     text = readme.read_text(encoding="utf-8")
-    assert "| 0.042 |" in text
-    assert "1,234 test shortlists" in text
+    assert "| All | 1,234 | 0.042 |" in text
     assert "old" not in text
     assert text.startswith("# Title") and text.endswith("After.\n")
 

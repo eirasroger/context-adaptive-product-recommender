@@ -29,12 +29,24 @@ for its use; the model ranks compliant options.
 
 ```mermaid
 flowchart TD
-  IN["a shortlist, a context and stakeholders"]
-  TOK["one token per indicator, for each alternative"]
-  ENC["encoder: each alternative over its own indicators"]
-  CMP["comparator: the alternatives over each other"]
-  OUT["a score per alternative"]
-  IN --> TOK --> ENC --> CMP --> OUT
+  IN["a shortlist: two to five products"]
+  REG["registry: indicators, directions, ranges"]
+  CTX["contexts"]
+  STK["stakeholders"]
+  TOK["one token per indicator, for each product"]
+  COND["conditioning: category, stakeholders, contexts"]
+  ENC["encoder: each product over its own indicators"]
+  CMP["comparator: the products over each other"]
+  OUT["a score per product"]
+  IN --> TOK
+  REG --> TOK
+  CTX -- "which indicators matter, and which way" --> TOK
+  CTX --> COND
+  STK --> COND
+  TOK --> ENC --> CMP --> OUT
+  COND --> ENC
+  COND --> CMP
+  COND --> OUT
 ```
 
 A **registry** declares what the model knows: the categories, their
@@ -55,22 +67,27 @@ experts.
 
 <!-- results:start -->
 The model in `serve/release/` comes from run `baseline-20261119T073306Z` and
-carries registry 0.6.2. On 10,871 test shortlists it scores:
+carries registry 0.6.2. On its test shortlists:
 
-| Gap fidelity | Pointwise MAE | Band placement | Top-1 agreement | Tie-tolerant rank correlation | Behavioural assertions |
-|---|---|---|---|---|---|
-| 0.041 | 0.028 | 0.016 | 0.919 | 0.923 | 1456 of 1456 pass |
+| Test shortlists | Count | Gap fidelity | Pointwise MAE | Band placement | Top-1 agreement | Tie-tolerant rank correlation |
+|---|---|---|---|---|---|---|
+| All | 10,871 | 0.041 | 0.028 | 0.016 | 0.919 | 0.923 |
+| Concrete | 8,231 | 0.047 | 0.032 | 0.018 | 0.906 | 0.911 |
+| Facade system | 2,640 | 0.025 | 0.019 | 0.012 | 0.963 | 0.961 |
+
+Behavioural assertions: 1456 of 1456 pass.
 <!-- results:end -->
 
 The behavioural assertions check that the model responds to each indicator in
 the direction the registry declares, in every context and for every
 stakeholder.
 
-Which indicators drive the scores, by context and by stakeholder:
+Which indicators drive the scores in each context, for concrete and for
+facade systems:
 
-![Indicator effects by context](experiments/figures/concrete-by-context.png)
+![Indicator effects by context, concrete](experiments/figures/concrete-by-context.png)
 
-![Indicator effects by stakeholder](experiments/figures/concrete-by-stakeholder.png)
+![Indicator effects by context, facade systems](experiments/figures/facade_system-by-context.png)
 
 ## Using it
 

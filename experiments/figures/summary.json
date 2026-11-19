@@ -11,15 +11,15 @@
     "concrete": {
       "shortlists": 300,
       "shap_rank_correlation": {
-        "all": 0.5952609416381417,
-        "unmasked": 0.5370528027973785
+        "all": 0.5920585527129959,
+        "unmasked": 0.5331829944283681
       }
     },
     "facade_system": {
       "shortlists": 300,
       "shap_rank_correlation": {
-        "all": 0.6082202876271467,
-        "unmasked": 0.6334048959225274
+        "all": 0.6029613653337276,
+        "unmasked": 0.6271534926493391
       }
     }
   }

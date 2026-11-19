@@ -67,23 +67,27 @@ def results_section(release_dir: Path = RELEASE_DIR) -> str:
     release_dir = Path(release_dir)
     manifest = read_manifest(release_dir) or {}
     metrics = json.loads((release_dir / METRICS_FILE).read_text(encoding="utf-8"))
-    overall = metrics["overall"]
     verdicts = (metrics.get("behavioural") or {}).get("summary") or {}
     passed = sum(counts.get("pass", 0) for counts in verdicts.values())
     total = sum(sum(counts.values()) for counts in verdicts.values())
+    def row(label: str, cell: dict) -> str:
+        return (
+            f"| {label} | {cell['n_sets']:,} | {cell['gap_fidelity']:.3f} | {cell['pointwise_mae']:.3f} "
+            f"| {cell['band_placement']:.3f} | {cell['top1_agreement']:.3f} | {cell['tie_tolerant_tau']:.3f} |"
+        )
 
+    categories = metrics["stratified"].get("category", {})
     return "\n".join([
         f"The model in `serve/release/` comes from run `{manifest.get('run')}` and",
-        f"carries registry {manifest.get('registry_version')}. On "
-        f"{overall['n_sets']:,} test shortlists it scores:",
+        f"carries registry {manifest.get('registry_version')}. On its test shortlists:",
         "",
-        "| Gap fidelity | Pointwise MAE | Band placement | Top-1 agreement "
-        "| Tie-tolerant rank correlation | Behavioural assertions |",
-        "|---|---|---|---|---|---|",
-        f"| {overall['gap_fidelity']:.3f} | {overall['pointwise_mae']:.3f} "
-        f"| {overall['band_placement']:.3f} "
-        f"| {overall['top1_agreement']:.3f} | {overall['tie_tolerant_tau']:.3f} "
-        f"| {passed} of {total} pass |",
+        "| Test shortlists | Count | Gap fidelity | Pointwise MAE | Band placement "
+        "| Top-1 agreement | Tie-tolerant rank correlation |",
+        "|---|---|---|---|---|---|---|",
+        row("All", metrics["overall"]),
+        *(row(key.replace("_", " ").capitalize(), cell) for key, cell in sorted(categories.items())),
+        "",
+        f"Behavioural assertions: {passed} of {total} pass.",
     ])
 
 
