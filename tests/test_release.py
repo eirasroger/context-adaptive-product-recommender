@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 import torch
 
+from eval.metrics import MetricSet
 from model import checkpoint as checkpoint_module
 from model.recommender import ModelConfig, Recommender
 from serve import release as release_module
@@ -110,10 +111,11 @@ def _readme(tmp_path):
 
 def _metrics(passed: bool = True, gap: float = 0.05) -> dict:
     return {
-        "overall": {
-            "gap_fidelity": gap, "band_placement": 0.02, "top1_agreement": 0.9,
-            "tie_tolerant_tau": 0.9, "n_sets": 1234,
-        },
+        "overall": MetricSet(
+            n_sets=1234, n_alternatives=4321, gap_fidelity=gap, gap_fidelity_se=0.001,
+            band_placement=0.02, pointwise_mae=0.03, top1_agreement=0.9,
+            top1_regret=0.01, tie_tolerant_tau=0.9,
+        ).as_dict(),
         "stratified": {"context": {"standard": {"gap_fidelity": gap}}},
         "judged": {"context": {"standard": {"gap_fidelity": gap}}},
         "behavioural": {"passed": passed, "failures": [] if passed else ["x"]},
