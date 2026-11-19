@@ -77,10 +77,11 @@ def results_section(release_dir: Path = RELEASE_DIR) -> str:
         f"carries registry {manifest.get('registry_version')}. On "
         f"{overall['n_sets']:,} test shortlists it scores:",
         "",
-        "| Gap fidelity | Band placement | Top-1 agreement "
+        "| Gap fidelity | Pointwise MAE | Band placement | Top-1 agreement "
         "| Tie-tolerant rank correlation | Behavioural assertions |",
-        "|---|---|---|---|---|",
-        f"| {overall['gap_fidelity']:.3f} | {overall['band_placement']:.3f} "
+        "|---|---|---|---|---|---|",
+        f"| {overall['gap_fidelity']:.3f} | {overall['pointwise_mae']:.3f} "
+        f"| {overall['band_placement']:.3f} "
         f"| {overall['top1_agreement']:.3f} | {overall['tie_tolerant_tau']:.3f} "
         f"| {passed} of {total} pass |",
     ])
