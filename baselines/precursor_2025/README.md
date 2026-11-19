@@ -67,4 +67,7 @@ python -m experiments.generic_vs_precursor compare <frozen_dataset.json> <labell
 its Table 2. `compare` trains the precursor, the generic model on the
 published concrete scenarios alone, and the generic model on the full joint
 corpus, once per seed, and scores all three on the published concrete test
-fold. Results go to `runs/generic-vs-precursor-<time>/`.
+fold. Each training is its own process, as many at once as the machine fits
+(`train/concurrent.py`); `--parallel` fixes the number and `--epochs`
+shortens the generic trainings for a quick check. Results, per-training logs
+and configs go to `runs/generic-vs-precursor-<time>/`.

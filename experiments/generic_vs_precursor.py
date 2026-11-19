@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import time
+import sys
 from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,8 +20,9 @@ from eval import metrics as M
 from ingest.adapters.concrete_v1 import SOURCE_KEY as PUBLISHED_SOURCE, classify_provenance
 from model import checkpoint as checkpoint_module
 from snapshot.build import SNAPSHOT_ROOT, build
+from train.concurrent import Job, run_jobs, sizing_line
 from train.config import TrainConfig
-from train.run import execute, resolve_registry
+from train.run import resolve_registry
 
 ARMS = ("precursor", "generic_concrete", "generic_joint")
 DEFAULT_CONFIG = Path("train/configs/default.yaml")
@@ -152,32 +153,49 @@ def reproduce(frozen_path: Path, labelled_path: Path, output: Path) -> None:
     _write(output, "reproduction", lines, {str(size): row for size, row in rows.items()})
 
 
-def published_snapshot(config: TrainConfig) -> tuple[str, dict[str, str]]:
-    """The concrete scenarios of the published source alone, with this repo's fold for each."""
+def prepare_snapshots(config: TrainConfig) -> tuple[dict[str, str], dict[str, str]]:
+    """Build each generic arm's snapshot and warm its prepared cache, so the training processes only read.
+
+    Returns the snapshot hash per generic arm, and this repo's fold for every published concrete scenario.
+    """
     with session_scope(create_db_engine(config.db)) as session:
         registry, _ = resolve_registry(config, session)
-        digest, directory = build(
+        published = build(
             session, config.split_key, config.registry_version,
             categories=["concrete"], sources=[PUBLISHED_SOURCE],
         )
-    prepared = load_or_prepare(registry, directory)
-    return digest, dict(zip(prepared.set_external_ids, prepared.set_fold))
+        joint = build(
+            session, config.split_key, config.registry_version,
+            categories=config.categories or None, provenances=config.provenances or None,
+        )
+    prepared = load_or_prepare(registry, published[1])
+    load_or_prepare(registry, joint[1])
+    folds = dict(zip(prepared.set_external_ids, prepared.set_fold))
+    return {"generic_concrete": published[0], "generic_joint": joint[0]}, folds
 
 
-def precursor_arm(frozen: list[dict], labels: dict, folds: dict[str, str], seed: int) -> BySet:
+def precursor_seed(frozen_path: Path, labelled_path: Path, snapshot: str, seed: int, out: Path) -> None:
+    """Train the precursor once on the published snapshot's folds; write its test-fold predictions."""
+    config = TrainConfig.load(DEFAULT_CONFIG)
+    with session_scope(create_db_engine(config.db)) as session:
+        registry, _ = resolve_registry(config, session)
+    prepared = load_or_prepare(registry, SNAPSHOT_ROOT / snapshot)
+    folds = dict(zip(prepared.set_external_ids, prepared.set_fold))
+    frozen, labels = precursor.read_published(frozen_path, labelled_path)
+
     fold_ids = {fold: {sid for sid, f in folds.items() if f == fold} for fold in ("train", "val", "test")}
     scenarios = precursor.encode(frozen, labels, fold_ids["train"])
     split = {fold: [s for s in scenarios if s["id"] in ids] for fold, ids in fold_ids.items()}
     model = precursor.fit(split["train"], split["val"], seed)
-    return by_set(*precursor.predict(model, split["test"]))
+    sets = by_set(*precursor.predict(model, split["test"]))
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps({sid: [p.tolist(), a.tolist()] for sid, (p, a) in sets.items()}), encoding="utf-8")
 
 
-def generic_arm(config: TrainConfig) -> tuple[BySet, dict[str, str]]:
-    """Train one generic run without gates or promotion; its test-fold predictions and folds."""
-    run_dir, _ = execute(config, behavioural_suite=False)
+def generic_predictions(run_dir: Path, device: str) -> tuple[BySet, dict[str, str]]:
+    """A finished generic run's test-fold predictions, and the fold of every set in its snapshot."""
     meta = checkpoint_module.describe(run_dir / "model.pt")["meta"]
     registry = checkpoint_module.load_registry(run_dir / "model.pt")
-    device = config.resolved_device()
     model, _, _ = checkpoint_module.load(run_dir / "model.pt", registry=registry, device=device)
     prepared = load_or_prepare(registry, SNAPSHOT_ROOT / str(meta["snapshot_hash"]))
     loader = DataLoader(ComparisonSetDataset(prepared, fold="test"), batch_size=256, shuffle=False, collate_fn=collate)
@@ -185,31 +203,59 @@ def generic_arm(config: TrainConfig) -> tuple[BySet, dict[str, str]]:
     return by_set(predictions, list(prepared.set_external_ids)), dict(zip(prepared.set_external_ids, prepared.set_fold))
 
 
-def compare(frozen_path: Path, labelled_path: Path, seeds: list[int], arms: list[str], output: Path) -> None:
+def _jobs(
+    base: TrainConfig, snapshots: dict[str, str], frozen_path: Path, labelled_path: Path,
+    seeds: list[int], arms: list[str], output: Path,
+) -> list[Job]:
+    """One process per arm and seed, longest first; the first is also the heaviest, so its footprint sizes the rest."""
+    jobs = []
+    for arm in sorted(arms, key=lambda a: ("generic_joint", "precursor", "generic_concrete").index(a)):
+        for seed in seeds:
+            name = f"{arm}-seed{seed}"
+            if arm == "precursor":
+                command = [
+                    sys.executable, "-u", "-m", "experiments.generic_vs_precursor", "precursor-seed",
+                    str(frozen_path), str(labelled_path), "--seed", str(seed),
+                    "--snapshot", snapshots["generic_concrete"], "--out", str(output / "precursor" / f"seed{seed}.json"),
+                ]
+            else:
+                config = replace(
+                    base, name=name, snapshot=snapshots[arm], optim=replace(base.optim, seed=seed),
+                    notes=f"generic_vs_precursor, arm {arm}, seed {seed}",
+                )
+                config_file = config.dump(output / "jobs" / f"{name}.yaml")
+                command = [sys.executable, "-u", "-m", "train.run", "--config", str(config_file), "--skip-behavioural"]
+            jobs.append(Job(name=name, command=command, log=output / "logs" / f"{name}.log"))
+    return jobs
+
+
+def compare(
+    frozen_path: Path, labelled_path: Path, seeds: list[int], arms: list[str], output: Path,
+    epochs: int | None = None, parallel: int | None = None,
+) -> None:
     base = TrainConfig.load(DEFAULT_CONFIG)
     base.promote = False
     base.output_dir = str(output)
-    snapshot, folds = published_snapshot(base)
+    if epochs is not None:
+        base.optim.epochs = epochs
+    snapshots, folds = prepare_snapshots(base)
     test_ids = sorted(sid for sid, fold in folds.items() if fold == "test")
-    frozen, labels = precursor.read_published(frozen_path, labelled_path)
+
+    jobs = _jobs(base, snapshots, frozen_path, labelled_path, seeds, arms, output)
+    sizing, exits = run_jobs(jobs, base.resolved_device(), parallel)
+    failed = sorted(name for name, code in exits.items() if code)
+    if failed:
+        raise SystemExit(f"failed: {', '.join(failed)}; logs in {output / 'logs'}")
 
     results: dict[str, dict[int, BySet]] = {arm: {} for arm in arms}
-    total, started = len(seeds) * len(arms), time.perf_counter()
-    for seed in seeds:
-        for arm in arms:
-            done = sum(len(runs) for runs in results.values())
-            print(f"\n== [{done + 1}/{total}] {arm}, seed {seed} | {_progress(started, done, total)}", flush=True)
+    for arm in arms:
+        for seed in seeds:
             if arm == "precursor":
-                results[arm][seed] = precursor_arm(frozen, labels, folds, seed)
+                raw = json.loads((output / "precursor" / f"seed{seed}.json").read_text(encoding="utf-8"))
+                results[arm][seed] = {sid: (np.asarray(p), np.asarray(a)) for sid, (p, a) in raw.items()}
                 continue
-            config = replace(
-                base,
-                name=f"{arm}-seed{seed}",
-                snapshot=snapshot if arm == "generic_concrete" else None,
-                optim=replace(base.optim, seed=seed),
-                notes=f"generic_vs_precursor, arm {arm}, seed {seed}",
-            )
-            sets, run_folds = generic_arm(config)
+            (run_dir,) = [path.parent for path in output.glob(f"{arm}-seed{seed}-*/model.pt")]
+            sets, run_folds = generic_predictions(run_dir, base.resolved_device())
             moved = [sid for sid in test_ids if run_folds.get(sid) != "test"]
             if moved:
                 raise SystemExit(f"{arm}: {len(moved)} published test sets sit in another fold, e.g. {moved[:3]}")
@@ -227,23 +273,11 @@ def compare(frozen_path: Path, labelled_path: Path, seeds: list[int], arms: list
 
     groups = strata(common, reference)
     summary = {
-        stratum: {
-            arm: {
-                seed: score(results[arm][seed], ids) for seed in seeds
-            }
-            for arm in arms
-        }
+        stratum: {arm: {seed: score(results[arm][seed], ids) for seed in seeds} for arm in arms}
         for stratum, ids in groups.items()
     }
-    _write(output, "comparison", _comparison_lines(summary, arms, seeds, len(test_ids), len(scored), len(common)), summary)
-
-
-def _progress(started: float, done: int, total: int) -> str:
-    """Elapsed minutes, and the time left at the mean pace of the trainings finished so far."""
-    elapsed = (time.perf_counter() - started) / 60
-    if not done:
-        return f"{elapsed:.1f} min elapsed"
-    return f"{elapsed:.1f} min elapsed | about {elapsed / done * (total - done):.0f} min left"
+    lines = _comparison_lines(summary, arms, seeds, len(test_ids), len(scored), len(common))
+    _write(output, "comparison", lines + ["", sizing_line(sizing)], summary)
 
 
 def _mean_sd(values: list[float]) -> tuple[float, float]:
@@ -305,20 +339,33 @@ def _write(output: Path, stem: str, lines: list[str], data: dict) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("reproduce", "compare"):
+    for name in ("reproduce", "compare", "precursor-seed"):
         command = commands.add_parser(name)
         command.add_argument("scenarios", type=Path, help="frozen_dataset.json of the published corpus")
         command.add_argument("labels", type=Path, help="labelled_dataset.json of the published corpus")
-    commands.choices["compare"].add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4])
-    commands.choices["compare"].add_argument("--arms", nargs="+", choices=ARMS, default=list(ARMS))
+    compare_command = commands.choices["compare"]
+    compare_command.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4])
+    compare_command.add_argument("--arms", nargs="+", choices=ARMS, default=list(ARMS))
+    compare_command.add_argument("--parallel", type=int, default=None,
+                                 help="trainings at once; by default sized to this machine from the first one")
+    compare_command.add_argument("--epochs", type=int, default=None,
+                                 help="generic training epochs, for a quick check of the pipeline")
+    seed_command = commands.choices["precursor-seed"]
+    seed_command.description = "One precursor training, started by compare."
+    seed_command.add_argument("--seed", type=int, required=True)
+    seed_command.add_argument("--snapshot", required=True)
+    seed_command.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
 
+    if args.command == "precursor-seed":
+        precursor_seed(args.scenarios, args.labels, args.snapshot, args.seed, args.out)
+        return
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     output = OUTPUT_ROOT / f"generic-vs-precursor-{stamp}"
     if args.command == "reproduce":
         reproduce(args.scenarios, args.labels, output)
     else:
-        compare(args.scenarios, args.labels, args.seeds, args.arms, output)
+        compare(args.scenarios, args.labels, args.seeds, args.arms, output, args.epochs, args.parallel)
 
 
 if __name__ == "__main__":

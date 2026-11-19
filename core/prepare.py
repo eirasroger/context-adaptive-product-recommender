@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -449,6 +450,8 @@ def load_or_prepare(registry: Registry, snapshot_dir: Path) -> Prepared:
             return pickle.load(handle)
 
     prepared = prepare(registry, snapshot_dir)
-    with path.open("wb") as handle:
+    partial = path.with_name(f"{path.name}.{os.getpid()}.partial")
+    with partial.open("wb") as handle:
         pickle.dump(prepared, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    os.replace(partial, path)  # atomic, so a concurrent run never reads half a file
     return prepared
