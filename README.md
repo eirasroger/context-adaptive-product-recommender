@@ -66,14 +66,14 @@ experts.
 ## Results
 
 <!-- results:start -->
-The model in `serve/release/` comes from run `baseline-20261119T073306Z` and
+The model in `serve/release/` comes from run `baseline-20261123T081346Z` and
 carries registry 0.6.2. On its test shortlists:
 
 | Test shortlists | Count | Gap fidelity | Pointwise MAE | Band placement | Top-1 agreement | Tie-tolerant rank correlation |
 |---|---|---|---|---|---|---|
-| All | 10,871 | 0.041 | 0.028 | 0.016 | 0.919 | 0.923 |
-| Concrete | 8,231 | 0.047 | 0.032 | 0.018 | 0.906 | 0.911 |
-| Facade system | 2,640 | 0.025 | 0.019 | 0.012 | 0.963 | 0.961 |
+| All | 11,021 | 0.042 | 0.029 | 0.016 | 0.922 | 0.922 |
+| Concrete | 8,231 | 0.047 | 0.031 | 0.017 | 0.909 | 0.911 |
+| Facade system | 2,790 | 0.027 | 0.020 | 0.013 | 0.959 | 0.955 |
 
 Behavioural assertions: 1456 of 1456 pass.
 <!-- results:end -->
