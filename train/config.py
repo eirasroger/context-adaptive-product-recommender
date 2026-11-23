@@ -14,7 +14,7 @@ class OptimConfig:
     learning_rate: float = 3e-4
     weight_decay: float = 0.01
     batch_size: int = 128
-    epochs: int = 40
+    epochs: int = 30
     warmup_steps: int = 300
     grad_clip: float = 1.0
     patience: int = 6
