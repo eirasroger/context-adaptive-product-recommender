@@ -9,6 +9,7 @@ import torch
 import torch.nn.functional as F
 
 MIN_CONFIDENCE = 0.05
+SMOOTH_L1_BETA = 0.05
 
 
 @dataclass
@@ -19,6 +20,8 @@ class LossWeights:
     pairwise: float = 1.0
     listwise: float = 0.0  # ablation only
     provenance: Mapping[str, Mapping[str, float]] = field(default_factory=dict)
+    smooth_l1_beta: float = SMOOTH_L1_BETA
+    use_confidence: bool = True
 
     def weight_for(self, category_key: str, provenance_key: str) -> float:
         return self.provenance.get(category_key, {}).get(provenance_key, 1.0)
@@ -81,18 +84,26 @@ def combine_by_group(
     return total / len(categories)
 
 
+def _confidence(conf: torch.Tensor, use_confidence: bool) -> torch.Tensor:
+    if not use_confidence:
+        return torch.ones_like(conf)
+    return torch.nan_to_num(conf, nan=1.0).clamp(MIN_CONFIDENCE, 1.0)
+
+
 def pointwise_per_set(
     scores: torch.Tensor,
     pref: torch.Tensor,
     conf: torch.Tensor,
     mask: torch.Tensor,
+    smooth_l1_beta: float = SMOOTH_L1_BETA,
+    use_confidence: bool = True,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Confidence-weighted smooth L1 per set, and which sets carry a label."""
     valid = _valid(pref, mask)
     target = torch.nan_to_num(pref, nan=0.0)
-    element = F.smooth_l1_loss(scores, target, reduction="none", beta=0.05)
+    element = F.smooth_l1_loss(scores, target, reduction="none", beta=smooth_l1_beta)
 
-    confidence = torch.nan_to_num(conf, nan=1.0).clamp(MIN_CONFIDENCE, 1.0)
+    confidence = _confidence(conf, use_confidence)
     weights = confidence * valid.to(scores.dtype)
 
     per_set = (element * weights).sum(dim=1) / weights.sum(dim=1).clamp(min=1e-8)
@@ -104,6 +115,8 @@ def pairwise_per_set(
     pref: torch.Tensor,
     conf: torch.Tensor,
     mask: torch.Tensor,
+    smooth_l1_beta: float = SMOOTH_L1_BETA,
+    use_confidence: bool = True,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Gap error averaged over each set's pairs, and which sets have a pair."""
     valid = _valid(pref, mask)
@@ -121,11 +134,11 @@ def pairwise_per_set(
     predicted_gap = scores.unsqueeze(2) - scores.unsqueeze(1)
     true_gap = target.unsqueeze(2) - target.unsqueeze(1)
 
-    confidence = torch.nan_to_num(conf, nan=1.0).clamp(MIN_CONFIDENCE, 1.0)
+    confidence = _confidence(conf, use_confidence)
     pair_confidence = torch.minimum(confidence.unsqueeze(2), confidence.unsqueeze(1))
 
     element = (
-        F.smooth_l1_loss(predicted_gap, true_gap, reduction="none", beta=0.05)
+        F.smooth_l1_loss(predicted_gap, true_gap, reduction="none", beta=smooth_l1_beta)
         * pair_confidence
         * pair_mask.to(scores.dtype)
     )
@@ -144,7 +157,7 @@ def pointwise_loss(
     category_keys: Sequence[str],
     weights: LossWeights,
 ) -> torch.Tensor:
-    per_set, counted = pointwise_per_set(scores, pref, conf, mask)
+    per_set, counted = pointwise_per_set(scores, pref, conf, mask, weights.smooth_l1_beta, weights.use_confidence)
     return combine_by_group(per_set, counted, provenance, category_keys, weights)
 
 
@@ -157,7 +170,7 @@ def pairwise_gap_loss(
     category_keys: Sequence[str],
     weights: LossWeights,
 ) -> torch.Tensor:
-    per_set, counted = pairwise_per_set(scores, pref, conf, mask)
+    per_set, counted = pairwise_per_set(scores, pref, conf, mask, weights.smooth_l1_beta, weights.use_confidence)
     return combine_by_group(per_set, counted, provenance, category_keys, weights)
 
 

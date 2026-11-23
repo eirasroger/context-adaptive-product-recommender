@@ -81,3 +81,19 @@ def test_only_the_baseline_config_promotes():
     assert TrainConfig.load(CONFIG_DIR / "default.yaml").promote
     assert not TrainConfig.load(CONFIG_DIR / "smoke.yaml").promote
     assert not TrainConfig().promote
+
+
+def test_config_provenance_weights_replace_only_the_shares_they_name(released):
+    from train.trainer import loss_weights
+
+    config = TrainConfig()
+    registry, _ = resolve_registry(config, released)
+    category = next(iter(registry.categories))
+    declared = dict(registry.categories[category].provenance_weights)
+    config.loss.provenance = {category: {"llm": 0.9}}
+
+    weights = loss_weights(config, registry).provenance[category]
+    assert weights["llm"] == 0.9
+    assert {key: value for key, value in weights.items() if key != "llm"} == {
+        key: value for key, value in declared.items() if key != "llm"
+    }

@@ -30,6 +30,10 @@ class LossConfig:
     pointwise: float = 1.0
     pairwise: float = 1.0
     listwise: float = 0.0
+    smooth_l1_beta: float = 0.05
+    use_confidence: bool = True
+    #: Provenance weights by category, laid over the registry's declared shares for tuning studies.
+    provenance: dict[str, dict[str, float]] = field(default_factory=dict)
 
 
 @dataclass

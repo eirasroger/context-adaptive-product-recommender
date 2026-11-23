@@ -1,0 +1,65 @@
+# Tuning studies: settings trained over seeds on one split and snapshot, each against the study's
+# reference setting. A setting is a set of overrides on the baseline config, by dotted key.
+# Run one with: python -u -m experiments.tuning <study>
+
+epochs:
+  reference: epochs-30
+  seeds: [0, 1, 2]
+  settings:
+    epochs-30: {optim.epochs: 30}
+    epochs-45: {optim.epochs: 45}
+    epochs-60: {optim.epochs: 60}
+
+architecture:
+  reference: baseline
+  seeds: [0, 1, 2]
+  settings:
+    baseline: {}
+    dim-64: {arch.dim: 64}
+    dim-128: {arch.dim: 128}
+    dim-192: {arch.dim: 192}
+    encoder-1: {arch.encoder_blocks: 1}
+    encoder-3: {arch.encoder_blocks: 3}
+    comparator-1: {arch.comparator_blocks: 1}
+    comparator-3: {arch.comparator_blocks: 3}
+    heads-2: {arch.encoder_heads: 2, arch.comparator_heads: 2}
+    heads-8: {arch.encoder_heads: 8, arch.comparator_heads: 8}
+
+learning-rate:
+  reference: lr-6e-4
+  seeds: [0, 1, 2]
+  settings:
+    lr-1.5e-4: {optim.learning_rate: 0.00015}
+    lr-3e-4: {optim.learning_rate: 0.0003}
+    lr-6e-4: {optim.learning_rate: 0.0006}
+    lr-1.2e-3: {optim.learning_rate: 0.0012}
+    lr-2.4e-3: {optim.learning_rate: 0.0024}
+
+# Joint random search: every trial draws all dimensions at once, one seed each. The best few are
+# then confirmed over seeds and Monte Carlo splits. The learning-rate range is the plateau the
+# learning-rate study found.
+search:
+  reference: baseline
+  seeds: [0]
+  settings:
+    baseline: {}
+  search:
+    seed: 0
+    trials: 40
+    space:
+      optim.learning_rate: {log: [0.0004, 0.0024]}
+      optim.batch_size: [128, 256, 512]
+      optim.weight_decay: {log: [0.001, 0.1]}
+      optim.warmup_steps: [100, 300, 1000]
+      arch.dim: [64, 96, 128]
+      arch.encoder_blocks: [1, 2, 3]
+      arch.comparator_blocks: [1, 2, 3]
+      arch.dropout: [0.0, 0.1, 0.2]
+      loss.pairwise: {log: [0.3, 3.0]}
+      loss.smooth_l1_beta: [0.01, 0.05, 0.2]
+      loss.use_confidence: [true, false]
+      loss.provenance:
+        - {}
+        - {facade_system: {llm: 0.8, control: 0.2}}
+        - {facade_system: {llm: 0.4, control: 0.6}}
+        - {facade_system: {llm: 0.8, control: 0.2}, concrete: {llm: 0.6, control: 0.2, expert: 0.2}}

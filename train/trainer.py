@@ -61,9 +61,11 @@ def loss_weights(config: TrainConfig, registry: Registry) -> LossWeights:
         pairwise=config.loss.pairwise,
         listwise=config.loss.listwise,
         provenance={
-            key: dict(category.provenance_weights)
+            key: {**category.provenance_weights, **config.loss.provenance.get(key, {})}
             for key, category in registry.categories.items()
         },
+        smooth_l1_beta=config.loss.smooth_l1_beta,
+        use_confidence=config.loss.use_confidence,
     )
 
 

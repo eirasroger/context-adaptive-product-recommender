@@ -217,3 +217,15 @@ def test_reported_provenance_losses_are_unweighted():
 
 def test_permutation_loss_is_off_by_default():
     assert LossWeights().listwise == 0.0
+
+
+def test_switching_off_confidence_weights_every_label_equally():
+    pref = torch.tensor([[0.9, 0.1]])
+    scores = torch.tensor([[0.5, 0.5]])
+    mask = torch.ones(1, 2, dtype=torch.bool)
+    confident = torch.tensor([[1.0, 1.0]])
+    unsure = torch.tensor([[1.0, 0.1]])
+
+    ignored, _ = pointwise_per_set(scores, pref, unsure, mask, use_confidence=False)
+    flat, _ = pointwise_per_set(scores, pref, confident, mask)
+    assert float(ignored[0]) == pytest.approx(float(flat[0]))
