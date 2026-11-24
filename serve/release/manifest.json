@@ -36,24 +36,24 @@
       }
     },
     "overall": {
-      "band_placement": 0.016281110408553064,
-      "gap_fidelity": 0.04160877359796213,
-      "gap_fidelity_se": 0.0006763991360777349,
-      "n_alternatives": 38476,
-      "n_sets": 11021,
-      "pointwise_mae": 0.028663814067840576,
-      "tie_tolerant_tau": 0.9217540173534103,
-      "top1_agreement": 0.9215134742763814,
-      "top1_regret": 0.007964504133815635
+      "band_placement": 0.016400087182595557,
+      "gap_fidelity": 0.04203537375979728,
+      "gap_fidelity_se": 0.0006714815708017653,
+      "n_alternatives": 39030,
+      "n_sets": 11171,
+      "pointwise_mae": 0.028905518352985382,
+      "tie_tolerant_tau": 0.919857490374854,
+      "top1_agreement": 0.918270521887029,
+      "top1_regret": 0.008420508432936277
     }
   },
   "model_bytes": 2469131,
-  "model_sha256": "99c962f4bd8ed72be2cf20ee4db21f50e475385d520bc6d9787c2b12d65ba094",
+  "model_sha256": "ac3949877d2320f6c9f5b560c1c24c56ef7ef900c0947741ad34341dfa4c99f6",
   "notes": "Concrete and facade systems; facade labels from language-model agents.",
-  "promoted_at": "2026-11-23T08:18:53.254414+00:00",
+  "promoted_at": "2026-11-24T08:14:38.729085+00:00",
   "registry_content_hash": "276f49722d40537ff44f04a2bed3d04993a6f942cccccc33136b6b873a697cfe",
   "registry_version": "0.6.2",
-  "run": "baseline-20261123T081346Z",
-  "snapshot_hash": "9df02a092c271a830baca0c3f3c5e5cc7a1bef4a620a6fea72813c46fa295e7e",
+  "run": "baseline-20261124T080839Z",
+  "snapshot_hash": "e337efc2575398a8d0513c8cb1707aa8a375b87a6340839d22c43e69af205605",
   "split_key": "default"
 }
