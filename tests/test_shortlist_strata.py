@@ -19,6 +19,11 @@ def test_a_mixed_shortlist_counts_as_across():
     assert _shortlist_strata("across") == ("across",)
 
 
+def test_an_unusual_shortlist_counts_as_unusual_and_under_no_other_shortlist():
+    assert _shortlist_strata("unusual:within:etics") == ("unusual",)
+    assert _shortlist_strata("unusual:across") == ("unusual",)
+
+
 def test_control_cases_and_unlabelled_generators_stay_out_of_the_stratum():
     assert _shortlist_strata("gwp") == ()
     assert _shortlist_strata(None) == ()

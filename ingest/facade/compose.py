@@ -297,7 +297,7 @@ class Library:
         return dict(sorted(counts.items()))
 
 
-def _pick(rng: random.Random, weights: dict):
+def weighted_choice(rng: random.Random, weights: dict):
     return rng.choices(list(weights), weights=list(weights.values()))[0]
 
 
@@ -313,7 +313,7 @@ def transmittance(base_resistance: float, insulation_mm: float, conductivity: fl
 
 
 def _add_insulation(build: Build, library: Library, rng: random.Random, kinds: dict[str, float], thickness_mm: float) -> tuple[str, float]:
-    kind = _pick(rng, kinds)
+    kind = weighted_choice(rng, kinds)
     layer = library.pick(rng, "insulation", kind)
     conductivity, typical_density = INSULATION[layer.kind]
     metres = thickness_mm / 1000
@@ -322,13 +322,13 @@ def _add_insulation(build: Build, library: Library, rng: random.Random, kinds: d
 
 
 def _add_substrate(build: Build, library: Library, rng: random.Random, mass: float) -> None:
-    build.add(library.pick(rng, "substrate", _pick(rng, {"brick": 0.6, "concrete": 0.4})), mass, mass)
+    build.add(library.pick(rng, "substrate", weighted_choice(rng, {"brick": 0.6, "concrete": 0.4})), mass, mass)
 
 
-def _insulation_fire(kind: str, rng: random.Random) -> str:
+def insulation_fire(kind: str, rng: random.Random) -> str:
     table = {"eps": {"b": 0.7, "c": 0.3}, "xps": {"b": 0.4, "c": 0.4, "e": 0.2}, "pir": {"b": 0.6, "c": 0.3, "d": 0.1},
              "wood": {"b": 0.3, "c": 0.4, "d": 0.3}, "wool": {"a2": 0.7, "a1": 0.3}}
-    return _pick(rng, table[kind])
+    return weighted_choice(rng, table[kind])
 
 
 def sandwich_panel(library: Library, rng: random.Random) -> tuple[Build, dict]:
@@ -342,7 +342,7 @@ def sandwich_panel(library: Library, rng: random.Random) -> tuple[Build, dict]:
         "u_value": transmittance(0.0, thickness_mm, conductivity + 0.004),
         "acoustic_reduction": rng.uniform(29, 34) if layer.kind == "wool" else rng.uniform(24, 28),
         "heat_capacity": rng.uniform(5, 15),
-        "fire_reaction": _insulation_fire(layer.kind, rng),
+        "fire_reaction": insulation_fire(layer.kind, rng),
         "thickness": thickness_mm,
         "cost_product": rng.uniform(45, 90) + 0.1 * thickness_mm,
         "cost_labour": rng.uniform(15, 30),
@@ -385,7 +385,7 @@ def etics(library: Library, rng: random.Random) -> tuple[Build, dict]:
         "u_value": transmittance(rng.uniform(0.2, 0.6), insulation_mm, conductivity),
         "acoustic_reduction": mass_law_reduction(substrate_mass) + (rng.uniform(-4, 0) if kind == "eps" else rng.uniform(0, 3)),
         "heat_capacity": min(0.6 * substrate_mass, 250) * rng.uniform(0.9, 1.1),
-        "fire_reaction": _insulation_fire(kind, rng),
+        "fire_reaction": insulation_fire(kind, rng),
         "thickness": substrate_mass / 1.4 + insulation_mm + 10,
         "cost_product": rng.uniform(70, 125),
         "cost_labour": rng.uniform(45, 80),
@@ -408,7 +408,7 @@ def ventilated(library: Library, rng: random.Random) -> tuple[Build, dict]:
         "u_value": transmittance(rng.uniform(0.2, 0.6), insulation_mm, conductivity),
         "acoustic_reduction": mass_law_reduction(substrate_mass) + rng.uniform(1, 5),
         "heat_capacity": min(0.6 * substrate_mass, 250) * rng.uniform(0.9, 1.1),
-        "fire_reaction": _pick(rng, fire),
+        "fire_reaction": weighted_choice(rng, fire),
         "thickness": substrate_mass / 1.4 + insulation_mm + rng.uniform(40, 90),
         "cost_product": rng.uniform(90, 230),
         "cost_labour": rng.uniform(50, 100),
@@ -433,7 +433,7 @@ def masonry(library: Library, rng: random.Random) -> tuple[Build, dict]:
         "u_value": transmittance(rng.uniform(0.45, 0.75), insulation_mm, conductivity),
         "acoustic_reduction": mass_law_reduction(outer + inner) + rng.uniform(-1, 3),
         "heat_capacity": rng.uniform(40, 100),
-        "fire_reaction": _pick(rng, {"a1": 0.85, "a2": 0.15}),
+        "fire_reaction": weighted_choice(rng, {"a1": 0.85, "a2": 0.15}),
         "thickness": 115 + 70 + 30 + insulation_mm,
         "cost_product": rng.uniform(40, 80),
         "cost_labour": rng.uniform(50, 90),
@@ -451,7 +451,7 @@ TYPOLOGIES = {
 
 
 def health_status(rng: random.Random) -> str | None:
-    return None if rng.random() < HEALTH_MISSING_SHARE else _pick(rng, HEALTH_WEIGHTS)
+    return None if rng.random() < HEALTH_MISSING_SHARE else weighted_choice(rng, HEALTH_WEIGHTS)
 
 
 def product(library: Library, rng: random.Random, typology: str, key: str) -> dict:

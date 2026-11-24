@@ -31,7 +31,7 @@ LABELLERS = {
     "rule": ("synthetic", "rule:facade_v1", "Declared rule over registry directions and stakeholder priorities."),
     "llm": ("llm", "llm:claude", "Language model, scenario by scenario, following ingest/facade/labelling_brief.md."),
 }
-METADATA_FIELDS = {"id_prod", "typology", "sources"}
+METADATA_FIELDS = {"id_prod", "typology", "sources", "derived_from", "levers"}
 CHUNK = 5_000
 
 

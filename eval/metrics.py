@@ -238,6 +238,7 @@ CONTROL_PROVENANCE = "control"
 
 SHORTLIST_ACROSS = "across"
 SHORTLIST_WITHIN = "within"
+SHORTLIST_UNUSUAL = "unusual"
 
 
 def strata_of(prepared: Prepared, set_index: int, kind: str) -> tuple[str, ...]:
@@ -259,6 +260,8 @@ def strata_of(prepared: Prepared, set_index: int, kind: str) -> tuple[str, ...]:
         return tuple(f"stakeholder_slot={slot}" for slot in slots) or ("none",)
     if kind == "shortlist":
         generator = prepared.set_generator[set_index]
+        if isinstance(generator, str) and generator.startswith(f"{SHORTLIST_UNUSUAL}:"):
+            return (SHORTLIST_UNUSUAL,)
         if generator == SHORTLIST_ACROSS:
             return (SHORTLIST_ACROSS,)
         if isinstance(generator, str) and generator.startswith(f"{SHORTLIST_WITHIN}:"):

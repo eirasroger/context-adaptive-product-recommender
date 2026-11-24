@@ -110,7 +110,14 @@ def next_chunk_number(paths: list[Path]) -> int:
     return 1 + max((int(re.match(r"chunk_(\d+)", p.stem).group(1)) for p in paths), default=0)
 
 
-def write_chunks(registry: Registry, sets: int, chunks: int, seed: int, resend: bool = False) -> None:
+def of_kind(scenarios: list[dict], kind: str) -> list[dict]:
+    """The scenarios whose shortlist is of this kind, or of a narrower kind under it."""
+    return [s for s in scenarios if s["shortlist"] == kind or s["shortlist"].startswith(f"{kind}:")]
+
+
+def write_chunks(
+    registry: Registry, sets: int, chunks: int, seed: int, resend: bool = False, shortlist: str | None = None
+) -> None:
     """A new round of chunks, numbered after the existing ones: fresh scenarios, or pending ones with resend."""
     scenarios = json.loads((DATASET_DIR / SCENARIOS_FILE).read_text(encoding="utf-8"))
     index: dict[str, dict] = json.loads(INDEX_FILE.read_text(encoding="utf-8")) if INDEX_FILE.exists() else {}
@@ -120,6 +127,8 @@ def write_chunks(registry: Registry, sets: int, chunks: int, seed: int, resend: 
         if resend
         else [s for s in scenarios if s["id"] not in index]
     )
+    if shortlist is not None:
+        pool = of_kind(pool, shortlist)
     chosen = random.Random(seed).sample(pool, min(sets, len(pool)))
     sets = len(chosen)
     CHUNKS_DIR.mkdir(parents=True, exist_ok=True)
@@ -181,6 +190,7 @@ def main() -> None:
     chunk.add_argument("--chunks", type=int, default=20)
     chunk.add_argument("--seed", type=int, default=0)
     chunk.add_argument("--resend", action="store_true", help="chunk scenarios sent out earlier that came back unlabelled")
+    chunk.add_argument("--shortlist", help="draw only shortlists of this kind, such as unusual or within:etics")
     commands.add_parser("collect", help="check the returned labels and write the labels file")
     commands.add_parser("status", help="count labelled, pending and fresh scenarios")
     args = parser.parse_args()
@@ -195,7 +205,7 @@ def main() -> None:
         BRIEF_FILE.write_text(brief(), encoding="utf-8")
         print(f"brief written to {BRIEF_FILE}")
     else:
-        write_chunks(open_registry(), args.sets, args.chunks, args.seed, args.resend)
+        write_chunks(open_registry(), args.sets, args.chunks, args.seed, args.resend, args.shortlist)
 
 
 if __name__ == "__main__":

@@ -5,12 +5,12 @@ from __future__ import annotations
 import json
 import random
 from pathlib import Path
-from typing import Sequence
+from typing import Callable, Sequence
 
 from core.registry import Registry
-from eval.metrics import SHORTLIST_ACROSS, SHORTLIST_WITHIN
+from eval.metrics import SHORTLIST_ACROSS, SHORTLIST_UNUSUAL, SHORTLIST_WITHIN
 from ingest.generators import parametric
-from ingest.facade import compose
+from ingest.facade import compose, variants
 
 CATEGORY_KEY = "facade_system"
 DATASET_DIR = Path("data/facade")
@@ -26,6 +26,8 @@ CONTEXT_COUNT_WEIGHTS = {0: 0.2, 1: 0.55, 2: 0.25}
 COMBINED_CONTEXT_WEIGHTS = {3: 2 / 3, 4: 1 / 3}
 STAKEHOLDER_COUNT_WEIGHTS = {1: 0.6, 2: 0.3, 3: 0.1}
 MIN_ALTS, MAX_ALTS = 2, 5
+#: Share of variants that sit beside the product they vary, so the levers are the only difference.
+PAIRED_VARIANT_SHARE = 0.5
 
 MISSING_QUALITY = 0.3
 LABEL_CONFIDENCE = 0.8
@@ -165,15 +167,40 @@ def _scenario(
     )
 
 
+def unusual_shortlist(rng: random.Random, pools: dict[str, list[dict]], external_id: str) -> tuple[str, list[dict]]:
+    """A shortlist with one or two alternatives replaced by variants, half of them beside the product they vary."""
+    kind, alternatives = shortlist(rng, pools)
+    alternatives = list(alternatives)
+    replaced = rng.sample(range(len(alternatives)), 1 if len(alternatives) <= 3 else rng.randint(1, 2))
+    for number, slot in enumerate(replaced, start=1):
+        others = [a for i, a in enumerate(alternatives) if i not in replaced]
+        parent = rng.choice(others) if others and rng.random() < PAIRED_VARIANT_SHARE else alternatives[slot]
+        alternatives[slot] = variants.variant(parent, rng, f"{external_id}_variant_{number}")
+    return f"{SHORTLIST_UNUSUAL}:{kind}", alternatives
+
+
 def extend(registry: Registry, directory: Path, sets: int, seed: int, counts: dict[int, float]) -> int:
     """Append sets drawn from the products already in the dataset, leaving every existing set as it was."""
+    return _append(registry, directory, sets, seed, counts, lambda rng, pools, _: shortlist(rng, pools))
+
+
+def extend_unusual(registry: Registry, directory: Path, sets: int, seed: int) -> int:
+    """Append sets that each hold an unusual variant of a product already in the dataset."""
+    return _append(registry, directory, sets, seed, CONTEXT_COUNT_WEIGHTS, unusual_shortlist)
+
+
+def _append(
+    registry: Registry, directory: Path, sets: int, seed: int, counts: dict[int, float],
+    draw: Callable[[random.Random, dict[str, list[dict]], str], tuple[str, list[dict]]],
+) -> int:
     scenarios_path, labels_path = directory / SCENARIOS_FILE, directory / LABELS_FILE
     scenarios = json.loads(scenarios_path.read_text(encoding="utf-8"))
     labels = json.loads(labels_path.read_text(encoding="utf-8"))
     pools: dict[str, dict[str, dict]] = {}
     for scenario in scenarios:
         for alternative in scenario["alternatives"]:
-            pools.setdefault(alternative["typology"], {})[alternative["id_prod"]] = alternative
+            if "derived_from" not in alternative:
+                pools.setdefault(alternative["typology"], {})[alternative["id_prod"]] = alternative
     products = {typology: list(found.values()) for typology, found in sorted(pools.items())}
 
     category = registry.category(CATEGORY_KEY)
@@ -182,10 +209,11 @@ def extend(registry: Registry, directory: Path, sets: int, seed: int, counts: di
     rng = random.Random(seed)
     first = 1 + max(int(s["id"].rsplit("_", 1)[1]) for s in scenarios)
     for index in range(first, first + sets):
+        external_id = f"synthetic_{index:06d}"
         contexts = situation(rng, category.default_context_key, others, counts)
         chosen = rng.sample(stakeholders, _pick(rng, STAKEHOLDER_COUNT_WEIGHTS))
-        kind, alternatives = shortlist(rng, products)
-        scenario, label = _scenario(registry, rng, f"synthetic_{index:06d}", kind, alternatives, contexts, chosen)
+        kind, alternatives = draw(rng, products, external_id)
+        scenario, label = _scenario(registry, rng, external_id, kind, alternatives, contexts, chosen)
         scenarios.append(scenario)
         labels.append(label)
     scenarios_path.write_text(json.dumps(scenarios), encoding="utf-8")
@@ -216,10 +244,16 @@ def main() -> None:
     more = commands.add_parser("extend", help="append sets where three or four contexts combine")
     more.add_argument("--sets", type=int, required=True)
     more.add_argument("--seed", type=int, required=True)
+    unusual = commands.add_parser("unusual", help="append sets that each hold an unusual variant of a product")
+    unusual.add_argument("--sets", type=int, required=True)
+    unusual.add_argument("--seed", type=int, required=True)
     args = parser.parse_args()
     with session_scope(create_db_engine(JOINT_DB)) as session:
         registry = registry_module.from_session(session)
-    added = extend(registry, DATASET_DIR, args.sets, args.seed, COMBINED_CONTEXT_WEIGHTS)
+    if args.command == "unusual":
+        added = extend_unusual(registry, DATASET_DIR, args.sets, args.seed)
+    else:
+        added = extend(registry, DATASET_DIR, args.sets, args.seed, COMBINED_CONTEXT_WEIGHTS)
     print(f"appended {added} sets to {DATASET_DIR / SCENARIOS_FILE}")
 
 
