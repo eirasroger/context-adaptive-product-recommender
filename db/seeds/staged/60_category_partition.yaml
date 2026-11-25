@@ -1,0 +1,275 @@
+# Interior partitions, the third category. Staged: applied on top of the live
+# seeds by tests/test_partition_registry.py, and moved into db/seeds with the
+# registry bump once the first partition data is built (docs/PARTITIONS.md 1).
+# Indicators: docs/PARTITIONS.md 3 and 7.10; contexts: 8.4 and 9.5.
+
+indicator:
+  - key: acoustic_reduction_pink
+    display_name: Airborne sound reduction, household noise
+    family_key: performance
+    value_type: continuous
+    unit: dBA
+    default_direction: 1
+    definition_text: >-
+      Airborne sound reduction of the system for speech and household noise:
+      the A-weighted index RA over the third-octave bands 100 Hz to 5 kHz for
+      pink noise (CTE DB-HR), approximately Rw + C per EN ISO 717-1. Higher is
+      better. A product property, distinct from the in-situ insulation between
+      rooms, which also depends on flanking paths. Kept apart from the
+      traffic-weighted reduction because the two weightings differ by several
+      decibels on the same wall.
+
+  - key: impact_resistance
+    display_name: Impact resistance
+    family_key: performance
+    value_type: ordinal
+    default_direction: 1
+    definition_text: >-
+      Robustness of the system against knocks and impacts in use, as the use
+      category of EAD 210005 for internal partition kits. The UK duty grades of
+      BS 5234-2 (Light, Medium, Heavy, Severe) map onto it by their definitions.
+      Higher is better. The levels are spaced evenly: the soft-body damage
+      tests rise in equal steps of energy from one category to the next.
+    levels:
+      - level_key: category_i
+        level_index: 0
+        display_name: Category I
+        normalised_position: 0.0
+        definition_text: >-
+          Zones used by people with a strong incentive to take care, with a
+          small risk of accidents or misuse. BS 5234-2 Light duty.
+      - level_key: category_ii
+        level_index: 1
+        display_name: Category II
+        normalised_position: 0.333
+        definition_text: >-
+          Zones used by people with some incentive to take care, with some risk
+          of accidents or misuse. BS 5234-2 Medium duty.
+      - level_key: category_iii
+        level_index: 2
+        display_name: Category III
+        normalised_position: 0.667
+        definition_text: >-
+          Zones used by people with little incentive to take care, with a risk
+          of accidents or misuse. BS 5234-2 Heavy duty.
+      - level_key: category_iv
+        level_index: 3
+        display_name: Category IV
+        normalised_position: 1.0
+        definition_text: >-
+          As category III with intensive use or vandalism, or where the wall
+          must stop a fall to a lower level. BS 5234-2 Severe duty.
+
+functional_unit:
+  - key: m2_partition_installed
+    display_name: One square metre of partition, installed
+    quantity_kind: area
+    unit: m2
+    reference_service_life_years: 50
+    definition_text: >-
+      One square metre of a complete fixed, non-loadbearing interior partition
+      as installed and finished on both faces, over the reference service life.
+      Layered systems are aggregated to this unit before ingest.
+
+category:
+  - key: interior_partition
+    display_name: Interior partition
+    functional_unit_key: m2_partition_installed
+    default_context_key: partition_within_home
+    definition_text: >-
+      Opaque, fixed, non-loadbearing walls between two indoor spaces, compared
+      per square metre installed and finished on both faces: brick or block
+      walls with or without a plasterboard lining, double brick leaves on
+      elastic bands, and steel-stud plasterboard walls. Covers walls inside one
+      unit and separating walls between units. Typology is product metadata.
+      The third category.
+    eligibility_precondition_text: >-
+      All alternatives are assumed to have passed a separate compliance check
+      for the building: fire resistance against compartmentation, maximum
+      height against the storey, the minimum sound insulation in place between
+      rooms, lining reaction to fire against the escape routes, and water
+      resistance in wet rooms. This model ranks the systems that pass; its
+      output is no compliance statement.
+
+    provenance_weights:
+      control: 0.4
+      synthetic: 0.0
+      llm: 0.6
+      expert: 0.0
+
+    indicators:
+      - {indicator_key: gwp, ref_low: 0.0, ref_high: 120.0}
+      - {indicator_key: wdp, ref_low: -5.0, ref_high: 50.0}
+      - {indicator_key: fwu, ref_low: 0.005, ref_high: 2.0, scale: log}
+
+      - {indicator_key: circ_orig, ref_low: 0.0, ref_high: 100.0}
+      - {indicator_key: fu_recyc, ref_low: 0.0, ref_high: 100.0}
+      - {indicator_key: fu_inert, ref_low: 0.0, ref_high: 100.0}
+      - {indicator_key: fu_haz, ref_low: 0.0, ref_high: 10.0}
+      - indicator_key: fu_incin
+        ref_low: 0.0
+        ref_high: 100.0
+        control_mode: exclude
+        control_note: >-
+          Declared neutral, as for concrete and facades: energy recovery sits
+          between material recovery and landfill, so there is no direction to
+          sweep.
+
+      - {indicator_key: cost_product, ref_low: 5.0, ref_high: 150.0}
+      - {indicator_key: cost_labour, ref_low: 5.0, ref_high: 120.0}
+      - {indicator_key: cost_maintenance, ref_low: 0.0, ref_high: 50.0}
+      - indicator_key: cost_total
+        ref_low: 10.0
+        ref_high: 300.0
+        control_mode: exclude
+        control_note: >-
+          Derived from the three cost components, which are swept individually.
+
+      - {indicator_key: health}
+      - {indicator_key: fire_reaction}
+      - {indicator_key: impact_resistance}
+
+      - indicator_key: u_value
+        ref_low: 0.2
+        ref_high: 2.5
+        direction_override: 0
+        note: >-
+          Between two heated rooms almost no heat crosses, so U carries no
+          preference unless a context says the other side is unheated.
+      - {indicator_key: acoustic_reduction_pink, ref_low: 30.0, ref_high: 70.0}
+      - {indicator_key: surface_mass, ref_low: 15.0, ref_high: 450.0, scale: log}
+      - {indicator_key: heat_capacity, ref_low: 5.0, ref_high: 150.0, scale: log}
+      - {indicator_key: thickness, ref_low: 50.0, ref_high: 350.0}
+
+    # Listed in display order. Shared contexts take partition wording here.
+    context_presentation:
+      - {context_key: partition_within_home, theme: Baseline}
+      - {context_key: unit_separation, theme: Neighbours}
+      - {context_key: noisy_neighbour, theme: Neighbours}
+      - {context_key: unheated_neighbour, theme: Neighbours}
+      - {context_key: heavy_use, theme: Use}
+      - {context_key: limited_support, theme: Structure}
+      - context_key: seismic
+        theme: Structure
+        definition_text: >-
+          The reference peak ground acceleration is at least 0.1 g at a
+          475-year return period on the 2020 European Seismic Hazard Model.
+          Eurocode 8 sizes the force on a partition by its weight, and masonry
+          infills and partitions were the most frequent damage in L'Aquila
+          2009, so a lighter partition counts moderately.
+      - context_key: hot_summer
+        theme: Climate
+        definition_text: >-
+          The mean temperature of the warmest month is at least 22 °C (Köppen
+          subtype a, and BSk and BSh), as in most of southern Europe. A
+          partition offers thermal mass to the rooms on both sides, which damps
+          daytime peaks where nights are cool enough to discharge it, so
+          internal heat capacity counts moderately.
+
+    context_overrides:
+      - context_key: new_build_mild
+        is_applicable: false
+        justification: >-
+          The facade baseline. Partitions have their own baseline, a wall
+          between two heated rooms of one home.
+      - context_key: thermal_insulation
+        is_applicable: false
+        justification: >-
+          Cold winter. Between two heated rooms U hardly matters in any
+          climate; the influence pilot found no effect (docs/PARTITIONS.md
+          8.3). A cold neighbouring space is its own context.
+      - context_key: high_rise
+        is_applicable: false
+        justification: >-
+          Indoor lining classes do not depend on building height (DB-SI SI 1
+          Tabla 4.1), and the pilot found no effect. Partition weight is
+          covered by the light or existing floor context.
+      - context_key: wildfire_edge
+        is_applicable: false
+        justification: >-
+          The exposure acts on the outside of the building; partitions are
+          indoors.
+      - context_key: architectural_finish
+        is_applicable: false
+        justification: >-
+          Its only declaration a partition holds is the reversed circular
+          origin, which describes exposed concrete surfaces.
+      - context_key: no_room_outwards
+        is_applicable: false
+        justification: >-
+          Thinner is already preferred at the partition baseline, and a small
+          floor plan added little in the pilot (0.026).
+
+range_source_note: >-
+  Envelope per square metre of partition, from the pilot products composed
+  from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2).
+  Provisional until real products are composed.
+
+# Selection and definitions: docs/PARTITIONS.md 8 and 9.5; record in experiments/partition_context_screening.yaml.
+context:
+  - key: partition_within_home
+    display_name: Between rooms of one home
+    is_baseline: true
+    definition_text: >-
+      Baseline for partitions: a wall between two heated rooms of the same
+      dwelling, in a new residential building in a temperate climate, with
+      reference ground acceleration below 0.1 g, on a floor designed for it,
+      built before occupation. Both faces are indoors, so thickness is floor
+      area and counts moderately; sound reduction, impact resistance and fire
+      class count mildly.
+    declarations:
+      - {indicator_key: acoustic_reduction_pink, direction: 1, priority: 0.30, category_key: interior_partition}
+      - {indicator_key: thickness, direction: -1, priority: 0.50, category_key: interior_partition}
+      - {indicator_key: fire_reaction, direction: 1, priority: 0.20, category_key: interior_partition}
+      - {indicator_key: impact_resistance, direction: 1, priority: 0.20, category_key: interior_partition}
+
+  - key: unit_separation
+    display_name: Separates two homes or units
+    definition_text: >-
+      The people on the two sides belong to different units of occupancy: two
+      dwellings, two classrooms, two hotel or hospital rooms, two tenancies.
+      More than 30 European countries regulate airborne sound insulation
+      between dwellings, and the margin above the minimum leaves room for
+      flanking paths, so sound reduction counts strongly.
+    declarations:
+      - {indicator_key: acoustic_reduction_pink, direction: 1, priority: 0.80}
+
+  - key: noisy_neighbour
+    display_name: Next to a noisy room
+    definition_text: >-
+      The other side is a room whose activity noise exceeds 70 dB(A): a car
+      park, a shop or bar, a gym, a workshop or a plant room. The requirement
+      rises and the source is loud, so sound reduction counts strongly.
+    declarations:
+      - {indicator_key: acoustic_reduction_pink, direction: 1, priority: 0.90}
+
+  - key: unheated_neighbour
+    display_name: Next to an unheated space
+    definition_text: >-
+      The other side is a space kept unheated in winter, such as a garage, an
+      unheated stairwell, a storeroom or a workshop, so the partition bounds the
+      heated home. Heat flows across it, reduced by the adjustment factor of
+      the unheated space (EN ISO 13789), so lower U counts moderately.
+    declarations:
+      - {indicator_key: u_value, direction: -1, priority: 0.50, category_key: interior_partition}
+
+  - key: heavy_use
+    display_name: Rooms in hard use
+    definition_text: >-
+      The partition lines rooms where people, equipment, trolleys or balls
+      strike it: school corridors, sports halls, workshops, hospital corridors.
+      EAD 210005 use categories III and IV and the UK Heavy and Severe duty
+      grades exist for these spaces, so impact resistance counts strongly.
+    declarations:
+      - {indicator_key: impact_resistance, direction: 1, priority: 0.90}
+
+  - key: limited_support
+    display_name: Light or existing floor
+    definition_text: >-
+      The floor carrying the partition has little reserve for permanent load:
+      an old timber floor, a light steel or timber floor, or an existing slab
+      in a building being refurbished. EN 1991-1-1 6.3.1.2 lets light
+      partitions count as a small uniform floor load, while heavy ones must be
+      designed for individually, so a lighter partition counts strongly.
+    declarations:
+      - {indicator_key: surface_mass, direction: -1, priority: 0.90, category_key: interior_partition}
