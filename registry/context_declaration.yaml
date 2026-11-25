@@ -79,6 +79,14 @@ context_declaration:
   is_required: 0
   ideal_value: null
   note: null
+- context_key: heavy_use
+  indicator_key: impact_resistance
+  category_key: '*'
+  direction: 1
+  priority: 0.9
+  is_required: 0
+  ideal_value: null
+  note: null
 - context_key: high_rise
   indicator_key: fire_reaction
   category_key: '*'
@@ -100,6 +108,14 @@ context_declaration:
   category_key: '*'
   direction: 1
   priority: 0.5
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: limited_support
+  indicator_key: surface_mass
+  category_key: interior_partition
+  direction: -1
+  priority: 0.9
   is_required: 0
   ideal_value: null
   note: null
@@ -140,6 +156,46 @@ context_declaration:
   category_key: '*'
   direction: -1
   priority: 0.9
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: noisy_neighbour
+  indicator_key: acoustic_reduction_pink
+  category_key: '*'
+  direction: 1
+  priority: 0.9
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: partition_within_home
+  indicator_key: acoustic_reduction_pink
+  category_key: interior_partition
+  direction: 1
+  priority: 0.3
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: partition_within_home
+  indicator_key: fire_reaction
+  category_key: interior_partition
+  direction: 1
+  priority: 0.2
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: partition_within_home
+  indicator_key: impact_resistance
+  category_key: interior_partition
+  direction: 1
+  priority: 0.2
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: partition_within_home
+  indicator_key: thickness
+  category_key: interior_partition
+  direction: -1
+  priority: 0.5
   is_required: 0
   ideal_value: null
   note: null
@@ -228,6 +284,22 @@ context_declaration:
   category_key: '*'
   direction: -1
   priority: 0.9
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: unheated_neighbour
+  indicator_key: u_value
+  category_key: interior_partition
+  direction: -1
+  priority: 0.5
+  is_required: 0
+  ideal_value: null
+  note: null
+- context_key: unit_separation
+  indicator_key: acoustic_reduction_pink
+  category_key: '*'
+  direction: 1
+  priority: 0.8
   is_required: 0
   ideal_value: null
   note: null

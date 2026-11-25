@@ -9,6 +9,11 @@ context:
   definition_text: The product's own surface is the finished, visible surface. Finer aggregate and better workability give smoother, more uniform results. Very high secondary content can harm visual uniformity, so this context reaches into a circularity indicator and reverses its usual direction -- an empirical cross-family effect that nobody would author as a performance requirement, and the reason contexts need a learned residual on top of their declarations.
   is_baseline: 0
   is_active: 1
+- key: heavy_use
+  display_name: Rooms in hard use
+  definition_text: 'The partition lines rooms where people, equipment, trolleys or balls strike it: school corridors, sports halls, workshops, hospital corridors. EAD 210005 use categories III and IV and the UK Heavy and Severe duty grades exist for these spaces, so impact resistance counts strongly.'
+  is_baseline: 0
+  is_active: 1
 - key: high_rise
   display_name: High rise
   definition_text: The top of the facade is more than 18 m above ground. Fire spreading up a tall facade outruns external firefighting and lengthens evacuation, and owners and insurers value non-combustibility above the minimum class, so reaction to fire counts strongly. The facade's own weight sizes its anchors and accumulates floor by floor on the columns and foundations, a structural cost outside the facade's own cost, so a lighter system counts moderately.
@@ -17,6 +22,11 @@ context:
 - key: hot_summer
   display_name: Hot summer
   definition_text: 'The mean temperature of the warmest month is at least 22 °C (Köppen subtype a: Csa, Cfa, Dsa, Dfa, and the hot semi-arid BSk and BSh), as in most of Iberia and Italy, Greece, Mediterranean France, the Po valley and the Pannonian plain. Thermal mass on the room side of the insulation absorbs daytime gains and releases them at night, so internal heat capacity counts moderately.'
+  is_baseline: 0
+  is_active: 1
+- key: limited_support
+  display_name: Light or existing floor
+  definition_text: 'The floor carrying the partition has little reserve for permanent load: an old timber floor, a light steel or timber floor, or an existing slab in a building being refurbished. EN 1991-1-1 6.3.1.2 lets light partitions count as a small uniform floor load, while heavy ones must be designed for individually, so a lighter partition counts strongly.'
   is_baseline: 0
   is_active: 1
 - key: new_build_mild
@@ -28,6 +38,16 @@ context:
   display_name: No room outwards
   definition_text: The outer face of the facade is fixed, on the street line, the plot boundary or a protected street front, so any extra thickness is taken from the rooms. Thickness becomes lost floor area and counts strongly.
   is_baseline: 0
+  is_active: 1
+- key: noisy_neighbour
+  display_name: Next to a noisy room
+  definition_text: 'The other side is a room whose activity noise exceeds 70 dB(A): a car park, a shop or bar, a gym, a workshop or a plant room. The requirement rises and the source is loud, so sound reduction counts strongly.'
+  is_baseline: 0
+  is_active: 1
+- key: partition_within_home
+  display_name: Between rooms of one home
+  definition_text: 'Baseline for partitions: a wall between two heated rooms of the same dwelling, in a new residential building in a temperate climate, with reference ground acceleration below 0.1 g, on a floor designed for it, built before occupation. Both faces are indoors, so thickness is floor area and counts moderately; sound reduction, impact resistance and fire class count mildly.'
+  is_baseline: 1
   is_active: 1
 - key: seismic
   display_name: Seismic zone
@@ -42,6 +62,16 @@ context:
 - key: thermal_insulation
   display_name: Thermal insulation
   definition_text: Thermal resistance and reduced dead load matter. Lower density is preferred, which is the exact inverse of the acoustic case over the same indicator -- the pair is the sharpest available test that the model has learned context rather than memorised a direction.
+  is_baseline: 0
+  is_active: 1
+- key: unheated_neighbour
+  display_name: Next to an unheated space
+  definition_text: The other side is a space kept unheated in winter, such as a garage, an unheated stairwell, a storeroom or a workshop, so the partition bounds the heated home. Heat flows across it, reduced by the adjustment factor of the unheated space (EN ISO 13789), so lower U counts moderately.
+  is_baseline: 0
+  is_active: 1
+- key: unit_separation
+  display_name: Separates two homes or units
+  definition_text: 'The people on the two sides belong to different units of occupancy: two dwellings, two classrooms, two hotel or hospital rooms, two tenancies. More than 30 European countries regulate airborne sound insulation between dwellings, and the margin above the minimum leaves room for flanking paths, so sound reduction counts strongly.'
   is_baseline: 0
   is_active: 1
 - key: wildfire_edge

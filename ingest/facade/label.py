@@ -15,7 +15,7 @@ import yaml
 from core import registry as registry_module
 from core.registry import Registry
 from db.session import create_db_engine, session_scope
-from ingest.facade.build import JOINT_DB
+from ingest.build import JOINT_DB
 from ingest.facade.synthesise import CATEGORY_KEY, DATASET_DIR, LLM_LABELS_FILE, SCENARIOS_FILE
 
 LABELLING_DIR = DATASET_DIR / "labelling"

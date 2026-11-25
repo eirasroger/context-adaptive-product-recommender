@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from ingest.facade.compose import FLOWS, Build, Layer
+from ingest.epd.layers import FLOWS, Build, Layer
 from ingest.partition import compose
 
 LAYERS = ("plasterboard", "gypsum_fibreboard", "steel_profile", "mineral_wool", "joint_compound", "gypsum_plaster",

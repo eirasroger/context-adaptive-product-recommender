@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from ingest.facade import compose
-from ingest.facade.compose import FLOWS, Layer, in_metres, without_unit_errors
+from ingest.epd import layers
+from ingest.epd.layers import FLOWS, Layer
+from ingest.facade.compose import in_metres, without_unit_errors
 
 
 def _layer(mass: float, **values: float) -> Layer:
@@ -25,10 +27,10 @@ def test_a_share_of_products_has_an_unknown_health_status():
     import random
 
     rng = random.Random(0)
-    statuses = [compose.health_status(rng) for _ in range(5000)]
+    statuses = [layers.health_status(rng) for _ in range(5000)]
     missing = statuses.count(None) / len(statuses)
-    assert abs(missing - compose.HEALTH_MISSING_SHARE) < 0.02
-    assert {s for s in statuses if s is not None} <= set(compose.HEALTH_WEIGHTS)
+    assert abs(missing - layers.HEALTH_MISSING_SHARE) < 0.02
+    assert {s for s in statuses if s is not None} <= set(layers.HEALTH_WEIGHTS)
 
 
 def test_stored_biogenic_carbon_survives_the_limits():

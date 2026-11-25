@@ -1,4 +1,4 @@
-# Baseline training configuration: every category, on the joint corpus built by ingest.facade.build.
+# Baseline training configuration: every category, on the joint corpus built by ingest.build.
 name: baseline
 db: data/joint.db
 split_key: default

@@ -237,7 +237,7 @@ def main() -> None:
 
     from core import registry as registry_module
     from db.session import create_db_engine, session_scope
-    from ingest.facade.build import JOINT_DB
+    from ingest.build import JOINT_DB
 
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     commands = parser.add_subparsers(dest="command", required=True)

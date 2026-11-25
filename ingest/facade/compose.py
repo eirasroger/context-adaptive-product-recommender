@@ -3,19 +3,24 @@
 from __future__ import annotations
 
 import csv
-import math
 import random
 import re
-from dataclasses import dataclass, field
 from pathlib import Path
+
+from ingest.epd.layers import (
+    LIMITS_PER_KG,
+    Build,
+    Layer,
+    health_status,
+    mass_law_reduction,
+    number,
+    per_unit,
+    weighted_choice,
+)
 
 CANDIDATES = Path("data/facade/epd/candidates.csv")
 
 SURFACE_RESISTANCES = 0.17
-HEALTH_WEIGHTS = {"h0": 0.05, "h1": 0.35, "h2": 0.35, "h3": 0.10, "h4": 0.08, "h5": 0.05, "h6": 0.02}
-#: Share of products whose health status is unknown, so labels and the model see missing values often.
-HEALTH_MISSING_SHARE = 0.2
-
 #: Product rules for groups that match a facade term but are another product.
 OFF_SCOPE_PCR = ("windows and doors", "technical - chemical", "technical-chemical", "werkmörtel", "dübel")
 OFF_SCOPE_NAME = ("mortar", "mörtel", "adhesive", "kleber", "fastening", "dowel", "geosynth", "masonry cement",
@@ -59,99 +64,9 @@ CLADDING_PATTERNS = {
     "composite": r"composite|wpc|honeycomb",
 }
 
-FLOWS = ("gwp", "wdp", "fw", "sm", "recovered", "mer", "hwd")
-
-
-def _float(text: str) -> float | None:
-    try:
-        value = float(text)
-    except (TypeError, ValueError):
-        return None
-    return None if math.isnan(value) else value
-
-
-@dataclass(frozen=True)
-class Layer:
-    """One EPD's values per base unit (kg, m2 or m3, by role), and the mass of that unit."""
-
-    role: str
-    kind: str
-    uuid: str
-    name: str
-    values: dict[str, float | None]
-    mass: float | None
-    thickness_m: float | None = None
-    density: float | None = None
-
-    def times(self, factor: float) -> dict[str, float | None]:
-        return {k: None if v is None else v * factor for k, v in self.values.items()}
-
-
-@dataclass
-class Build:
-    """A system being assembled layer by layer, per m2 of wall."""
-
-    values: dict[str, float | None] = field(default_factory=lambda: dict.fromkeys(FLOWS, 0.0))
-    mass: float = 0.0
-    sources: list[str] = field(default_factory=list)
-
-    def add(self, layer: Layer | None, factor: float, mass: float) -> None:
-        self.mass += mass
-        if layer is None:
-            return
-        self.sources.append(layer.uuid)
-        for key, value in layer.times(factor).items():
-            current = self.values[key]
-            self.values[key] = None if current is None or value is None else current + value
-
-    def add_estimate(self, mass: float, **values: float) -> None:
-        self.mass += mass
-        for key, value in values.items():
-            if self.values[key] is not None:
-                self.values[key] += value
-
-    def indicators(self) -> dict[str, float | None]:
-        v, mass = self.values, self.mass
-
-        def share(amount: float | None) -> float | None:
-            return None if amount is None or mass <= 0 else min(100.0, max(0.0, 100.0 * amount / mass))
-
-        recovered, incinerated, hazardous = share(v["recovered"]), share(v["mer"]), share(v["hwd"])
-        landfilled = (
-            None if None in (recovered, incinerated, hazardous)
-            else max(0.0, 100.0 - recovered - incinerated - hazardous)
-        )
-        return {
-            "gwp": v["gwp"],
-            "wdp": v["wdp"],
-            "fwu": v["fw"],
-            "circ_orig": share(v["sm"]),
-            "fu_recyc": recovered,
-            "fu_incin": incinerated,
-            "fu_haz": hazardous,
-            "fu_inert": landfilled,
-            "surface_mass": mass,
-        }
-
-
 def _classify(text: str, patterns: dict[str, str]) -> str | None:
     lowered = text.lower()
     return next((kind for kind, pattern in patterns.items() if re.search(pattern, lowered)), None)
-
-
-def _per_unit(row: dict, divisor: float) -> dict[str, float | None]:
-    raw = {
-        "gwp": _float(row["gwp_total_a1a3"]),
-        "wdp": _float(row["wdp_a1a3"]),
-        "fw": _float(row["fw_a1a3"]),
-        "sm": _float(row["sm_a1a3"]),
-        "recovered": None,
-        "mer": _float(row["mer_c"]),
-        "hwd": _float(row["hwd_c"]),
-    }
-    mfr, cru = _float(row["mfr_c"]), _float(row["cru_c"])
-    raw["recovered"] = None if mfr is None and cru is None else (mfr or 0.0) + (cru or 0.0)
-    return {k: None if v is None else v / divisor for k, v in raw.items()}
 
 
 def in_metres(thickness: float | None) -> float | None:
@@ -169,12 +84,12 @@ def layer_from(row: dict) -> Layer | None:
     lowered = name.lower()
     if any(p in pcr for p in OFF_SCOPE_PCR) or any(p in lowered for p in OFF_SCOPE_NAME):
         return None
-    if _float(row["gwp_total_a1a3"]) is None:
+    if number(row["gwp_total_a1a3"]) is None:
         return None
 
-    unit, amount = row["declared_unit"], _float(row["declared_amount"]) or 1.0
-    mass, thickness = _float(row["mass_kg"]), in_metres(_float(row["thickness_m"]))
-    density, grammage = _float(row["density_kg_m3"]), _float(row["grammage_kg_m2"])
+    unit, amount = row["declared_unit"], number(row["declared_amount"]) or 1.0
+    mass, thickness = number(row["mass_kg"]), in_metres(number(row["thickness_m"]))
+    density, grammage = number(row["density_kg_m3"]), number(row["grammage_kg_m2"])
     if thickness is None and grammage and density:
         thickness = grammage / density
     typology = row["typology"]
@@ -183,7 +98,7 @@ def layer_from(row: dict) -> Layer | None:
     def per_m2(role: str, kind: str) -> Layer | None:
         if unit != "m2":
             return None
-        return Layer(role, kind, values=_per_unit(row, amount), mass=None if mass is None else mass / amount,
+        return Layer(role, kind, values=per_unit(row, amount), mass=None if mass is None else mass / amount,
                      thickness_m=thickness, **common)
 
     metal_faced = re.search(r"steel|metal|alumin|\bpir\b|\bpur\b|polyurethane|double skin|insulated panel", lowered)
@@ -200,9 +115,9 @@ def layer_from(row: dict) -> Layer | None:
             return per_m2("cladding", "precast")
         if re.search(r"insulated|sandwich|three-layer|two-layer", lowered) and unit == "kg":
             return Layer("precast", _classify(name, INSULATION_PATTERNS) or "eps",
-                         values=_per_unit(row, amount), mass=1.0, **common)
+                         values=per_unit(row, amount), mass=1.0, **common)
         if unit == "kg":
-            return Layer("substrate", "concrete", values=_per_unit(row, amount), mass=1.0, **common)
+            return Layer("substrate", "concrete", values=per_unit(row, amount), mass=1.0, **common)
         return None
 
     insulation = _classify(name, INSULATION_PATTERNS)
@@ -222,31 +137,19 @@ def layer_from(row: dict) -> Layer | None:
         else:
             return None
         per_m3_mass = mass / divisor if mass else density
-        return Layer("insulation", insulation, values=_per_unit(row, divisor), mass=per_m3_mass, density=density, **common)
+        return Layer("insulation", insulation, values=per_unit(row, divisor), mass=per_m3_mass, density=density, **common)
 
     if typology == "masonry" and unit in ("kg", "t") and re.search(r"brick|block|ziegel|clay", lowered):
-        return Layer("substrate", "brick", values=_per_unit(row, amount * (1000 if unit == "t" else 1)), mass=1.0, **common)
+        return Layer("substrate", "brick", values=per_unit(row, amount * (1000 if unit == "t" else 1)), mass=1.0, **common)
 
     if typology == "render" and unit == "kg":
-        return Layer("render", "render", values=_per_unit(row, amount), mass=1.0, **common)
+        return Layer("render", "render", values=per_unit(row, amount), mass=1.0, **common)
 
     if typology == "ventilated":
         kind = _classify(name, CLADDING_PATTERNS)
         return per_m2("cladding", kind) if kind else None
     return None
 
-
-#: Physical limits per kg of product; a value outside them is a unit error, such as litres entered as m3.
-#: Mass flows cannot exceed the product's own mass; biogenic storage stays above about -2 kg CO2e per kg.
-LIMITS_PER_KG = {
-    "gwp": (-2.0, 40.0),
-    "wdp": (-5.0, 5.0),
-    "fw": (-0.05, 0.05),
-    "sm": (0.0, 1.05),
-    "recovered": (0.0, 1.05),
-    "mer": (0.0, 1.05),
-    "hwd": (0.0, 1.05),
-}
 
 #: Values set aside by the last load, as (layer name, flow), for the build to report.
 set_aside: list[tuple[str, str]] = []
@@ -295,17 +198,6 @@ class Library:
         for layer in self.layers:
             counts[f"{layer.role}:{layer.kind}"] = counts.get(f"{layer.role}:{layer.kind}", 0) + 1
         return dict(sorted(counts.items()))
-
-
-def weighted_choice(rng: random.Random, weights: dict):
-    return rng.choices(list(weights), weights=list(weights.values()))[0]
-
-
-def mass_law_reduction(surface_mass: float) -> float:
-    """Airborne sound reduction of a single leaf by the CTE DB-HR mass law."""
-    if surface_mass <= 150:
-        return 16.6 * math.log10(surface_mass) + 5
-    return 36.5 * math.log10(surface_mass) - 38.5
 
 
 def transmittance(base_resistance: float, insulation_mm: float, conductivity: float) -> float:
@@ -448,10 +340,6 @@ TYPOLOGIES = {
     "ventilated": ventilated,
     "masonry": masonry,
 }
-
-
-def health_status(rng: random.Random) -> str | None:
-    return None if rng.random() < HEALTH_MISSING_SHARE else weighted_choice(rng, HEALTH_WEIGHTS)
 
 
 def product(library: Library, rng: random.Random, typology: str, key: str) -> dict:

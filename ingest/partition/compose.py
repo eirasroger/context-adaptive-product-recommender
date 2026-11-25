@@ -11,14 +11,14 @@ import statistics
 from dataclasses import dataclass, replace
 from pathlib import Path
 
-from ingest.facade.compose import (
+from ingest.epd.layers import (
     LIMITS_PER_KG,
     Build,
     Layer,
-    _float,
-    _per_unit,
     health_status,
     mass_law_reduction,
+    number,
+    per_unit,
     weighted_choice,
 )
 
@@ -149,11 +149,11 @@ class Library:
 
 
 def per_kg_layer(row: dict) -> Layer | None:
-    unit, amount = row["declared_unit"], _float(row["declared_amount"]) or 1.0
-    mass = _float(row["mass_kg"]) or (amount if unit == "kg" else None)
-    if not mass or _float(row["gwp_total_a1a3"]) is None:
+    unit, amount = row["declared_unit"], number(row["declared_amount"]) or 1.0
+    mass = number(row["mass_kg"]) or (amount if unit == "kg" else None)
+    if not mass or number(row["gwp_total_a1a3"]) is None:
         return None
-    values = _per_unit(row, mass)
+    values = per_unit(row, mass)
     for key, (low, high) in LIMITS_PER_KG.items():
         if values[key] is not None and not low <= values[key] <= high:
             values[key] = None

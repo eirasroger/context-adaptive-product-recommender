@@ -1,53 +1,55 @@
-"""The staged partition seed, applied on top of the live seeds, until it moves into db/seeds."""
+"""The partition seed in the live registry, against the registry without it."""
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 import pytest
-import yaml
 
 from core import registry as registry_module
 from db import validate
-from db.seed import SEED_DIR, apply_seed_document, seed
+from db.seed import SEED_DIR, seed
 from db.session import create_all, create_db_engine, session_factory
 
-STAGED = SEED_DIR / "staged" / "60_category_partition.yaml"
+PARTITION_SEED = SEED_DIR / "60_category_partition.yaml"
 PARTITION = "interior_partition"
 
 
-def _session(path: Path, with_partitions: bool):
+def _session(path: Path, seed_dir: Path = SEED_DIR):
     engine = create_db_engine(path)
     create_all(engine)
     session = session_factory(engine)()
-    seed(session)
-    if with_partitions:
-        apply_seed_document(session, yaml.safe_load(STAGED.read_text(encoding="utf-8")))
+    seed(session, seed_dir)
     session.commit()
     return session
 
 
 @pytest.fixture(scope="module")
-def staged(tmp_path_factory):
-    return _session(tmp_path_factory.mktemp("staged") / "registry.db", with_partitions=True)
+def seeded(tmp_path_factory):
+    return _session(tmp_path_factory.mktemp("seeded") / "registry.db")
 
 
 @pytest.fixture(scope="module")
-def live(tmp_path_factory):
-    return _session(tmp_path_factory.mktemp("live") / "registry.db", with_partitions=False)
+def without_partitions(tmp_path_factory):
+    seeds = tmp_path_factory.mktemp("seeds")
+    for path in SEED_DIR.glob("*.yaml"):
+        if path != PARTITION_SEED:
+            shutil.copy(path, seeds / path.name)
+    return _session(tmp_path_factory.mktemp("without") / "registry.db", seeds)
 
 
 @pytest.fixture(scope="module")
-def registry(staged):
-    return registry_module.from_session(staged, version="staged")
+def registry(seeded):
+    return registry_module.from_session(seeded, version="seeded")
 
 
-def test_the_staged_partition_seed_passes_every_registry_check(staged):
-    assert validate.check(staged) == []
+def test_the_seeds_with_partitions_pass_every_registry_check(seeded):
+    assert validate.check(seeded) == []
 
 
-def test_partitions_get_their_own_baseline_and_the_seven_confirmed_contexts(staged):
-    assert validate.available_contexts(staged, PARTITION) == {
+def test_partitions_get_their_own_baseline_and_the_seven_confirmed_contexts(seeded):
+    assert validate.available_contexts(seeded, PARTITION) == {
         "partition_within_home",
         "unit_separation",
         "noisy_neighbour",
@@ -59,9 +61,9 @@ def test_partitions_get_their_own_baseline_and_the_seven_confirmed_contexts(stag
     }
 
 
-def test_adding_partitions_leaves_the_other_categories_contexts_unchanged(staged, live):
+def test_adding_partitions_leaves_the_other_categories_contexts_unchanged(seeded, without_partitions):
     for category in ("concrete", "facade_system"):
-        assert validate.available_contexts(staged, category) == validate.available_contexts(live, category)
+        assert validate.available_contexts(seeded, category) == validate.available_contexts(without_partitions, category)
 
 
 def test_u_carries_no_preference_between_heated_rooms_and_matters_next_to_a_cold_space(registry):

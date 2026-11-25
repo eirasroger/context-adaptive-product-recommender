@@ -8,7 +8,7 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from ingest.facade.epd_search import FIELDS, _text, details, european, search
+from ingest.epd.soda4lca import FIELDS, details, european, search, text_of
 
 NODES = {
     "EPD International": "https://data.environdec.com",
@@ -163,7 +163,7 @@ def main() -> None:
     with ThreadPoolExecutor(max_workers=8) as pool:
         for node, hits in pool.map(_safe_search, jobs):
             for hit in hits:
-                name = _text(hit.get("name"))
+                name = text_of(hit.get("name"))
                 layer = layer_of(name)
                 if layer is None or not _qualifies(hit, args.valid_from):
                     continue
@@ -176,7 +176,7 @@ def main() -> None:
         record = {
             "typology": entry["typology"],
             "node": entry["node"],
-            "name": _text(hit.get("name")).strip(),
+            "name": text_of(hit.get("name")).strip(),
             "uuid": hit["uuid"],
             "geo": hit.get("geo", ""),
             "reg_no": hit.get("regNo", ""),

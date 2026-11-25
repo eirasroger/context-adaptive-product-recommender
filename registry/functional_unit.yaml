@@ -11,3 +11,9 @@ functional_unit:
   unit: m2
   reference_service_life_years: 50.0
   definition_text: One square metre of the complete facade system as installed, over the reference service life. Layered systems are aggregated to this unit before ingest.
+- key: m2_partition_installed
+  display_name: One square metre of partition, installed
+  quantity_kind: area
+  unit: m2
+  reference_service_life_years: 50.0
+  definition_text: One square metre of a complete fixed, non-loadbearing interior partition as installed and finished on both faces, over the reference service life. Layered systems are aggregated to this unit before ingest.

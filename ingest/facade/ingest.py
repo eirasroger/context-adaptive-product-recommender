@@ -134,3 +134,20 @@ def ingest(
         for start in range(0, len(batch), CHUNK):
             session.execute(insert(model.__table__), batch[start : start + CHUNK])
     return {model.__tablename__: len(batch) for model, batch in rows.items()}
+
+
+def add_dataset(
+    session: Session, registry: Registry, labeller: str, sets: int, seed: int, resynthesise: bool
+) -> dict[str, int]:
+    """The facade sets for the joint build, synthesising the working dataset first if it is missing."""
+    from ingest.facade import compose, synthesise
+
+    scenarios = synthesise.DATASET_DIR / synthesise.SCENARIOS_FILE
+    labels = synthesise.DATASET_DIR / (synthesise.LLM_LABELS_FILE if labeller == "llm" else synthesise.LABELS_FILE)
+    if resynthesise or not scenarios.exists():
+        library = compose.Library.load()
+        print(f"EPD layers: {library.summary()}")
+        print(f"values set aside as unit errors: {len(compose.set_aside)}")
+        synthesise.write(registry, library, synthesise.DATASET_DIR, sets, seed)
+        print(f"wrote the working dataset to {synthesise.DATASET_DIR}")
+    return ingest(session, registry, scenarios, labels, labeller)

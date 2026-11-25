@@ -98,9 +98,9 @@ category:
       expert: 0.0
 
     indicators:
-      - {indicator_key: gwp, ref_low: 0.0, ref_high: 120.0}
-      - {indicator_key: wdp, ref_low: -5.0, ref_high: 50.0}
-      - {indicator_key: fwu, ref_low: 0.005, ref_high: 2.0, scale: log}
+      - {indicator_key: gwp, ref_low: 0.0, ref_high: 150.0}
+      - {indicator_key: wdp, ref_low: -5.0, ref_high: 100.0}
+      - {indicator_key: fwu, ref_low: 0.02, ref_high: 5.0, scale: log}
 
       - {indicator_key: circ_orig, ref_low: 0.0, ref_high: 100.0}
       - {indicator_key: fu_recyc, ref_low: 0.0, ref_high: 100.0}
@@ -115,9 +115,9 @@ category:
           between material recovery and landfill, so there is no direction to
           sweep.
 
-      - {indicator_key: cost_product, ref_low: 5.0, ref_high: 150.0}
-      - {indicator_key: cost_labour, ref_low: 5.0, ref_high: 120.0}
-      - {indicator_key: cost_maintenance, ref_low: 0.0, ref_high: 50.0}
+      - {indicator_key: cost_product, ref_low: 10.0, ref_high: 150.0}
+      - {indicator_key: cost_labour, ref_low: 10.0, ref_high: 150.0}
+      - {indicator_key: cost_maintenance, ref_low: 0.0, ref_high: 60.0}
       - indicator_key: cost_total
         ref_low: 10.0
         ref_high: 300.0

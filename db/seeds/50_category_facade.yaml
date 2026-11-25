@@ -123,9 +123,9 @@ indicator:
     unit: mm
     default_direction: -1
     definition_text: >-
-      Overall thickness of the installed system. Lower is better: weakly where
-      the facade is free to grow outwards, strongly where its outer face is
-      fixed and every millimetre is taken from the rooms.
+      Overall thickness of the installed system. Lower is better, since a
+      thicker wall takes space: weakly where the wall is free to grow outwards,
+      strongly where every millimetre is taken from the rooms.
 
 functional_unit:
   - key: m2_installed

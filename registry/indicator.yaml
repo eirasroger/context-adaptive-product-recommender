@@ -9,6 +9,16 @@ indicator:
   nominal_justification: null
   is_derived: 0
   is_active: 1
+- key: acoustic_reduction_pink
+  display_name: Airborne sound reduction, household noise
+  family_key: performance
+  value_type: continuous
+  unit: dBA
+  definition_text: 'Airborne sound reduction of the system for speech and household noise: the A-weighted index RA over the third-octave bands 100 Hz to 5 kHz for pink noise (CTE DB-HR), approximately Rw + C per EN ISO 717-1. Higher is better. A product property, distinct from the in-situ insulation between rooms, which also depends on flanking paths. Kept apart from the traffic-weighted reduction because the two weightings differ by several decibels on the same wall.'
+  default_direction: 1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
 - key: b
   display_name: Biodiversity pressure
   family_key: environmental_impact
@@ -199,6 +209,16 @@ indicator:
   nominal_justification: null
   is_derived: 0
   is_active: 1
+- key: impact_resistance
+  display_name: Impact resistance
+  family_key: performance
+  value_type: ordinal
+  unit: null
+  definition_text: 'Robustness of the system against knocks and impacts in use, as the use category of EAD 210005 for internal partition kits. The UK duty grades of BS 5234-2 (Light, Medium, Heavy, Severe) map onto it by their definitions. Higher is better. The levels are spaced evenly: the soft-body damage tests rise in equal steps of energy from one category to the next.'
+  default_direction: 1
+  nominal_justification: null
+  is_derived: 0
+  is_active: 1
 - key: scm_content
   display_name: Supplementary cementitious content
   family_key: performance
@@ -234,7 +254,7 @@ indicator:
   family_key: performance
   value_type: continuous
   unit: mm
-  definition_text: 'Overall thickness of the installed system. Lower is better: weakly where the facade is free to grow outwards, strongly where its outer face is fixed and every millimetre is taken from the rooms.'
+  definition_text: 'Overall thickness of the installed system. Lower is better, since a thicker wall takes space: weakly where the wall is free to grow outwards, strongly where every millimetre is taken from the rooms.'
   default_direction: -1
   nominal_justification: null
   is_derived: 0

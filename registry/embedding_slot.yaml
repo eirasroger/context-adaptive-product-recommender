@@ -5,12 +5,33 @@ embedding_slot:
 - table_name: category
   entity_key: facade_system
   slot: 1
+- table_name: category
+  entity_key: interior_partition
+  slot: 2
 - table_name: context
   entity_key: standard_structural
   slot: 0
 - table_name: context
   entity_key: acoustic_insulation
   slot: 1
+- table_name: context
+  entity_key: partition_within_home
+  slot: 10
+- table_name: context
+  entity_key: unit_separation
+  slot: 11
+- table_name: context
+  entity_key: noisy_neighbour
+  slot: 12
+- table_name: context
+  entity_key: unheated_neighbour
+  slot: 13
+- table_name: context
+  entity_key: heavy_use
+  slot: 14
+- table_name: context
+  entity_key: limited_support
+  slot: 15
 - table_name: context
   entity_key: thermal_insulation
   slot: 2
@@ -96,6 +117,12 @@ embedding_slot:
   entity_key: thickness
   slot: 26
 - table_name: indicator
+  entity_key: acoustic_reduction_pink
+  slot: 27
+- table_name: indicator
+  entity_key: impact_resistance
+  slot: 28
+- table_name: indicator
   entity_key: b
   slot: 3
 - table_name: indicator
@@ -149,6 +176,18 @@ embedding_slot:
 - table_name: indicator_level
   entity_key: fire_reaction::a1
   slot: 13
+- table_name: indicator_level
+  entity_key: impact_resistance::category_i
+  slot: 14
+- table_name: indicator_level
+  entity_key: impact_resistance::category_ii
+  slot: 15
+- table_name: indicator_level
+  entity_key: impact_resistance::category_iii
+  slot: 16
+- table_name: indicator_level
+  entity_key: impact_resistance::category_iv
+  slot: 17
 - table_name: indicator_level
   entity_key: health::h2
   slot: 2
