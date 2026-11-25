@@ -1,0 +1,287 @@
+# Interior partition context selection: the long list, the screening and the prevalence evidence.
+#
+# Same method as facades (docs/CONTEXTS.md section 2). A candidate goes to the
+# influence pilot (experiments.partition_context_pilot) when it passes three tests:
+#   ranking     it changes preference among options that already pass the code,
+#               including a valued margin above the minimum
+#   preference  it changes how much an indicator matters, leaving the product's
+#               values as they are
+#   external    it describes the project's situation, never a decision-maker's priority
+#
+# Prevalence is the share of European interior partition decisions the context
+# applies to, in bands: high > 30 %, medium 10 to 30 %, low 3 to 10 %, rare < 3 %.
+# A band marked `judgement` has no statistical source and needs expert review.
+# `registry_key` names an existing context the candidate would reuse.
+
+baseline:
+  name: Baseline
+  description: >-
+    A partition between two heated rooms of the same flat, for example a
+    bedroom and the living room, in a new residential building of four to six
+    storeys in a temperate climate, outside seismic areas. It stands on a new
+    concrete floor designed for it, in a flat of ordinary size, and is built
+    before anyone moves in.
+
+sources:
+  KAT: Lopez, partition application situations ESC-01 to ESC-05 (presentation v4, 2026-11-24)
+  CTE: Codigo Tecnico de la Edificacion, conditions that trigger DB HR, HE, SI, HS, SUA, SE-AE for partitions
+  EAD: EAD 210005-00-0505, internal partition kits, use categories I to IV
+  FAC: facade contexts (docs/CONTEXTS.md), tested for transfer
+  LEVELS: JRC Level(s) indicators 2.3 (adaptability) and 2.4 (deconstruction), EN 15978 scenarios
+  ADDED: candidate added in this review
+
+candidates:
+  # Acoustics
+  - key: unit_separation
+    name: Separates two homes or units
+    source: [KAT ESC-01, CTE HR]
+    tests: {ranking: yes, preference: yes, external: yes}
+    outcome: pilot
+    prevalence: {band: medium, basis: "47.7 % of EU residents live in flats (Eurostat, Housing in Europe 2024, 2023 data), where every flat has separating walls; separating walls are a minority of partition area inside each building; judgement for the share"}
+    description: >-
+      The partition separates two different homes or units of occupancy, such
+      as two flats, two classrooms, two hotel rooms or the offices of two
+      tenants, so the people on either side are strangers to each other.
+
+  - key: noisy_neighbour
+    name: Next to a noisy room
+    source: [KAT ESC-02, KAT ESC-04, KAT ESC-05, CTE HR]
+    tests: {ranking: yes, preference: yes, external: yes}
+    outcome: pilot
+    prevalence: {band: low, basis: "car parks, shops, bars, gyms, workshops and plant rooms next to dwellings or offices; judgement"}
+    description: >-
+      The partition separates a living or working room from a noisy room
+      next door: a car park, a shop or bar, a gym, a workshop or a plant
+      room, where noise levels exceed 70 dB(A).
+
+  # Thermal
+  - key: unheated_neighbour
+    name: Next to an unheated space
+    source: [KAT ESC-02, KAT ESC-05, CTE HE]
+    tests: {ranking: yes, preference: yes, external: yes}
+    outcome: pilot
+    prevalence: {band: low, basis: "walls to garages, unheated stairwells, storerooms and workshops; a small share of partition area; judgement"}
+    description: >-
+      One side of the partition is a space kept unheated in winter, such as a
+      garage, an unheated common stairwell, a storeroom or a workshop, so the
+      partition is part of the boundary of the heated home.
+
+  - key: hot_summer
+    name: Hot summer
+    registry_key: hot_summer
+    source: [FAC, CTE HE]
+    tests: {ranking: yes, preference: yes, external: yes}
+    outcome: pilot
+    prevalence: {band: medium, basis: "as for facades: cooling degree days concentrated in the Mediterranean member states, about 28 % of EU population (Eurostat)"}
+    description: >-
+      The building is in a climate with long, hot summers and warm nights, as
+      in southern Europe. Overheating indoors is the main comfort problem;
+      winters are mild.
+
+  - key: cold_winter
+    name: Cold winter
+    registry_key: thermal_insulation
+    source: [FAC, CTE HE]
+    tests: {ranking: unclear, preference: unclear, external: yes}
+    outcome: pilot
+    piloted_to_test: transfer of the facade context, expected to have no effect between two heated rooms
+    prevalence: {band: medium, basis: "as for facades: Koppen D and E cover roughly a quarter of the EU population; judgement"}
+    description: >-
+      The building is in a climate with long, cold winters, as in central and
+      northern Europe. Heating runs for most of the year.
+
+  # Structure
+  - key: seismic
+    name: Seismic zone
+    registry_key: seismic
+    source: [FAC, CTE SE]
+    tests: {ranking: yes, preference: yes, external: yes}
+    outcome: pilot
+    prevalence: {band: high, basis: "as for facades: reference PGA of at least 0.1 g on ESHM20 covers Italy, Greece, Romania, the Balkans and south-east Iberia; masonry infills and partitions were the main damage in L'Aquila 2009 (Braga et al. 2011)"}
+    description: >-
+      The building is in an area of moderate or high earthquake hazard, such
+      as most of Italy, Greece, Romania, the Balkans or south-east Spain.
+
+  - key: high_rise
+    name: High-rise building
+    registry_key: high_rise
+    source: [FAC, CTE SI]
+    tests: {ranking: unclear, preference: unclear, external: yes}
+    outcome: pilot
+    piloted_to_test: transfer of the facade context; lining fire classes indoors do not depend on height (DB-SI SI 1 Tabla 4.1)
+    prevalence: {band: low, basis: "as for facades: buildings above 18 m; judgement"}
+    description: >-
+      The building is a tower whose top floor is more than 18 m above ground,
+      seven storeys or more.
+
+  - key: limited_support
+    name: Light or existing floor
+    source: [ADDED, CTE SE-AE]
+    tests: {ranking: yes, preference: yes, external: yes}
+    outcome: pilot
+    prevalence: {band: medium, basis: "renovation is about 55 % of building output in Western Europe (ING from Euroconstruct, 2023); timber and light floors in old stock and new timber buildings; the share with little load reserve is judgement"}
+    description: >-
+      The partition stands on a floor with little reserve for extra permanent
+      load: an old timber floor, a light steel or timber floor, or an existing
+      slab in a building being refurbished.
+
+  # Building and use
+  - key: tight_plan
+    name: Small floor plan
+    registry_key: no_room_outwards
+    source: [ADDED, KAT]
+    tests: {ranking: yes, preference: yes, external: yes}
+    outcome: pilot
+    prevalence: {band: low, basis: "small flats and studios in dense city centres; judgement"}
+    description: >-
+      The home is small, such as a studio or a one-bedroom flat in a dense
+      city centre, so every centimetre of wall is taken from rooms that are
+      already at their minimum size.
+
+  - key: heavy_use
+    name: Rooms in hard use
+    source: [KAT ESC-04, KAT ESC-05, EAD]
+    tests: {ranking: yes, preference: unclear, external: yes}
+    outcome: pilot
+    piloted_to_test: no impact indicator exists; the pilot shows whether the situation acts through other indicators
+    prevalence: {band: low, basis: "school corridors, sports halls, workshops, hospital corridors; EAD use categories III and IV; judgement"}
+    description: >-
+      The partition lines rooms in hard everyday use, where people,
+      equipment, trolleys or balls strike it: a school corridor, a sports
+      hall, a workshop or a hospital corridor.
+
+  - key: occupied_renovation
+    name: Works in an occupied building
+    source: [ADDED, LEVELS]
+    tests: {ranking: yes, preference: unclear, external: yes}
+    outcome: pilot
+    piloted_to_test: the facade pilot found no effect (CI included zero); partitions are often fit-out work
+    prevalence: {band: medium, basis: "office fit-outs and refurbishments of occupied flats; renovation is about 55 % of building output in Western Europe (ING from Euroconstruct, 2023); judgement for the occupied share"}
+    description: >-
+      The partition is built inside an existing building that stays in use
+      during the works, such as an office fit-out or a flat refurbished with
+      neighbours living around it, so dust, noise, wet trades and time on
+      site disturb the occupants.
+
+  # Screened out
+  - key: fire_compartment
+    name: Fire compartment boundary
+    source: [KAT ESC-03, CTE SI]
+    tests: {ranking: no, preference: no, external: yes}
+    outcome: compliance
+    reason: >-
+      Sets a fire resistance EI to pass (DB-SI SI 1 Tabla 1.2: EI 60 to EI 180
+      by use and height). Surplus above it carries little value, as for
+      facades.
+
+  - key: escape_route
+    name: Escape route or protected corridor
+    source: [CTE SI]
+    tests: {ranking: no, preference: no, external: yes}
+    outcome: compliance
+    reason: >-
+      Sets a lining class to pass (B-s1,d0, DB-SI SI 1 Tabla 4.1). Every
+      partition in scope is A1 or A2.
+
+  - key: wet_room
+    name: Bathroom or kitchen
+    source: [CTE HS]
+    tests: {ranking: no, preference: no, external: yes}
+    outcome: compliance
+    reason: >-
+      Decides which boards are eligible (water-resistant EN 520 type H, or
+      masonry with a suitable finish). Durability shows in the maintenance
+      cost value.
+
+  - key: tall_partition
+    name: Tall storey
+    source: [KAT ESC-04]
+    tests: {ranking: no, preference: no, external: yes}
+    outcome: compliance
+    reason: >-
+      A system reaches the height or it falls short (maximum height, and the
+      height to which EI is valid).
+
+  - key: services_wall
+    name: Services inside the wall
+    source: [ADDED]
+    tests: {ranking: no, preference: no, external: yes}
+    outcome: compliance
+    reason: >-
+      Pipes and cables need a cavity of a given width: an eligibility check
+      on the product, with no indicator to rank.
+
+  - key: hygiene
+    name: Healthcare hygiene
+    source: [ADDED, EAD]
+    tests: {ranking: no, preference: no, external: yes}
+    outcome: compliance
+    reason: >-
+      Cleanable and resistant surfaces are a specification to meet; EAD
+      210005 places such zones outside its scope.
+
+  - key: special_shielding
+    name: Radiation or security shielding
+    source: [ADDED]
+    tests: {ranking: no, preference: no, external: yes}
+    outcome: compliance
+    reason: >-
+      X-ray rooms and secure rooms need specific linings that decide
+      eligibility.
+
+  - key: wildfire_edge
+    name: Wildfire edge
+    registry_key: wildfire_edge
+    source: [FAC]
+    tests: {ranking: no, preference: no, external: yes}
+    outcome: scope
+    reason: >-
+      The exposure acts on the outside of the building; partitions are
+      indoors.
+
+  - key: noisy_site
+    name: Noisy site
+    registry_key: acoustic_insulation
+    source: [FAC]
+    tests: {ranking: no, preference: no, external: yes}
+    outcome: scope
+    reason: >-
+      Outdoor noise reaches rooms through the facade. Its declaration names
+      the traffic-weighted facade key, which partitions do not hold, so the
+      context is inert for them without an override.
+
+  - key: future_layout_change
+    name: Expected future change of layout
+    source: [LEVELS]
+    tests: {ranking: yes, preference: yes, external: no}
+    outcome: stakeholder
+    reason: >-
+      A priority the client brings (circular economy advocate); no
+      adaptability indicator exists.
+
+  - key: short_programme
+    name: Short programme, dry construction wanted
+    source: [ADDED]
+    tests: {ranking: yes, preference: yes, external: no}
+    outcome: stakeholder
+    reason: >-
+      A contractor's priority (pragmatic contractor); labour cost carries
+      the time on site.
+
+  - key: embodied_carbon_limit
+    name: Embodied-carbon limit
+    source: [LEVELS]
+    tests: {ranking: yes, preference: yes, external: no}
+    outcome: stakeholder
+    reason: >-
+      A limit on the whole building is a threshold or a priority the
+      decision-maker brings (regulatory-aligned builder), as for facades.
+
+  - key: demountable_office
+    name: Demountable office partitions
+    source: [ADDED]
+    tests: {ranking: yes, preference: yes, external: yes}
+    outcome: scope
+    reason: >-
+      Glazed and demountable systems are outside the category (shorter
+      replacement cycle).
