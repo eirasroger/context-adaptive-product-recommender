@@ -319,7 +319,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: acoustic_reduction_pink
   is_required: 0
   relevance_mode: always
@@ -327,7 +327,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: circ_orig
   is_required: 0
   relevance_mode: always
@@ -335,7 +335,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: cost_labour
   is_required: 0
   relevance_mode: always
@@ -343,7 +343,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: cost_maintenance
   is_required: 0
   relevance_mode: always
@@ -351,7 +351,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: cost_product
   is_required: 0
   relevance_mode: always
@@ -359,7 +359,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: cost_total
   is_required: 0
   relevance_mode: always
@@ -367,7 +367,7 @@ category_indicator:
   control_mode: exclude
   control_note: Derived from the three cost components, which are swept individually.
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: fire_reaction
   is_required: 0
   relevance_mode: always
@@ -375,7 +375,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: fu_haz
   is_required: 0
   relevance_mode: always
@@ -383,7 +383,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: fu_incin
   is_required: 0
   relevance_mode: always
@@ -391,7 +391,7 @@ category_indicator:
   control_mode: exclude
   control_note: 'Declared neutral, as for concrete and facades: energy recovery sits between material recovery and landfill, so there is no direction to sweep.'
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: fu_inert
   is_required: 0
   relevance_mode: always
@@ -399,7 +399,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: fu_recyc
   is_required: 0
   relevance_mode: always
@@ -407,7 +407,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: fwu
   is_required: 0
   relevance_mode: always
@@ -415,7 +415,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: gwp
   is_required: 0
   relevance_mode: always
@@ -423,7 +423,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: health
   is_required: 0
   relevance_mode: always
@@ -431,7 +431,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: heat_capacity
   is_required: 0
   relevance_mode: always
@@ -439,7 +439,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: impact_resistance
   is_required: 0
   relevance_mode: always
@@ -447,7 +447,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: surface_mass
   is_required: 0
   relevance_mode: always
@@ -455,7 +455,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: thickness
   is_required: 0
   relevance_mode: always
@@ -463,7 +463,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: null
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: u_value
   is_required: 0
   relevance_mode: always
@@ -471,7 +471,7 @@ category_indicator:
   control_mode: sweep
   control_note: null
   note: Between two heated rooms almost no heat crosses, so U carries no preference unless a context says the other side is unheated.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: wdp
   is_required: 0
   relevance_mode: always

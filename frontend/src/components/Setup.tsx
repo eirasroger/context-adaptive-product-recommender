@@ -22,9 +22,11 @@ export function Setup({
   onContexts,
   onStakeholders,
 }: Props) {
+  const full = stakeholders.length >= category.max_stakeholders;
   const toggle = (key: string) => {
-    if (!stakeholders.includes(key)) onStakeholders([...stakeholders, key]);
-    else if (stakeholders.length > 1) onStakeholders(stakeholders.filter((s) => s !== key));
+    if (!stakeholders.includes(key)) {
+      if (!full) onStakeholders([...stakeholders, key]);
+    } else if (stakeholders.length > 1) onStakeholders(stakeholders.filter((s) => s !== key));
   };
 
   return (
@@ -60,6 +62,7 @@ export function Setup({
             <span className="label" id="priorities-label">
               Whose priorities count
             </span>
+            <p className="hint">Up to {category.max_stakeholders}, the most the model learned to combine.</p>
             <div className="chips" role="group" aria-labelledby="priorities-label">
               {form.stakeholders.map((s) => (
                 <button
@@ -68,6 +71,7 @@ export function Setup({
                   className="chip"
                   title={s.definition}
                   aria-pressed={stakeholders.includes(s.key)}
+                  disabled={full && !stakeholders.includes(s.key)}
                   onClick={() => toggle(s.key)}
                 >
                   <svg className="tick" viewBox="0 0 16 16" aria-hidden="true">

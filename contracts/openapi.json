@@ -281,6 +281,11 @@
             "title": "Max Contexts",
             "type": "integer"
           },
+          "max_stakeholders": {
+            "description": "Most stakeholders one request may combine.",
+            "title": "Max Stakeholders",
+            "type": "integer"
+          },
           "preview": {
             "description": "Trained partly on synthetic labels; scores restate the declared rules.",
             "title": "Preview",
@@ -296,6 +301,7 @@
           "eligibility_precondition",
           "default_context",
           "max_contexts",
+          "max_stakeholders",
           "contexts",
           "fields"
         ],
@@ -745,7 +751,7 @@
             "type": "array"
           },
           "stakeholders": {
-            "description": "Whose priorities count, as keys from /api/stakeholders.",
+            "description": "Whose priorities count, as keys from /api/stakeholders; at most the category's max_stakeholders from /api/explore/form.",
             "items": {
               "type": "string"
             },

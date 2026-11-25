@@ -6,7 +6,7 @@ embedding_slot:
   entity_key: facade_system
   slot: 1
 - table_name: category
-  entity_key: interior_partition
+  entity_key: indoor_partition
   slot: 2
 - table_name: context
   entity_key: standard_structural

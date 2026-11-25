@@ -1,4 +1,4 @@
-# Interior partitions, the third category. Staged: applied on top of the live
+# Indoor partitions, the third category. Staged: applied on top of the live
 # seeds by tests/test_partition_registry.py, and moved into db/seeds with the
 # registry bump once the first partition data is built (docs/PARTITIONS.md 1).
 # Indicators: docs/PARTITIONS.md 3 and 7.10; contexts: 8.4 and 9.5.
@@ -67,13 +67,13 @@ functional_unit:
     unit: m2
     reference_service_life_years: 50
     definition_text: >-
-      One square metre of a complete fixed, non-loadbearing interior partition
+      One square metre of a complete fixed, non-loadbearing indoor partition
       as installed and finished on both faces, over the reference service life.
       Layered systems are aggregated to this unit before ingest.
 
 category:
-  - key: interior_partition
-    display_name: Interior partition
+  - key: indoor_partition
+    display_name: Indoor partition
     functional_unit_key: m2_partition_installed
     default_context_key: partition_within_home
     definition_text: >-
@@ -218,10 +218,10 @@ context:
       area and counts moderately; sound reduction, impact resistance and fire
       class count mildly.
     declarations:
-      - {indicator_key: acoustic_reduction_pink, direction: 1, priority: 0.30, category_key: interior_partition}
-      - {indicator_key: thickness, direction: -1, priority: 0.50, category_key: interior_partition}
-      - {indicator_key: fire_reaction, direction: 1, priority: 0.20, category_key: interior_partition}
-      - {indicator_key: impact_resistance, direction: 1, priority: 0.20, category_key: interior_partition}
+      - {indicator_key: acoustic_reduction_pink, direction: 1, priority: 0.30, category_key: indoor_partition}
+      - {indicator_key: thickness, direction: -1, priority: 0.50, category_key: indoor_partition}
+      - {indicator_key: fire_reaction, direction: 1, priority: 0.20, category_key: indoor_partition}
+      - {indicator_key: impact_resistance, direction: 1, priority: 0.20, category_key: indoor_partition}
 
   - key: unit_separation
     display_name: Separates two homes or units
@@ -251,7 +251,7 @@ context:
       heated home. Heat flows across it, reduced by the adjustment factor of
       the unheated space (EN ISO 13789), so lower U counts moderately.
     declarations:
-      - {indicator_key: u_value, direction: -1, priority: 0.50, category_key: interior_partition}
+      - {indicator_key: u_value, direction: -1, priority: 0.50, category_key: indoor_partition}
 
   - key: heavy_use
     display_name: Rooms in hard use
@@ -272,4 +272,4 @@ context:
       partitions count as a small uniform floor load, while heavy ones must be
       designed for individually, so a lighter partition counts strongly.
     declarations:
-      - {indicator_key: surface_mass, direction: -1, priority: 0.90, category_key: interior_partition}
+      - {indicator_key: surface_mass, direction: -1, priority: 0.90, category_key: indoor_partition}

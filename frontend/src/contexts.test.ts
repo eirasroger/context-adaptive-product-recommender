@@ -6,6 +6,7 @@ import { keepOffered, switchable, toggle } from "./contexts";
 const category = {
   default_context: "base",
   max_contexts: 2,
+  max_stakeholders: 3,
   contexts: [
     { key: "base", display_name: "Base", definition: "", theme: "Baseline" },
     { key: "cold", display_name: "Cold", definition: "", theme: "Climate" },

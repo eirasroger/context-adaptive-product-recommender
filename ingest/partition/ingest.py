@@ -57,7 +57,7 @@ def add_dataset(session: Session, registry: Registry) -> dict[str, int]:
     now = datetime.now(timezone.utc).isoformat()
     session.add(DataSource(
         key=SOURCE_KEY,
-        display_name="Interior partitions composed from EPD layers",
+        display_name="Indoor partitions composed from EPD layers",
         citation="Composed from European EN 15804+A2 EPDs by ingest.partition.compose.",
         doi=None,
         ingested_at=now,

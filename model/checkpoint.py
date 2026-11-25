@@ -27,6 +27,8 @@ class CheckpointMeta:
     notes: str = ""
     #: per category, the most contexts any training set combined; empty in checkpoints older than the record
     max_contexts: dict[str, int] = field(default_factory=dict)
+    #: per category, the most stakeholders any training set combined; empty in checkpoints older than the record
+    max_stakeholders: dict[str, int] = field(default_factory=dict)
 
 
 def save(

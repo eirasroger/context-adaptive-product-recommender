@@ -45,3 +45,9 @@ class ServedModel:
             raise ValueError(
                 f"{path} records no context limit for {unrecorded}; export it from a checkpoint trained since the limit was recorded"
             )
+        self.max_stakeholders: dict[str, int] = json.loads(carried.get(scoring.MAX_STAKEHOLDERS) or "{}")
+        unrecorded = sorted(set(self.registry.categories) - set(self.max_stakeholders))
+        if unrecorded:
+            raise ValueError(
+                f"{path} records no stakeholder limit for {unrecorded}; export it from a checkpoint trained since the limit was recorded"
+            )

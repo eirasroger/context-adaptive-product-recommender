@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 from fastapi import HTTPException
 
-from serve.shortlist import checked_contexts
-from train.run import trained_context_limits
+from serve.shortlist import checked_contexts, checked_stakeholder_count
+from train.run import trained_context_limits, trained_stakeholder_limits
 
 
 def _offered(category):
@@ -57,3 +57,21 @@ def test_the_limit_is_the_most_contexts_a_training_set_combined():
         combo_context_slots=((1,), (1, 2), (1, 2, 3)),
     )
     assert trained_context_limits(prepared) == {"a": 2, "b": 1}
+
+
+def test_the_stakeholder_limit_is_the_most_stakeholders_a_training_set_combined():
+    prepared = SimpleNamespace(
+        set_fold=("train", "train", "test", "train"),
+        category_keys=("a", "b"),
+        set_category=np.array([0, 0, 0, 1]),
+        set_stakeholder_slots=((1,), (1, 2, 3), (1, 2, 3, 4), (5,)),
+    )
+    assert trained_stakeholder_limits(prepared) == {"a": 3, "b": 1}
+
+
+def test_more_stakeholders_than_trained_are_refused():
+    checked_stakeholder_count("a", ["x", "y", "z"], limit=3)
+    with pytest.raises(HTTPException):
+        checked_stakeholder_count("a", ["w", "x", "y", "z"], limit=3)
+    with pytest.raises(HTTPException):
+        checked_stakeholder_count("a", ["x", "x"], limit=3)

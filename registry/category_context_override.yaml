@@ -4,32 +4,32 @@ category_context_override:
   is_applicable: 0
   display_name: null
   justification: Its only declaration a facade holds is the reversed circular origin, which describes exposed concrete surfaces. Cladding appearance is a design choice made before the shortlist exists.
-- category_key: interior_partition
+- category_key: indoor_partition
   context_key: architectural_finish
   is_applicable: 0
   display_name: null
   justification: Its only declaration a partition holds is the reversed circular origin, which describes exposed concrete surfaces.
-- category_key: interior_partition
+- category_key: indoor_partition
   context_key: high_rise
   is_applicable: 0
   display_name: null
   justification: Indoor lining classes do not depend on building height (DB-SI SI 1 Tabla 4.1), and the pilot found no effect. Partition weight is covered by the light or existing floor context.
-- category_key: interior_partition
+- category_key: indoor_partition
   context_key: new_build_mild
   is_applicable: 0
   display_name: null
   justification: The facade baseline. Partitions have their own baseline, a wall between two heated rooms of one home.
-- category_key: interior_partition
+- category_key: indoor_partition
   context_key: no_room_outwards
   is_applicable: 0
   display_name: null
   justification: Thinner is already preferred at the partition baseline, and a small floor plan added little in the pilot (0.026).
-- category_key: interior_partition
+- category_key: indoor_partition
   context_key: thermal_insulation
   is_applicable: 0
   display_name: null
   justification: Cold winter. Between two heated rooms U hardly matters in any climate; the influence pilot found no effect (docs/PARTITIONS.md 8.3). A cold neighbouring space is its own context.
-- category_key: interior_partition
+- category_key: indoor_partition
   context_key: wildfire_edge
   is_applicable: 0
   display_name: null

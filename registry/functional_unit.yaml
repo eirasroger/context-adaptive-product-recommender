@@ -16,4 +16,4 @@ functional_unit:
   quantity_kind: area
   unit: m2
   reference_service_life_years: 50.0
-  definition_text: One square metre of a complete fixed, non-loadbearing interior partition as installed and finished on both faces, over the reference service life. Layered systems are aggregated to this unit before ingest.
+  definition_text: One square metre of a complete fixed, non-loadbearing indoor partition as installed and finished on both faces, over the reference service life. Layered systems are aggregated to this unit before ingest.

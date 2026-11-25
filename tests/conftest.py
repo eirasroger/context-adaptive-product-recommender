@@ -61,6 +61,7 @@ def checkpoint(registry, seeded, tmp_path_factory):
             created_at=checkpoint_module.now(),
             metrics={},
             max_contexts={key: 2 for key in registry.categories},
+            max_stakeholders={key: 3 for key in registry.categories},
         ),
     )
     return path

@@ -1,4 +1,4 @@
-"""Interior partitions composed layer by layer from real EPDs; physics and published ranges supply the rest."""
+"""Indoor partitions composed layer by layer from real EPDs; physics and published ranges supply the rest."""
 
 from __future__ import annotations
 

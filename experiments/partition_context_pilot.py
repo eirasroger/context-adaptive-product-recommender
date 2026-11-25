@@ -1,4 +1,4 @@
-"""Context influence pilot for interior partitions: plausible products composed from CEC tables and reviewed manufacturer data, labelled under each candidate context."""
+"""Context influence pilot for indoor partitions: plausible products composed from CEC tables and reviewed manufacturer data, labelled under each candidate context."""
 
 from __future__ import annotations
 

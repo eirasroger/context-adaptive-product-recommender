@@ -13,7 +13,7 @@ from db.seed import SEED_DIR, seed
 from db.session import create_all, create_db_engine, session_factory
 
 PARTITION_SEED = SEED_DIR / "60_category_partition.yaml"
-PARTITION = "interior_partition"
+PARTITION = "indoor_partition"
 
 
 def _session(path: Path, seed_dir: Path = SEED_DIR):

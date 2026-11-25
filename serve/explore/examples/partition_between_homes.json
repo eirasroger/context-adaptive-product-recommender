@@ -1,7 +1,7 @@
 {
- "title": "Five interior partitions between two homes",
+ "title": "Five indoor partitions between two homes",
  "request": {
-  "category": "interior_partition",
+  "category": "indoor_partition",
   "context": [
    "unit_separation"
   ],

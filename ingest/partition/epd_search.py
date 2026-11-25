@@ -1,4 +1,4 @@
-"""Find EN 15804+A2 EPDs for interior partition layers and systems on open soda4LCA registry nodes, across European languages."""
+"""Find EN 15804+A2 EPDs for indoor partition layers and systems on open soda4LCA registry nodes, across European languages."""
 
 from __future__ import annotations
 
@@ -115,7 +115,7 @@ CURATION: dict[str, dict[str, tuple[str, ...]]] = {
 
 
 def curated(layer: str, name: str) -> bool:
-    """Whether a matched dataset describes a layer an interior partition can use."""
+    """Whether a matched dataset describes a layer an indoor partition can use."""
     lowered = name.lower()
     rules = CURATION.get(layer, {})
     if any(word in lowered for word in CURATION["all"]["drop"] + rules.get("drop", ())):

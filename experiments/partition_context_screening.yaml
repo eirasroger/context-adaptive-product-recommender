@@ -1,4 +1,4 @@
-# Interior partition context selection: the long list, the screening and the prevalence evidence.
+# Indoor partition context selection: the long list, the screening and the prevalence evidence.
 #
 # Same method as facades (docs/CONTEXTS.md section 2). A candidate goes to the
 # influence pilot (experiments.partition_context_pilot) when it passes three tests:
@@ -8,7 +8,7 @@
 #               values as they are
 #   external    it describes the project's situation, never a decision-maker's priority
 #
-# Prevalence is the share of European interior partition decisions the context
+# Prevalence is the share of European indoor partition decisions the context
 # applies to, in bands: high > 30 %, medium 10 to 30 %, low 3 to 10 %, rare < 3 %.
 # A band marked `judgement` has no statistical source and needs expert review.
 # `registry_key` names an existing context the candidate would reuse.

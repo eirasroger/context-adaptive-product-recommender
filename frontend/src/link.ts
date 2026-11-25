@@ -86,6 +86,8 @@ export function restore(snapshot: Snapshot, form: Form): Restored | null {
     if (!known.has(key)) dropped.push(`stakeholder ${quoted(key)}`);
     return known.has(key);
   });
+  for (const key of stakeholders.slice(category.max_stakeholders)) dropped.push(`stakeholder ${quoted(key)}`);
+  stakeholders = stakeholders.slice(0, category.max_stakeholders);
   if (stakeholders.length === 0) stakeholders = [fallbackStakeholder.key];
 
   const fields = new Map(category.fields.map((field) => [field.key, field]));

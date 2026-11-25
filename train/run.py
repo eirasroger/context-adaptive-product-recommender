@@ -108,6 +108,17 @@ def main() -> None:
             promote_on_pass(run_dir, config.notes)
 
 
+def trained_stakeholder_limits(prepared) -> dict[str, int]:
+    """Per category, the most stakeholders any training set combined."""
+    limits: dict[str, int] = {}
+    for index, fold in enumerate(prepared.set_fold):
+        if fold != "train":
+            continue
+        category = prepared.category_keys[int(prepared.set_category[index])]
+        limits[category] = max(limits.get(category, 0), len(prepared.set_stakeholder_slots[index]))
+    return limits
+
+
 def trained_context_limits(prepared) -> dict[str, int]:
     """Per category, the most contexts any training set combined."""
     limits: dict[str, int] = {}
@@ -164,6 +175,7 @@ def execute(config: TrainConfig, behavioural_suite: bool = True) -> tuple[Path, 
             created_at=checkpoint_module.now(),
             metrics={},
             max_contexts=trained_context_limits(prepared),
+            max_stakeholders=trained_stakeholder_limits(prepared),
             notes=config.notes,
         ),
     )
@@ -215,6 +227,7 @@ def execute(config: TrainConfig, behavioural_suite: bool = True) -> tuple[Path, 
             created_at=checkpoint_module.now(),
             metrics=results.get("overall", {}),
             max_contexts=trained_context_limits(prepared),
+            max_stakeholders=trained_stakeholder_limits(prepared),
             notes=config.notes,
         ),
     )

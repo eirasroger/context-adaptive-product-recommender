@@ -55,6 +55,7 @@ class FormCategory(BaseModel):
     eligibility_precondition: str
     default_context: str
     max_contexts: int = Field(description="Most contexts one request may combine.")
+    max_stakeholders: int = Field(description="Most stakeholders one request may combine.")
     contexts: list[FormContext] = Field(description="In display order.")
     fields: list[FormField]
 
@@ -177,6 +178,7 @@ def build_router(service_getter, metered: Any) -> APIRouter:
                     "eligibility_precondition": category.eligibility_precondition_text,
                     "default_context": category.default_context_key,
                     "max_contexts": service.max_contexts[key],
+                    "max_stakeholders": service.max_stakeholders[key],
                     "contexts": [
                         {
                             "key": context_key,
@@ -211,7 +213,7 @@ def build_router(service_getter, metered: Any) -> APIRouter:
     def compare(request: ShortlistRequest) -> Comparison:
         """Why the leading alternative is ahead of each of the others."""
         service = service_getter()
-        shortlist = resolve(service.registry, request, service.max_contexts)
+        shortlist = resolve(service.registry, request, service.max_contexts, service.max_stakeholders)
         return compare_module.compare(
             service.scorer, service.registry, shortlist.category_key,
             shortlist.alternatives, shortlist.contexts, shortlist.stakeholders,
@@ -267,7 +269,7 @@ def build_router(service_getter, metered: Any) -> APIRouter:
     @router.post("/context-sensitivity", dependencies=costly)
     def context_sensitivity(request: ShortlistRequest) -> Sensitivity:
         service = service_getter()
-        shortlist = resolve(service.registry, request, service.max_contexts)
+        shortlist = resolve(service.registry, request, service.max_contexts, service.max_stakeholders)
         return analysis.context_sensitivity(
             service.scorer, service.registry, shortlist.category_key,
             shortlist.alternatives, shortlist.stakeholders,
@@ -276,7 +278,7 @@ def build_router(service_getter, metered: Any) -> APIRouter:
     @router.post("/stakeholder-sensitivity", dependencies=costly)
     def stakeholder_sensitivity(request: ShortlistRequest) -> Sensitivity:
         service = service_getter()
-        shortlist = resolve(service.registry, request, service.max_contexts)
+        shortlist = resolve(service.registry, request, service.max_contexts, service.max_stakeholders)
         return analysis.stakeholder_sensitivity(
             service.scorer, service.registry, shortlist.category_key,
             shortlist.alternatives, shortlist.contexts,

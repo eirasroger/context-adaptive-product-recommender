@@ -138,6 +138,7 @@ def export(checkpoint: Path, out: Path) -> Path:
             scoring.SNAPSHOT_HASH: meta.snapshot_hash or "",
             scoring.SOURCE_SHA256: release.digest(checkpoint),
             scoring.MAX_CONTEXTS: json.dumps(meta.max_contexts, sort_keys=True),
+            scoring.MAX_STAKEHOLDERS: json.dumps(meta.max_stakeholders, sort_keys=True),
         },
     )
     onnx.save(exported, str(out))

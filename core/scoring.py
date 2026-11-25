@@ -31,6 +31,7 @@ REGISTRY_BLOB = "registry_blob"
 REGISTRY_VERSION = "registry_version"
 REGISTRY_CONTENT_HASH = "registry_content_hash"
 MAX_CONTEXTS = "max_contexts"
+MAX_STAKEHOLDERS = "max_stakeholders"
 SNAPSHOT_HASH = "snapshot_hash"
 SOURCE_SHA256 = "source_sha256"
 

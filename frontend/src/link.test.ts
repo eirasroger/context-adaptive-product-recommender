@@ -23,6 +23,7 @@ const form: Form = {
       eligibility_precondition: "",
       default_context: "plain",
       max_contexts: 2,
+      max_stakeholders: 3,
       contexts: [
         { key: "plain", display_name: "Plain", definition: "", theme: null },
         { key: "quiet", display_name: "Quiet", definition: "", theme: null },

@@ -47,49 +47,49 @@ category_context_presentation:
   sort_order: 4
   display_name: null
   definition_text: null
-- category_key: interior_partition
+- category_key: indoor_partition
   context_key: heavy_use
   theme: Use
   sort_order: 4
   display_name: null
   definition_text: null
-- category_key: interior_partition
+- category_key: indoor_partition
   context_key: hot_summer
   theme: Climate
   sort_order: 7
   display_name: null
   definition_text: The mean temperature of the warmest month is at least 22 °C (Köppen subtype a, and BSk and BSh), as in most of southern Europe. A partition offers thermal mass to the rooms on both sides, which damps daytime peaks where nights are cool enough to discharge it, so internal heat capacity counts moderately.
-- category_key: interior_partition
+- category_key: indoor_partition
   context_key: limited_support
   theme: Structure
   sort_order: 5
   display_name: null
   definition_text: null
-- category_key: interior_partition
+- category_key: indoor_partition
   context_key: noisy_neighbour
   theme: Neighbours
   sort_order: 2
   display_name: null
   definition_text: null
-- category_key: interior_partition
+- category_key: indoor_partition
   context_key: partition_within_home
   theme: Baseline
   sort_order: 0
   display_name: null
   definition_text: null
-- category_key: interior_partition
+- category_key: indoor_partition
   context_key: seismic
   theme: Structure
   sort_order: 6
   display_name: null
   definition_text: The reference peak ground acceleration is at least 0.1 g at a 475-year return period on the 2020 European Seismic Hazard Model. Eurocode 8 sizes the force on a partition by its weight, and masonry infills and partitions were the most frequent damage in L'Aquila 2009, so a lighter partition counts moderately.
-- category_key: interior_partition
+- category_key: indoor_partition
   context_key: unheated_neighbour
   theme: Neighbours
   sort_order: 3
   display_name: null
   definition_text: null
-- category_key: interior_partition
+- category_key: indoor_partition
   context_key: unit_separation
   theme: Neighbours
   sort_order: 1

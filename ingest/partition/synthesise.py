@@ -11,7 +11,7 @@ from core.registry import Registry
 from eval.metrics import SHORTLIST_ACROSS, SHORTLIST_WITHIN
 from ingest.partition.compose import PRODUCTS
 
-CATEGORY_KEY = "interior_partition"
+CATEGORY_KEY = "indoor_partition"
 DATASET_DIR = Path("data/partition")
 SCENARIOS_FILE = "scenarios.json"
 LLM_LABELS_FILE = "llm_labelled_dataset.json"

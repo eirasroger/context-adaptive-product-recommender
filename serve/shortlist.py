@@ -38,7 +38,8 @@ class ShortlistRequest(BaseModel):
     )
     stakeholders: list[str] = Field(
         min_length=1,
-        description="Whose priorities count, as keys from /api/stakeholders.",
+        description="Whose priorities count, as keys from /api/stakeholders; at most the "
+        "category's max_stakeholders from /api/explore/form.",
     )
     alternatives: list[AlternativePayload] = Field(
         min_length=limits.MIN_ALTERNATIVES,
@@ -59,7 +60,10 @@ class Shortlist:
 
 
 def resolve(
-    registry: Registry, request: ShortlistRequest, max_contexts: Mapping[str, int]
+    registry: Registry,
+    request: ShortlistRequest,
+    max_contexts: Mapping[str, int],
+    max_stakeholders: Mapping[str, int],
 ) -> Shortlist:
     try:
         category = registry.category(request.category)
@@ -74,6 +78,7 @@ def resolve(
 
     contexts = checked_contexts(category, request.context, max_contexts[request.category])
     _refuse_unlisted("stakeholder(s)", request.stakeholders, registry.stakeholders, request.category)
+    checked_stakeholder_count(request.category, request.stakeholders, max_stakeholders[request.category])
 
     held = set(category.token_order)
     supplied = [set(a.values) | set(a.levels) for a in request.alternatives]
@@ -120,6 +125,17 @@ def checked_contexts(category: CategorySpec, given: Sequence[str], limit: int) -
             f"its training data combined; got {len(given)}",
         )
     return list(given)
+
+
+def checked_stakeholder_count(category_key: str, given: Sequence[str], limit: int) -> None:
+    if len(set(given)) < len(given):
+        raise HTTPException(status_code=400, detail=f"a stakeholder is repeated: {list(given)}")
+    if len(given) > limit:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{category_key!r} combines at most {limit} stakeholder(s), the most "
+            f"its training data combined; got {len(given)}",
+        )
 
 
 def _refuse_unlisted(

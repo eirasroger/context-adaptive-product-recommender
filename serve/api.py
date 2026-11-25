@@ -58,9 +58,10 @@ class Service:
         self.registry_version = served.registry_version
         self.snapshot_hash = served.snapshot_hash
         self.max_contexts = served.max_contexts
+        self.max_stakeholders = served.max_stakeholders
 
     def score(self, request: ShortlistRequest) -> ScoreResponse:
-        shortlist = resolve(self.registry, request, self.max_contexts)
+        shortlist = resolve(self.registry, request, self.max_contexts, self.max_stakeholders)
         scores = analysis.score(
             self.scorer,
             self.registry,

@@ -369,7 +369,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of facade, set from facade systems composed of European EN 15804+A2 EPDs (sandwich panels, precast elements, and ETICS, ventilated and masonry walls built from layer EPDs). GWP reaches below zero where biogenic carbon is stored. Provisional until real products are collected.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: acoustic_reduction_pink
   ref_low: 30.0
   ref_high: 70.0
@@ -379,7 +379,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: circ_orig
   ref_low: 0.0
   ref_high: 100.0
@@ -389,7 +389,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: cost_labour
   ref_low: 10.0
   ref_high: 150.0
@@ -399,7 +399,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: cost_maintenance
   ref_low: 0.0
   ref_high: 60.0
@@ -409,7 +409,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: cost_product
   ref_low: 10.0
   ref_high: 150.0
@@ -419,7 +419,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: cost_total
   ref_low: 10.0
   ref_high: 300.0
@@ -429,7 +429,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: fu_haz
   ref_low: 0.0
   ref_high: 10.0
@@ -439,7 +439,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: fu_incin
   ref_low: 0.0
   ref_high: 100.0
@@ -449,7 +449,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: fu_inert
   ref_low: 0.0
   ref_high: 100.0
@@ -459,7 +459,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: fu_recyc
   ref_low: 0.0
   ref_high: 100.0
@@ -469,7 +469,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: fwu
   ref_low: 0.02
   ref_high: 5.0
@@ -479,7 +479,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: gwp
   ref_low: 0.0
   ref_high: 150.0
@@ -489,7 +489,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: heat_capacity
   ref_low: 5.0
   ref_high: 150.0
@@ -499,7 +499,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: surface_mass
   ref_low: 15.0
   ref_high: 450.0
@@ -509,7 +509,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: thickness
   ref_low: 50.0
   ref_high: 350.0
@@ -519,7 +519,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: u_value
   ref_low: 0.2
   ref_high: 2.5
@@ -529,7 +529,7 @@ indicator_reference_range:
   ideal_low: null
   ideal_high: null
   source_note: Envelope per square metre of partition, from the pilot products composed from the CEC tables and reviewed manufacturer data (docs/PARTITIONS.md 8.2). Provisional until real products are composed.
-- category_key: interior_partition
+- category_key: indoor_partition
   indicator_key: wdp
   ref_low: -5.0
   ref_high: 100.0
