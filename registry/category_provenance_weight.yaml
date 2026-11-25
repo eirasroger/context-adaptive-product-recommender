@@ -25,13 +25,13 @@ category_provenance_weight:
   weight: 0.0
 - category_key: interior_partition
   provenance_key: control
-  weight: 0.4
+  weight: 0.8
 - category_key: interior_partition
   provenance_key: expert
   weight: 0.0
 - category_key: interior_partition
   provenance_key: llm
-  weight: 0.6
+  weight: 0.2
 - category_key: interior_partition
   provenance_key: synthetic
   weight: 0.0

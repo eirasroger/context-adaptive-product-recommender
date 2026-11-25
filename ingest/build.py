@@ -17,6 +17,7 @@ from db.seed import seed
 from db.session import create_db_engine, db_path, session_scope
 from ingest import split
 from ingest.facade import ingest as facade
+from ingest.partition import ingest as partition
 from ingest.generators import run as control
 from ingest.generators.writer import write_cases
 
@@ -72,10 +73,12 @@ def main() -> None:
     parser.add_argument("--labels", choices=("llm", "rule"), default="llm", help="which facade labels to ingest")
     args = parser.parse_args()
 
-    copy_corpus(db_path(), JOINT_DB)
-    print(f"copied {db_path()} to {JOINT_DB}")
+    building = JOINT_DB.with_name(f"{JOINT_DB.stem}.building{JOINT_DB.suffix}")
+    copy_corpus(db_path(), building)
+    print(f"copied {db_path()} to {building}")
 
-    with session_scope(create_db_engine(JOINT_DB)) as session:
+    engine = create_db_engine(building)
+    with session_scope(engine) as session:
         for path in seed(session):
             print(f"applied {path.name}")
         registry = registry_module.from_session(session)
@@ -85,6 +88,8 @@ def main() -> None:
         ).items():
             print(f"  {table:28s} {count:>9,}")
         add_controls(session, registry, args.control_count, args.seed)
+        for table, count in partition.add_dataset(session, registry).items():
+            print(f"  {table:28s} {count:>9,}")
 
         empty = sorted(set(registry.categories) - set(set_counts(session)))
         if empty:
@@ -93,6 +98,12 @@ def main() -> None:
         print(f"folds: {split.assign(session, replace=True)}")
         digest, _ = release.create_release(session, args.release, args.note)
         print(f"registry {args.release}  {digest[:12]}")
+
+    engine.dispose()
+    for suffix in ("-wal", "-shm"):
+        Path(f"{JOINT_DB}{suffix}").unlink(missing_ok=True)
+    building.replace(JOINT_DB)
+    print(f"replaced {JOINT_DB}")
 
 
 if __name__ == "__main__":

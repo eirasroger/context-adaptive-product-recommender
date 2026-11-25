@@ -6,8 +6,9 @@ priorities count; it returns a score between 0 and 1 for each.
 
 **Live at <https://context-adaptive-product-recommende.vercel.app>.**
 
-Concrete is the first product category and facade systems the second, added
-as registry rows and data with the model code left untouched.
+Concrete is the first product category, facade systems the second and interior
+partitions the third, each added as registry rows and data with the model code
+left untouched.
 
 ## The problem
 
@@ -66,16 +67,17 @@ experts.
 ## Results
 
 <!-- results:start -->
-The model in `serve/release/` comes from run `baseline-20261124T123933Z` and
-carries registry 0.6.2. On its test shortlists:
+The model in `serve/release/` comes from run `baseline-20261125T134636Z` and
+carries registry 0.7.0. On its test shortlists:
 
 | Test shortlists | Count | Gap fidelity | Pointwise MAE | Band placement | Top-1 agreement | Tie-tolerant rank correlation |
 |---|---|---|---|---|---|---|
-| All | 11,321 | 0.042 | 0.029 | 0.016 | 0.918 | 0.920 |
-| Concrete | 8,231 | 0.046 | 0.031 | 0.017 | 0.907 | 0.911 |
-| Facade system | 3,090 | 0.031 | 0.023 | 0.014 | 0.947 | 0.946 |
+| All | 13,526 | 0.036 | 0.025 | 0.014 | 0.931 | 0.931 |
+| Concrete | 8,231 | 0.046 | 0.031 | 0.017 | 0.908 | 0.911 |
+| Facade system | 3,090 | 0.030 | 0.022 | 0.013 | 0.945 | 0.944 |
+| Interior partition | 2,205 | 0.007 | 0.007 | 0.005 | 0.995 | 0.995 |
 
-Behavioural assertions: 1456 of 1456 pass.
+Behavioural assertions: 2456 of 2456 pass.
 <!-- results:end -->
 
 The behavioural assertions check that the model responds to each indicator in
@@ -189,10 +191,10 @@ that is a flaw in the design.
 
 ## Status
 
-Facade systems are the second category. Their products are composed from
-European environmental product declarations and labelled by language-model
-agents, scenario by scenario, as the concrete corpus was. Expert validation of
-the facade labels is still open.
+Facade systems and interior partitions are composed from European
+environmental product declarations and labelled by language-model agents,
+scenario by scenario, as the concrete corpus was. Partitions have a first
+round of labels. Expert validation of the labels for both is still open.
 
 ## Background
 

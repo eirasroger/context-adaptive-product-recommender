@@ -1,7 +1,7 @@
 {
   "checkpoint": "serve/release/model.pt",
-  "model_sha256": "9c041a0597ff4959aac6009fb2852da64c14f04677f7e14765e1c1aef59bbda5",
-  "registry_version": "0.6.2",
+  "model_sha256": "ca9c8286d1c82e40cdec330b94df13fb046a057715355ef22c5f99afd79fcce6",
+  "registry_version": "0.7.0",
   "snapshot": "tests/fixtures/snapshot",
   "seed": 0,
   "masked": {
@@ -11,15 +11,22 @@
     "concrete": {
       "shortlists": 300,
       "shap_rank_correlation": {
-        "all": 0.6004009675157752,
-        "unmasked": 0.5377380117408365
+        "all": 0.6455003404486913,
+        "unmasked": 0.5904537494127873
       }
     },
     "facade_system": {
       "shortlists": 300,
       "shap_rank_correlation": {
-        "all": 0.6077507007037752,
-        "unmasked": 0.6190968333151858
+        "all": 0.6432814155936164,
+        "unmasked": 0.6640431126261337
+      }
+    },
+    "interior_partition": {
+      "shortlists": 45,
+      "shap_rank_correlation": {
+        "all": 0.5888258369509077,
+        "unmasked": 0.5929462189718829
       }
     }
   }

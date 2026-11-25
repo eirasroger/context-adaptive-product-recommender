@@ -7,11 +7,11 @@
     "encoder_blocks": 2,
     "encoder_heads": 4,
     "ffn_factor": 4.0,
-    "n_categories": 2,
-    "n_contexts": 10,
+    "n_categories": 3,
+    "n_contexts": 16,
     "n_families": 5,
-    "n_indicators": 27,
-    "n_levels": 14,
+    "n_indicators": 29,
+    "n_levels": 18,
     "n_stakeholders": 8,
     "use_context_residual": true,
     "use_family_prior": true
@@ -22,12 +22,12 @@
       "disqualification": {
         "fail": 0,
         "no_response": 0,
-        "pass": 16
+        "pass": 24
       },
       "monotonicity": {
         "fail": 0,
         "no_response": 0,
-        "pass": 1432
+        "pass": 2424
       },
       "sign_flip": {
         "fail": 0,
@@ -36,24 +36,24 @@
       }
     },
     "overall": {
-      "band_placement": 0.01634747208694236,
-      "gap_fidelity": 0.04191348753001812,
-      "gap_fidelity_se": 0.0006621237751771533,
-      "n_alternatives": 39563,
-      "n_sets": 11321,
-      "pointwise_mae": 0.02892673946917057,
-      "tie_tolerant_tau": 0.9203671873524356,
-      "top1_agreement": 0.9179401112975886,
-      "top1_regret": 0.008424988975696593
+      "band_placement": 0.0143462670045713,
+      "gap_fidelity": 0.03604227651512544,
+      "gap_fidelity_se": 0.0005725177974759644,
+      "n_alternatives": 47277,
+      "n_sets": 13526,
+      "pointwise_mae": 0.025088174268603325,
+      "tie_tolerant_tau": 0.9313820569484411,
+      "top1_agreement": 0.930578145793287,
+      "top1_regret": 0.007134134227496165
     }
   },
-  "model_bytes": 2469131,
-  "model_sha256": "9c041a0597ff4959aac6009fb2852da64c14f04677f7e14765e1c1aef59bbda5",
+  "model_bytes": 2497419,
+  "model_sha256": "ca9c8286d1c82e40cdec330b94df13fb046a057715355ef22c5f99afd79fcce6",
   "notes": "Concrete and facade systems; facade labels from language-model agents.",
-  "promoted_at": "2026-11-24T12:45:55.830973+00:00",
-  "registry_content_hash": "276f49722d40537ff44f04a2bed3d04993a6f942cccccc33136b6b873a697cfe",
-  "registry_version": "0.6.2",
-  "run": "baseline-20261124T123933Z",
-  "snapshot_hash": "7cb25d137c4606b3263abdd0bd421727377514cfb70e5faa1b2e0a361ad338ed",
+  "promoted_at": "2026-11-25T13:53:36.144066+00:00",
+  "registry_content_hash": "7940b649479c2d36e7bf14ca780f8d73d1f23a41fbdcd189780bcf1713fd7492",
+  "registry_version": "0.7.0",
+  "run": "baseline-20261125T134636Z",
+  "snapshot_hash": "8545e6bb8dd0ffc81efee5c8d351788eda1815e63817d1b7e8225b237a5f297b",
   "split_key": "default"
 }

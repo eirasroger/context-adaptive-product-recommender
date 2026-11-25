@@ -1,0 +1,43 @@
+# Worked examples for the partition labelling brief. Values are composed partitions from
+# data/partition/products.json; the judgements are written by hand.
+
+examples:
+  - applications: [Next to a noisy room]
+    stakeholders: [Cost-conscious developer]
+    alternatives:
+      - {id_prod: A, gwp: 18.4, wdp: 13.8, fwu: 0.349, circ_orig: 48.4, fu_recyc: 23.7, fu_incin: 0.0, fu_inert: 76.3, fu_haz: 0.0115,
+         cost_product: 23.7, cost_labour: 23.5, cost_maintenance: 6.48, health: null, u_value: 1.54, surface_mass: 47.2,
+         heat_capacity: 21.4, fire_reaction: "Class A2", thickness: 130.0, acoustic_reduction_pink: 38.9, impact_resistance: "Category IV"}
+      - {id_prod: B, gwp: 68.1, wdp: 20.0, fwu: 0.293, circ_orig: 3.95, fu_recyc: 20.1, fu_incin: 0.0, fu_inert: 79.8, fu_haz: 0.0119,
+         cost_product: 88.7, cost_labour: 61.5, cost_maintenance: 47.5, health: "Undocumented", u_value: 0.473, surface_mass: 257.0,
+         heat_capacity: 68.0, fire_reaction: "Class A1", thickness: 250.0, acoustic_reduction_pink: 61.6, impact_resistance: "Category III"}
+      - {id_prod: C, gwp: 40.3, wdp: 15.6, fwu: 0.152, circ_orig: 6.85, fu_recyc: 68.4, fu_incin: 0.0, fu_inert: 31.6, fu_haz: 0.0019,
+         cost_product: 43.7, cost_labour: 48.3, cost_maintenance: 21.8, health: "Undocumented", u_value: 1.95, surface_mass: 252.0,
+         heat_capacity: 110.0, fire_reaction: "Class A2", thickness: 194.0, acoustic_reduction_pink: 51.8, impact_resistance: "Category III"}
+    labels:
+      - {id_prod: A, pref: 0.35, conf: 0.8, reason: "By far the cheapest at 54 in total, but 38.9 dBA is weak against a room above 70 dB(A); the saving does not make up for the noise next door."}
+      - {id_prod: B, pref: 0.65, conf: 0.7, reason: "The quietest at 61.6 dBA, ten decibels better than C, but at 198 in total it costs about 75% more, which a cost-conscious developer weighs heavily."}
+      - {id_prod: C, pref: 0.75, conf: 0.7, reason: "51.8 dBA gives a solid margin against the noisy room at a total of 114, the best balance of sound and cost here; health is undocumented, as for B."}
+
+  - applications: [Light or existing floor]
+    stakeholders: [Sustainability maximalist, Pragmatic contractor]
+    alternatives:
+      - {id_prod: A, gwp: 39.9, wdp: 3.31, fwu: 0.359, circ_orig: 0.0265, fu_recyc: 73.1, fu_incin: 0.0, fu_inert: 26.9, fu_haz: 0.0012,
+         cost_product: 43.5, cost_labour: 72.9, cost_maintenance: 12.0, health: null, u_value: 2.18, surface_mass: 245.0,
+         heat_capacity: 119.0, fire_reaction: "Class A1", thickness: 164.0, acoustic_reduction_pink: 47.8, impact_resistance: "Category III"}
+      - {id_prod: B, gwp: 14.9, wdp: 6.65, fwu: 0.128, circ_orig: 5.79, fu_recyc: 46.5, fu_incin: 0.0, fu_inert: 53.5, fu_haz: 0.0062,
+         cost_product: 59.0, cost_labour: 36.3, cost_maintenance: 24.7, health: "No listed substances, uncertified", u_value: 0.327,
+         surface_mass: 76.0, heat_capacity: 35.4, fire_reaction: "Class A2", thickness: 185.0, acoustic_reduction_pink: 57.7,
+         impact_resistance: "Category IV"}
+      - {id_prod: C, gwp: 10.6, wdp: 4.11, fwu: 0.103, circ_orig: 9.93, fu_recyc: 28.5, fu_incin: 0.0, fu_inert: 71.5, fu_haz: 0.0001,
+         cost_product: 31.7, cost_labour: 18.7, cost_maintenance: 11.9, health: "No listed substances, uncertified", u_value: 0.383,
+         surface_mass: 25.1, heat_capacity: 8.66, fire_reaction: "Class A2", thickness: 138.0, acoustic_reduction_pink: 49.5,
+         impact_resistance: "Category II"}
+      - {id_prod: D, gwp: 32.0, wdp: 11.2, fwu: 0.242, circ_orig: 1.68, fu_recyc: 36.7, fu_incin: 0.0, fu_inert: 63.3, fu_haz: 0.0086,
+         cost_product: 26.6, cost_labour: 48.4, cost_maintenance: 21.1, health: "Undocumented", u_value: 0.674, surface_mass: 110.0,
+         heat_capacity: 38.4, fire_reaction: "Class A2", thickness: 186.0, acoustic_reduction_pink: 45.4, impact_resistance: "Category III"}
+    labels:
+      - {id_prod: A, pref: 0.20, conf: 0.8, reason: "At 245 kg/m² it is ten times heavier than C on a floor with little reserve, with the second-highest GWP and the highest labour cost at 72.9."}
+      - {id_prod: B, pref: 0.75, conf: 0.75, reason: "Light enough at 76 kg/m², low GWP of 14.9 and the best recycled share at end of life, but labour and total cost are well above C's."}
+      - {id_prod: C, pref: 0.90, conf: 0.8, reason: "The lightest at 25 kg/m², with the lowest GWP (10.6), the lowest labour cost (18.7) and the highest recycled content; only its end-of-life recycling trails B's."}
+      - {id_prod: D, pref: 0.45, conf: 0.7, reason: "110 kg/m² weighs on a light floor, GWP of 32 is twice B's, and its health is undocumented."}
