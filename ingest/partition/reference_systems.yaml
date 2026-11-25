@@ -1,0 +1,153 @@
+# Published performance of real interior partition systems across European markets, collected on 2026-11-25
+# for the product survey (docs/PARTITIONS.md section 11). Stage 3 checks composed products against these.
+#
+# kind: lab        laboratory value declared by the manufacturer or a test report (EN ISO 10140, EN 1364-1)
+#       calculated mass-law or code calculation published by the manufacturer or an industry body
+#       in_situ    value with flanking transmission (R'w, R'A1); a building quantity, kept for context
+#       secondary  read from a search-engine summary of a document that refused automated access; unverified
+# A pair [low, high] is a range over the variants of one system family.
+# typology: t1 masonry or block wall, t2 double leaf on elastic bands, t3 framed plasterboard or gypsum fibre,
+#           gypsum_block solid gypsum wall panels (EN 12859).
+
+systems:
+  # Switzerland and Germany: Knauf W11.ch data sheet, 03/2026 (DIN 4103-1 installation areas)
+  - {id: ch_knauf_w111_cw50, market: CH, maker: Knauf, typology: t3, build_up: "1 board per face on CW50, with or without mineral wool", thickness_mm: 75, mass_kg_m2: [22, 39], rw: [44, 56], c: [-5, -3], fire: [EI30, EI60], kind: lab,
+     source: "https://prd-media.crb.ch/media/125877/W11.ch_-_Knauf_Metallstaenderwände_-_DEU_-_03.2026.pdf"}
+  - {id: ch_knauf_w111_cw75, market: CH, maker: Knauf, typology: t3, build_up: "1 board per face on CW75", thickness_mm: 100, mass_kg_m2: [22, 39], rw: [45, 59], c: [-4, -3], fire: [EI30, EI60], kind: lab,
+     source: "https://prd-media.crb.ch/media/125877/W11.ch_-_Knauf_Metallstaenderwände_-_DEU_-_03.2026.pdf"}
+  - {id: ch_knauf_w111_cw100, market: CH, maker: Knauf, typology: t3, build_up: "1 board per face on CW100", thickness_mm: 125, mass_kg_m2: [22, 39], rw: [48, 60], c: [-4, -3], fire: [EI30, EI60], kind: lab,
+     source: "https://prd-media.crb.ch/media/125877/W11.ch_-_Knauf_Metallstaenderwände_-_DEU_-_03.2026.pdf"}
+  - {id: ch_knauf_w112_cw50, market: CH, maker: Knauf, typology: t3, build_up: "2 boards per face on CW50, board types from standard to Diamant", thickness_mm: 100, mass_kg_m2: [40, 75], rw: [54, 67], c: [-4, -3], kind: lab,
+     source: "https://prd-media.crb.ch/media/125877/W11.ch_-_Knauf_Metallstaenderwände_-_DEU_-_03.2026.pdf"}
+  - {id: ch_knauf_w112_cw75, market: CH, maker: Knauf, typology: t3, build_up: "2 boards per face on CW75", thickness_mm: 125, mass_kg_m2: [40, 75], rw: [55, 69], c: [-4, -3], kind: lab,
+     source: "https://prd-media.crb.ch/media/125877/W11.ch_-_Knauf_Metallstaenderwände_-_DEU_-_03.2026.pdf"}
+  - {id: ch_knauf_w112_cw100, market: CH, maker: Knauf, typology: t3, build_up: "2 boards per face on CW100", thickness_mm: 150, mass_kg_m2: [40, 75], rw: [58, 70], c: [-5, -2], kind: lab,
+     source: "https://prd-media.crb.ch/media/125877/W11.ch_-_Knauf_Metallstaenderwände_-_DEU_-_03.2026.pdf"}
+  - {id: ch_knauf_w113, market: CH, maker: Knauf, typology: t3, build_up: "3 boards per face on CW50 to CW100", thickness_mm: [125, 175], mass_kg_m2: [58, 101], rw: [58, 71], c: [-4, -3], kind: lab,
+     source: "https://prd-media.crb.ch/media/125877/W11.ch_-_Knauf_Metallstaenderwände_-_DEU_-_03.2026.pdf"}
+  - {id: ch_knauf_w115, market: CH, maker: Knauf, typology: t3, build_up: "twin frame, 2 boards per face", thickness_mm: [155, 255], mass_kg_m2: [43, 58], rw: [61, 74], c: [-4, -3], kind: lab,
+     source: "https://prd-media.crb.ch/media/125877/W11.ch_-_Knauf_Metallstaenderwände_-_DEU_-_03.2026.pdf"}
+
+  # Spain: Katherine's sources, checked in docs/PARTITIONS.md 7.8
+  - {id: es_pladur_100_70_1x15, market: ES, maker: Pladur, typology: t3, build_up: "1 x 15 mm per face, 70 mm stud, 65 mm wool", thickness_mm: 100, mass_kg_m2: 32, rw: 48, c: -1, ctr: -5, ra: 46.9, fire: EI30, max_height_m: 3.20, kind: lab,
+     source: "https://selector-de-sistemas.pladur.com/sistemas/detalle-sistema.aspx?IdSistema=311302002"}
+  - {id: es_pladur_120_70_2x125, market: ES, maker: Pladur, typology: t3, build_up: "2 x 12.5 mm per face, 70 mm stud, 65 mm wool", thickness_mm: 120, mass_kg_m2: 42, rw: 55, c: -1, ctr: -6, ra: 53.5, fire: EI60, max_height_m: 3.85, kind: lab,
+     source: "https://selector-de-sistemas.pladur.com/sistemas/detalle-sistema.aspx?IdSistema=312300000"}
+  - {id: es_gyptec_100_ba15f, market: ES, maker: Gyptec, typology: t3, build_up: "1 x 15 mm fire board per face, 70 mm stud, 60 mm wool", thickness_mm: 100, mass_kg_m2: 28.2, rw: 45, c: -1, ctr: -7, fire: EI60, max_height_m: 3.20, kind: lab,
+     source: "https://gyptec.eu/documentos/FichaTecnica_Gyptec_Divisoria100_GDIV_1108F_BA15.pdf"}
+  - {id: es_gyptec_120_ba13a, market: ES, maker: Gyptec, typology: t3, build_up: "2 x 12.5 mm per face, 70 mm stud, 60 mm wool", thickness_mm: 120, mass_kg_m2: 35.1, rw: 51, c: -3, ctr: -10, fire: EI60, max_height_m: 3.85, kind: lab,
+     source: "https://gyptec.eu/documentos/FichaTecnica_Gyptec_Divisoria120_GDIV_0113A_BA13.pdf"}
+
+  # France
+  - {id: fr_siniat_d106_70, market: FR, maker: Siniat, typology: t3, build_up: "Prégymétal D106/70, M70 studs, mineral wool", thickness_mm: 106, ra: 46, fire: EI60, kind: lab,
+     source: "https://www.siniat.fr/-/print2pdf/system/pi79222/siniat-fiche-technique/fr-fr/cloison-pregymetal-d106-70-ei60-46db-m70-50-laine-de-verre.pdf"}
+  - {id: fr_siniat_d100_70_flam, market: FR, maker: Siniat, typology: t3, build_up: "Prégymétal D100/70, 1 x 15 mm fire board per face, no wool", thickness_mm: 100, ra: 34, fire: EI60, kind: lab,
+     source: "https://www.siniat.fr/-/print2pdf/system/pi80411/siniat-fiche-technique/fr-fr/cloison-pregymetal-d100-70-flam-ei60-34db-m70-50.pdf"}
+  - {id: fr_placo_72_48_multiconforts_040, market: FR, maker: Placo, typology: t3, build_up: "72/48, 1 Multiconforts board per face, 45 mm wool, double M48 studs at 0.40 m", thickness_mm: 72, ra: 41, fire: EI30, max_height_m: 3.45, impact_j: 60, kind: lab,
+     source: "https://www.placo.fr/documents/fiche-systeme/fichesysteme-sp00021558.pdf"}
+  - {id: fr_placo_72_48_multiconforts_060, market: FR, maker: Placo, typology: t3, build_up: "72/48, 1 Multiconforts board per face, 45 mm wool, double M48 studs at 0.60 m", thickness_mm: 72, ra: 42, fire: EI30, max_height_m: 3.05, impact_j: 60, kind: lab,
+     source: "https://www.placo.fr/documents/fiche-systeme/fichesysteme-sp00021560.pdf"}
+  - {id: fr_placo_72_48_ba13_no_wool, market: FR, maker: Placo, typology: t3, build_up: "72/48, 1 Placoplatre BA13 per face, no wool, double M48 studs", thickness_mm: 72, ra: 33, fire: EI30, max_height_m: 3.05, impact_j: 60, kind: lab,
+     note: "title read; Placomarine BA13 sheet sp00020055 gives the same Ra 33, EI30, 60 J", source: "https://www.placo.fr/documents/fiche-systeme/fichesysteme-sp00018691.pdf"}
+  - {id: fr_placo_72_48_ba13_wool, market: FR, maker: Placo, typology: t3, build_up: "72/48, 1 Placoplatre BA13 per face, wool, double M48 studs at 0.40 m", thickness_mm: 72, ra: 38, fire: EI30, max_height_m: 3.45, kind: lab,
+     note: "title read", source: "https://www.placo.fr/documents/fiche-systeme/fichesysteme-sp00011220.pdf"}
+  - {id: fr_placo_72_48_lisaflam_hd, market: FR, maker: Placo, typology: t3, build_up: "72/48, 1 Lisaflam HD BA13 per face, no wool, double M48 studs", thickness_mm: 72, ra: 32, fire: EI60, max_height_m: 3.45, impact_j: 60, kind: lab,
+     source: "https://www.placo.fr/documents/fiche-systeme/fichesysteme-sp00019763.pdf"}
+  - {id: fr_placo_72_48_phonique, market: FR, maker: Placo, typology: t3, build_up: "72/48, 1 Placo Phonique BA13 per face, wool, single ML48 studs", thickness_mm: 72, ra: 42, fire: EI30, max_height_m: 2.60, kind: lab,
+     note: "title read", source: "https://www.placo.fr/documents/fiche-systeme/fichesysteme-sp00011201.pdf"}
+  - {id: fr_placo_72_48_habito, market: FR, maker: Placo, typology: t3, build_up: "72/48, 1 Habito 13 per face, 45 mm wool, double M48 studs", thickness_mm: 72, ra: 40, fire: EI45, max_height_m: 3.85, impact_j: 120, kind: lab,
+     source: "https://www.placo.fr/documents/fiche-systeme/fichesyteme-sp00011843.pdf"}
+  - {id: fr_placo_98_48_2ba13, market: FR, maker: Placo, typology: t3, build_up: "98/48, 2 Placoplatre BA13 per face, 45 mm PAR Phonic, single M48 studs", thickness_mm: 98, ra: 47, fire: EI60, max_height_m: 3.00, impact_j: 120, kind: lab,
+     note: "sheet also declares 15.4 kg CO2e/m2 over the life cycle and 8.6 % recycled content", source: "https://www.placo.fr/documents/fiche-systeme/fichesysteme-sp00018909.pdf"}
+  - {id: fr_placo_carrobric_70, market: FR, maker: Placo, typology: gypsum_block, build_up: "Carrobric solid gypsum block 70 mm", thickness_mm: 70, rw: 34, c: 0, ctr: -1, kind: lab,
+     source: "https://www.chausson.fr/media/article-document/202248"}
+  - {id: fr_placo_caroplatre_alveole_70, market: FR, maker: Placo, typology: gypsum_block, build_up: "Caroplatre hollow gypsum block 70 mm", thickness_mm: 70, mass_kg_m2: 58.1, rw: 32, fire: EI60, max_height_m: 3.40, kind: secondary,
+     source: "https://www.placo.fr/documents/fiche-technique/fichetechnique-caroplatre-alvol-7.pdf"}
+
+  # United Kingdom (BS 5234-2 duty grades)
+  - {id: uk_siniat_gtec_twin_300, market: UK, maker: Siniat, typology: t3, build_up: "GTEC twin frame, 2 x 15 mm dB board per face, braced", thickness_mm: 300, max_height_m: 5.30, rw: 64, ctr: -7, fire: EI90, kind: lab,
+     source: "https://www.siniat.co.uk/siteassets/page-assets/gb/page-content/homepage/local-docs/sample-project-packpdf.pdf"}
+  - {id: uk_bg_gypwall_a206001, market: UK, maker: British Gypsum, typology: t3, build_up: "GypWall Single Frame A206001: 1 WallBoard 12.5 mm per face, 48 mm studs", thickness_mm: 75, mass_kg_m2: 18, rw: 34, fire: EI30, duty: Medium, max_height_m: 2.5, kind: lab,
+     source: "https://www.british-gypsum.com/Specification/White-Book-Specification-Selector/internal-partitions-walls/gypwall-single-frame/a206001-en"}
+  - {id: uk_bg_gypwall_a206002, market: UK, maker: British Gypsum, typology: t3, build_up: "GypWall Single Frame A206002: 1 WallBoard 15 mm per face, 48 mm studs", thickness_mm: 80, mass_kg_m2: 22, rw: 36, fire: EI30, duty: Medium, max_height_m: 2.8, kind: lab,
+     source: "https://www.british-gypsum.com/Specification/White-Book-Specification-Selector/internal-partitions-walls/gypwall-single-frame/a206002-en"}
+  - {id: uk_bg_gypwall_a206013, market: UK, maker: British Gypsum, typology: t3, build_up: "GypWall Single Frame A206013: 1 WallBoard 12.5 mm per face, 70 mm studs", thickness_mm: 97, mass_kg_m2: 18, rw: 36, fire: EI30, duty: Medium, max_height_m: 3.6, kind: lab,
+     source: "https://www.british-gypsum.com/Specification/White-Book-Specification-Selector/internal-partitions-walls/gypwall-single-frame/a206013-en"}
+  - {id: uk_bg_gypwall_a206014, market: UK, maker: British Gypsum, typology: t3, build_up: "GypWall Single Frame A206014: 1 WallBoard 15 mm per face, 70 mm studs", thickness_mm: 102, mass_kg_m2: 22, rw: 38, fire: EI30, duty: Medium, max_height_m: 3.8, kind: lab,
+     source: "https://www.british-gypsum.com/Specification/White-Book-Specification-Selector/internal-partitions-walls/gypwall-single-frame/a206014-en"}
+  - {id: uk_bg_gypwall_a206045, market: UK, maker: British Gypsum, typology: t3, build_up: "GypWall Single Frame A206045: 1 WallBoard 12.5 mm per face, 70 mm studs, 25 mm wool", thickness_mm: 97, rw: 42, fire: EI30, duty: Medium, max_height_m: 3.6, kind: lab,
+     source: "https://www.british-gypsum.com/Specification/White-Book-Specification-Selector/internal-partitions-walls/gypwall-single-frame/a206045-en"}
+  - {id: uk_bg_gypwall_a206066, market: UK, maker: British Gypsum, typology: t3, build_up: "GypWall Single Frame A206066: 1 FireLine 15 mm per face, 48 mm studs", thickness_mm: 80, rw: 36, fire: EI60, duty: Heavy, max_height_m: 2.8, kind: lab,
+     source: "https://www.british-gypsum.com/Specification/White-Book-Specification-Selector/internal-partitions-walls/gypwall-single-frame/a206066-en"}
+  - {id: uk_bg_gypwall_a206078, market: UK, maker: British Gypsum, typology: t3, build_up: "GypWall Single Frame A206078: 1 FireLine 15 mm per face, 70 mm studs", thickness_mm: 102, rw: 37, fire: EI60, duty: Heavy, max_height_m: 3.8, kind: lab,
+     source: "https://www.british-gypsum.com/Specification/White-Book-Specification-Selector/internal-partitions-walls/gypwall-single-frame/a206078-en"}
+  - {id: uk_bg_gypwall_a206003, market: UK, maker: British Gypsum, typology: t3, build_up: "GypWall Single Frame A206003: 2 WallBoard 12.5 mm per face, 48 mm studs", thickness_mm: 100, mass_kg_m2: 35, rw: 42, fire: EI30, duty: Severe, max_height_m: 3.4, kind: lab,
+     source: "https://www.british-gypsum.com/Specification/White-Book-Specification-Selector/internal-partitions-walls/gypwall-single-frame/a206003-en"}
+  - {id: uk_bg_gypwall_a206047, market: UK, maker: British Gypsum, typology: t3, build_up: "GypWall Single Frame A206047: 2 WallBoard 12.5 mm per face, 70 mm studs, 25 mm wool", thickness_mm: 122, rw: 49, fire: EI30, duty: Severe, max_height_m: 4.2, kind: lab,
+     source: "https://www.british-gypsum.com/Specification/White-Book-Specification-Selector/internal-partitions-walls/gypwall-single-frame/a206047-en"}
+  - {id: uk_bg_gypwall_classic_92, market: UK, maker: British Gypsum, typology: t3, build_up: "GypWall Classic, 92 mm studs, 1 x 15 mm FireLine or SoundBloc per face (Heavy, 4.7 m) or 2 x 15 mm (Severe, 5.9 m)", duty: [Heavy, Severe], max_height_m: [4.7, 5.9], kind: lab,
+     note: "BS 5234-2 structural assessment BTC 20946LC", source: "https://www.british-gypsum.com/documents/test-reports/test-report-15368-btc-20946lc.pdf"}
+  - {id: uk_siniat_cs50r_twin_200, market: UK, maker: Siniat, typology: t3, build_up: "twin frame CS50R, 2 x 15 mm dB board per face, 50 mm wool", thickness_mm: 200, fire: EI90, duty: Severe, max_height_m: 5.30, kind: secondary,
+     note: "Rw + Ctr 53 dB", source: "https://source.thenbs.com/product/siniat-twin-frame-partition-twinab-cs50r-215db-50g/wLoyFtb4gxHUdcuecjg7Zo"}
+
+  # Italy: Rockwool laboratory test reports (Istituto Giordano and others)
+  - {id: it_rockwool_light_sf002, market: IT, maker: Rockwool, typology: t3, build_up: "single frame 75 mm, 2 x 12.5 mm per face, stone wool", thickness_mm: 125, rw: 61, c: -2, ctr: -8, kind: lab,
+     source: "https://www.rockwool.com/syssiteassets/rw-it/documentazione-tecnica/prove-acustiche-di-laboratorio/pareti-leggere-singola-orditura/lightsf002-parete-leggera-singola-orditura-rw61db-sp125mm.pdf"}
+  - {id: it_rockwool_light_sf003, market: IT, maker: Rockwool, typology: t3, build_up: "single frame 75 mm, 2 x 12.5 mm per face (LaDura), stone wool", thickness_mm: 125, rw: 59, c: -4, ctr: -10, kind: lab,
+     source: "https://www.rockwool.com/syssiteassets/rw-it/documentazione-tecnica/prove-acustiche-di-laboratorio/pareti-leggere-singola-orditura/lightsf003-parete-leggera-singola-orditura-rw59db-sp125mm.pdf"}
+  - {id: it_rockwool_light_df008, market: IT, maker: Rockwool, typology: t3, build_up: "double frame 2 x 50 mm, stone wool", thickness_mm: 160, rw: 64, c: -4, ctr: -10, kind: lab,
+     source: "https://www.rockwool.com/syssiteassets/rw-it/documentazione-tecnica/prove-acustiche-di-laboratorio/pareti-leggere-doppia-orditura/lightdf008-parete-leggera-doppia-orditura-rw64db-sp160mm.pdf"}
+  - {id: it_rockwool_light_df003, market: IT, maker: Rockwool, typology: t3, build_up: "double frame 2 x 75 mm, stone wool", thickness_mm: 190, rw: 66, c: -6, ctr: -14, kind: lab,
+     source: "https://www.rockwool.com/syssiteassets/rw-it/documentazione-tecnica/prove-acustiche-di-laboratorio/pareti-leggere-doppia-orditura/lightdf003-parete-leggera-doppia-orditura-rw66db-sp190mm.pdf"}
+  - {id: it_siniat_rockwool_s220, market: IT, maker: Siniat with Rockwool, typology: t3, build_up: "double frame S220/2M75, stone wool", thickness_mm: 220, rw: 68, c: -2, ctr: -8, kind: lab,
+     source: "https://www.rockwool.com/syssiteassets/rw-it/documentazione-tecnica/prove-acustiche-di-laboratorio/pareti-leggere-doppia-orditura/lightdf001-parete-leggera-doppia-orditura-rw68db-sp218mm.pdf"}
+  - {id: it_hollow_brick_80_plastered, market: IT, maker: industry, typology: t1, build_up: "80 mm hollow clay brick, 15 mm plaster each face", thickness_mm: 110, mass_kg_m2: 145, rw: 39, kind: lab,
+     source: "https://anit.it/wp-content/uploads/2024/11/Portera-Knauf-Riqualificazione-acustica-sottile.pdf"}
+  - {id: it_laterizio_mass_law, market: IT, maker: ANDIL laterizio manual, typology: t1, build_up: "single clay walls above 100 kg/m2: Rw = 20 log M; double walls +2 to +8 dB", kind: calculated,
+     source: "https://www.laterizio.it/images/Manuals/Murature/2_Pareti_leggere.pdf"}
+
+  # Poland
+  - {id: pl_rigips_3_40_01, market: PL, maker: Rigips, typology: t3, build_up: "3.40.01, 1 x 12.5 mm per face on CW50, mineral wool", thickness_mm: 75, mass_kg_m2: 26, rw: 44, max_height_m: 3.25, kind: lab,
+     source: "https://www.rigips.pl/rig-certyfikaty/6741/6744/short/pdf"}
+  - {id: pl_rigips_3_40_02, market: PL, maker: Rigips, typology: t3, build_up: "3.40.02, 1 x 12.5 mm per face on CW75, mineral wool", thickness_mm: 100, mass_kg_m2: 26, rw: [46, 48], kind: lab,
+     source: "https://www.rigips.pl/rig-certyfikaty/6695/6698/short/pdf"}
+  - {id: pl_rigips_3_40_03_aku, market: PL, maker: Rigips, typology: t3, build_up: "3.40.03 AKU, 2 boards per face", rw: 56, c: -3, ctr: -9, fire: EI60, max_height_m: 5.00, kind: secondary,
+     source: "https://www.rigips.pl/media/29615/file/download"}
+  - {id: pl_rigips_3_40_05, market: PL, maker: Rigips, typology: t3, build_up: "3.40.05, 2 x RIGIPS PRO 12.5 mm per face on CW75", thickness_mm: 125, ra: [null, 55], fire: [EI30, EI120], max_height_m: 5.50, kind: lab,
+     source: "https://www.rigips.pl/media/33916/file/download"}
+  - {id: pl_rigips_3_40_06_hb, market: PL, maker: Rigips, typology: t3, build_up: "3.40.06 HB, RIGIPS PRO and Habito 12.5 mm per face on CW100", thickness_mm: 150, fire: [EI30, EI120], max_height_m: 6.50, kind: lab,
+     source: "https://www.rigips.pl/media/9352/file/download"}
+  - {id: pl_rigips_3_41_01, market: PL, maker: Rigips, typology: t3, build_up: "3.41.01", thickness_mm: 155, ra: 60, fire: EI120, max_height_m: 4.50, kind: secondary,
+     source: "https://www.rigips.pl/media/29738/file/download"}
+  - {id: pl_silka_a12, market: PL, maker: Xella Silka, typology: t1, build_up: "calcium silicate block 120 mm, 12 mm cement-lime plaster", thickness_mm: 144, mass_kg_m2: 220, rw: 50, c: -1, ctr: -5, ra: 49, kind: secondary,
+     source: "https://inzynierbudownictwa.pl/bloczek-akustyczny-silikat-a12/"}
+  - {id: pl_silka_e8, market: PL, maker: Xella Silka, typology: t1, build_up: "calcium silicate block 80 mm", thickness_mm: 80, ra: 43, kind: secondary,
+     source: "https://yadda.icm.edu.pl/baztech/element/bwmeta1.element.baztech-426d23dc-46f0-4153-bd89-7edea968cb58/c/Stawiski_Eliminacja_11-12_2021.pdf"}
+
+  # Germany: masonry and gypsum blocks
+  - {id: de_ytong_planbauplatte_100, market: DE, maker: Xella Ytong, typology: t1, build_up: "aerated concrete wall panel PPpl-0,50, 100 mm", thickness_mm: 100, rw: 37.1, fire: EI90, kind: lab,
+     note: "50 mm Rw 31.0, 75 mm Rw 34.4; fire F90-A from 75 mm", source: "https://media.hornbach.ch/hb/datasheet/as.101617876.pdf"}
+  - {id: de_ks_115, market: DE, maker: Kalksandstein industry, typology: t1, build_up: "calcium silicate 115 mm, density class 1.2 to 2.2", thickness_mm: 115, r_w_in_situ: [39, 46], kind: in_situ,
+     note: "R'w,R to DIN 4109 Beiblatt 1; direct Rw is 3 to 6 dB higher", source: "https://www.dbz.de/download/298129/UNIKA_BauphysikalischeWerte.pdf"}
+  - {id: de_poroton_mz_t18_115, market: DE, maker: Wienerberger, typology: t1, build_up: "solid clay block Mz-T1,8, 115 mm, plaster both faces", thickness_mm: 115, mass_kg_m2: 228, rw: 50.7, fire: EI90, kind: lab,
+     source: "https://heinze.de/m2/19/16469019/etc/45/45051345.pdf"}
+  - {id: de_multigips_d100, market: DE, maker: VG-Orth Multigips, typology: gypsum_block, build_up: "solid gypsum wall panel 100 mm", thickness_mm: 100, rw: 48, fire: EI180, kind: lab,
+     note: "family: 60 to 100 mm, Rw 40 to 50 dB, F30 to F180, A1", source: "https://www.baulinks.de/bkd_file/vg-orth/VG_ORTH_gips_wandbauplatten_07062022.pdf"}
+  - {id: de_multigips_m100_085, market: DE, maker: VG-Orth Multigips, typology: gypsum_block, build_up: "gypsum wall panel M100, 850 kg/m3, elastic edge strip", thickness_mm: 100, mass_kg_m2: 87, rw: 40, kind: lab,
+     source: "https://res.cloudinary.com/baywa-ag-p/raw/upload/A32295826.pdf"}
+
+  # Czechia
+  - {id: cz_porotherm_115_profi, market: CZ, maker: Wienerberger, typology: t1, build_up: "Porotherm 11,5 Profi, 15 mm plaster both faces", thickness_mm: 145, mass_kg_m2: 141, rw: 43, fire: EI180, kind: calculated,
+     source: "https://www.tradix.cz/i/9/5/0/1/cz_por_tec_pth_11-5_profi.pdf"}
+
+  # Netherlands and Belgium: gypsum blocks
+  - {id: nl_knauf_gipsblok_70, market: NL, maker: Knauf, typology: gypsum_block, build_up: "Hydromur 70 to Isomur Zwaar 70", thickness_mm: 70, mass_kg_m2: [63, 82], kind: secondary,
+     source: "https://knauf.com/nl-NL/p/producten/gipsblokken-84571"}
+  - {id: nl_knauf_gipsblok_100, market: NL, maker: Knauf, typology: gypsum_block, build_up: "Isomur 100 to Isomur Zwaar 100", thickness_mm: 100, mass_kg_m2: [93, 112], kind: secondary,
+     source: "https://knauf.com/nl-BE/p/product/isomur-100-22298_0217"}
+
+  # Norway
+  - {id: no_norgips_single_layer_no_wool, market: "NO", maker: Norgips, typology: t3, build_up: "1 x 12.5 mm per face on 45 to 145 mm studs, no wool", thickness_mm: [70, 170], rw: [34, 39], fire: EI30, max_height_m: [2.50, 6.00], kind: lab,
+     source: "https://sintefcertification.no/product/download/1773"}
+  - {id: no_rockwool_steel_stud_walls, market: "NO", maker: Rockwool, typology: t3, build_up: "steel stud walls E50 and E75 with stone wool, 1 or 2 boards per face", rw: [41, 47], kind: lab,
+     note: "same guide: uninsulated wall Rw 40, insulated Rw 57", source: "https://www.rockwool.com/syssiteassets/o2-rockwool/dokumentasjon-og-sertifikater/brosjyrer/byggisolasjon/konstruksjonsguide-skillevegger--etasjeskillere.pdf"}

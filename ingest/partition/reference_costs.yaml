@@ -1,0 +1,56 @@
+# Price signal per m2 of installed partition, excluding VAT and decoration.
+# product and labour split the direct cost; maintenance_10y is the publisher's
+# ten-year maintenance cost. kind: itemised (a priced breakdown) or guide (a
+# range from consumer or trade guides). Read 2026-11-25.
+
+sources:
+  cype_es: https://generadordeprecios.info/obra_nueva/Fachadas_y_particiones.html
+  cype_fr: https://prix-construction.info/construction_neuve/Amenagements_et_finitions/Cloisons.html
+  de_guides: https://www.clean-invoice.com/wissen/allgemein/trockenbau-kosten-pro-qm
+  de_aac: https://meister-job.de/was-kosten-wand-aus-porenbeton/
+  uk_guides: https://www.trade2base.com/blog/stud-wall-costs-uk
+
+costs:
+  # Spain, CYPE price generator (itemised)
+  - {market: ES, source: cype_es, item: FBY000, typology: t3, build_up: "15+48+15 (48) one standard board per face", total: 32.7, product: 17.5, labour: 14.6, maintenance_10y: 1.6, kind: itemised}
+  - {market: ES, source: cype_es, item: FBY015, typology: t3, build_up: "Knauf W111.es 15+48+15", total: 33.9, product: 18.6, labour: 14.6, maintenance_10y: 1.7, kind: itemised}
+  - {market: ES, source: cype_es, item: FBY050, typology: t3, build_up: "Placo 15+48+15, studs at 600", total: 31.6, product: 17.9, labour: 13.1, maintenance_10y: 1.6, kind: itemised}
+  - {market: ES, source: cype_es, item: FBY100, typology: t3, build_up: "ATEDY-AFELMA PYL 78/600(48) LM, wool", total: 39.2, product: 23.3, labour: 15.1, maintenance_10y: 2.0, rw: 45, c: -3, fire: EI30, kind: itemised}
+  - {market: ES, source: cype_es, item: FBY019, typology: t3, build_up: "Knauf Oversize 18+70+18, high-hardness boards, tall walls", total: 44.1, product: 28.7, labour: 14.6, maintenance_10y: 2.2, kind: itemised}
+  - {market: ES, source: cype_es, item: FBY070, typology: t3, build_up: "Placo High Stil 25+70+25, tall walls", total: 53.6, product: 41.3, labour: 11.2, maintenance_10y: 2.7, kind: itemised}
+  - {market: ES, source: cype_es, item: FBY150, typology: t3, build_up: "Pladur 98 (48) MW, two standard boards per face", total: 60.3, product: 39.9, labour: 19.2, maintenance_10y: 3.0, rw: 51, c: 0, kind: itemised}
+  - {market: ES, source: cype_es, item: FBY170, typology: t3, build_up: "Fassa Gypsotech 98 (48) MW, two boards per face", total: 59.9, product: 41.6, labour: 17.1, maintenance_10y: 3.0, kind: itemised}
+  - {market: ES, source: cype_es, item: FBY060, typology: t3, build_up: "Placo acoustic 12.5x2+48+12.5x2", total: 84.6, product: 67.3, labour: 15.6, maintenance_10y: 4.2, kind: itemised}
+  - {market: ES, source: cype_es, item: FBY023, typology: t3, build_up: "Knauf W111.es Silentboard 12.5+50+12.5 LM", total: 89.2, product: 70.8, labour: 16.6, maintenance_10y: 4.5, kind: itemised}
+  - {market: ES, source: cype_es, item: FBY159, typology: t3, build_up: "Pladur 146 braced double frame 2MW, two boards per face", total: 72.9, product: 52.3, labour: 19.2, maintenance_10y: 3.6, rw: 60, c: -1, kind: itemised}
+  - {market: ES, source: cype_es, item: FBY022, typology: t3, build_up: "Knauf W112.es Drystar moisture boards, two per face", total: 117.1, product: 97.7, labour: 17.1, maintenance_10y: 5.9, kind: itemised}
+  - {market: ES, source: cype_es, item: FBY079, typology: t3, build_up: "Placo moisture-resistant, two boards per face", total: 126.9, product: 108.8, labour: 15.6, maintenance_10y: 6.4, kind: itemised}
+  - {market: ES, source: cype_es, item: FBY162, typology: t3, build_up: "Pladur WAB fire, water and impact boards, two per face", total: 167.6, product: 145.2, labour: 19.2, maintenance_10y: 25.6, rw: 51, c: 0, kind: itemised}
+  - {market: ES, source: cype_es, item: FBY018, typology: t3, build_up: "Knauf W118.es security, three boards per face, 100 mm studs", total: 295.4, product: 270.0, labour: 19.7, maintenance_10y: 14.8, kind: itemised}
+  - {market: ES, source: cype_es, item: FFQ010, typology: t1, build_up: "7 cm double hollow clay brick, unplastered", total: 22.2, product: 8.5, labour: 13.2, maintenance_10y: 0.4, kind: itemised}
+  - {market: ES, source: cype_es, item: FFQ030, typology: t1, build_up: "14 cm lightweight clay block, unplastered", total: 27.1, product: 12.9, labour: 13.7, maintenance_10y: 0.5, kind: itemised}
+  - {market: ES, source: cype_es, item: FFQ025, typology: t1, build_up: "8.5 cm aerated concrete, thin-bed, EI120, unplastered", total: 30.4, product: 20.3, labour: 9.5, maintenance_10y: 0.6, kind: itemised}
+  - {market: ES, source: cype_es, item: FFQ040, typology: t1, build_up: "12 cm acoustic perforated concrete brick, unplastered", total: 33.6, product: 10.3, labour: 22.4, maintenance_10y: 0.7, kind: itemised}
+  - {market: ES, source: cype_es, item: FFQ020, typology: t1, build_up: "20 cm hollow concrete block, unplastered", total: 40.4, product: 22.4, labour: 17.1, maintenance_10y: 0.8, kind: itemised}
+  - {market: ES, source: cype_es, item: FTS020, typology: t1, build_up: "DBBLOK 6.5 cm acoustic concrete brick, plastered both faces", total: 54.8, product: 10.7, labour: 41.3, maintenance_10y: 1.1, kind: itemised}
+  - {market: ES, source: cype_es, item: FTF010, typology: t1, build_up: "7 cm large clay brick lined with plasterboard both faces", total: 29.9, product: 11.8, labour: 17.5, kind: itemised}
+  - {market: ES, source: cype_es, item: FTY010, typology: gypsum_block, build_up: "Panelsystem TC-7 70 mm glass-fibre gypsum panel", total: 26.9, product: 16.4, labour: 10.0, maintenance_10y: 0.5, rw: 34, c: 1, fire: EI90, kind: itemised}
+  - {market: ES, source: cype_es, item: RPE005, typology: finish, build_up: "cement render, one interior face", total: 16.5, product: 1.3, labour: 14.9, maintenance_10y: 2.8, kind: itemised}
+  - {market: ES, source: cype_es, item: RRY001, typology: finish, build_up: "15 mm plasterboard bonded to masonry, one face", total: 16.0, product: 7.3, labour: 8.5, maintenance_10y: 1.8, kind: itemised}
+  # France, CYPE (Spanish material prices with French labour rates)
+  - {market: FR, source: cype_fr, item: FCO040, typology: t3, build_up: "Knauf W111 15+48+15", total: 42.6, product: 18.6, labour: 23.2, maintenance_10y: 2.1, kind: itemised}
+  - {market: FR, source: cype_fr, item: FCO080, typology: t3, build_up: "Knauf Oversize 18+70+18, tall walls", total: 52.9, product: 28.7, labour: 23.2, maintenance_10y: 2.6, kind: itemised}
+  - {market: FR, source: cype_fr, item: FCO120, typology: t3, build_up: "Knauf Silentboard 12.5+50+12.5 LM", total: 99.2, product: 70.8, labour: 26.4, maintenance_10y: 5.0, kind: itemised}
+  - {market: FR, source: cype_fr, item: FCO110, typology: t3, build_up: "Knauf Drystar, two boards per face", total: 127.4, product: 97.7, labour: 27.2, maintenance_10y: 6.4, kind: itemised}
+  - {market: FR, source: cype_fr, item: FCC010, typology: t3, build_up: "Knauf Aquapanel cement boards", total: 100.7, product: 78.3, labour: 20.4, maintenance_10y: 5.0, kind: itemised}
+  - {market: FR, source: cype_fr, item: FCR010, typology: t1, build_up: "5 cm hollow clay plaster-tile wall, unfinished", total: 37.8, product: 17.9, labour: 19.2, maintenance_10y: 0.8, kind: itemised}
+  - {market: FR, source: cype_fr, item: FCR020, typology: t1, build_up: "10 cm hollow concrete block, unfinished", total: 33.3, product: 19.5, labour: 13.0, maintenance_10y: 0.7, kind: itemised}
+  - {market: FR, source: cype_fr, item: FCR030, typology: t1, build_up: "8 cm vertically perforated clay, thin-bed, unfinished", total: 59.3, product: 31.4, labour: 26.7, maintenance_10y: 1.2, kind: itemised}
+  - {market: FR, source: cype_fr, item: FCM020, typology: t1, build_up: "10 cm fair-faced concrete block", total: 46.3, product: 14.8, labour: 30.4, maintenance_10y: 2.3, kind: itemised}
+  # Germany and the UK, guide ranges (material and installation, finish excluded)
+  - {market: DE, source: de_guides, typology: t3, build_up: "metal stud, one board per face", total: [45, 70], kind: guide}
+  - {market: DE, source: de_guides, typology: t3, build_up: "metal stud, two boards per face", total: [60, 110], kind: guide}
+  - {market: DE, source: de_guides, typology: t3, build_up: "twin frame, acoustic", total: [80, 150], kind: guide}
+  - {market: DE, source: de_aac, typology: t1, build_up: "aerated concrete wall, built by a contractor", total: [55, 110], kind: guide}
+  - {market: UK, source: uk_guides, typology: t3, build_up: "stud partition, board both faces (GBP 40 to 75)", total: [47, 88], kind: guide}
+  - {market: UK, source: uk_guides, typology: t3, build_up: "acoustic or insulated stud partition (GBP 60 to 100)", total: [70, 117], kind: guide}
