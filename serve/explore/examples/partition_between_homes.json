@@ -1,0 +1,144 @@
+{
+ "title": "Five interior partitions between two homes",
+ "request": {
+  "category": "interior_partition",
+  "context": [
+   "unit_separation"
+  ],
+  "stakeholders": [
+   "balanced_optimizer"
+  ],
+  "alternatives": [
+   {
+    "id": "Steel-stud wall, one board per face",
+    "values": {
+     "gwp": 12,
+     "wdp": 3.7,
+     "fwu": 0.11,
+     "circ_orig": 9.7,
+     "fu_recyc": 34,
+     "fu_incin": 0.0,
+     "fu_inert": 66,
+     "fu_haz": 0.01,
+     "cost_product": 28,
+     "cost_labour": 21,
+     "cost_maintenance": 11,
+     "u_value": 0.53,
+     "acoustic_reduction_pink": 41,
+     "surface_mass": 27,
+     "heat_capacity": 11,
+     "thickness": 102
+    },
+    "levels": {
+     "health": "h2",
+     "fire_reaction": "a2",
+     "impact_resistance": "category_ii"
+    }
+   },
+   {
+    "id": "Steel-stud wall, two boards per face",
+    "values": {
+     "gwp": 18,
+     "wdp": 6.2,
+     "fwu": 0.17,
+     "circ_orig": 11,
+     "fu_recyc": 29,
+     "fu_incin": 0.0,
+     "fu_inert": 70,
+     "fu_haz": 0.03,
+     "cost_product": 42,
+     "cost_labour": 29,
+     "cost_maintenance": 16,
+     "u_value": 0.5,
+     "acoustic_reduction_pink": 49,
+     "surface_mass": 48,
+     "heat_capacity": 21,
+     "thickness": 130
+    },
+    "levels": {
+     "health": "h2",
+     "fire_reaction": "a2",
+     "impact_resistance": "category_iv"
+    }
+   },
+   {
+    "id": "Plastered brick wall",
+    "values": {
+     "gwp": 29,
+     "wdp": 6.3,
+     "fwu": 0.14,
+     "circ_orig": 3.3,
+     "fu_recyc": 24,
+     "fu_incin": 0.0,
+     "fu_inert": 75,
+     "fu_haz": 0.0,
+     "cost_product": 25,
+     "cost_labour": 51,
+     "cost_maintenance": 16,
+     "u_value": 1.9,
+     "acoustic_reduction_pink": 41,
+     "surface_mass": 133,
+     "heat_capacity": 58,
+     "thickness": 133
+    },
+    "levels": {
+     "health": "h2",
+     "fire_reaction": "a1",
+     "impact_resistance": "category_iii"
+    }
+   },
+   {
+    "id": "Brick wall lined with plasterboard",
+    "values": {
+     "gwp": 32,
+     "wdp": 7.5,
+     "fwu": 0.2,
+     "circ_orig": 4.6,
+     "fu_recyc": 24,
+     "fu_incin": 0.0,
+     "fu_inert": 75,
+     "fu_haz": 0.0,
+     "cost_product": 43,
+     "cost_labour": 49,
+     "cost_maintenance": 20,
+     "u_value": 0.67,
+     "acoustic_reduction_pink": 51,
+     "surface_mass": 130,
+     "heat_capacity": 40,
+     "thickness": 189
+    },
+    "levels": {
+     "health": "h2",
+     "fire_reaction": "a2",
+     "impact_resistance": "category_iii"
+    }
+   },
+   {
+    "id": "Double brick wall on elastic bands",
+    "values": {
+     "gwp": 47,
+     "wdp": 11,
+     "fwu": 0.28,
+     "circ_orig": 4.8,
+     "fu_recyc": 35,
+     "fu_incin": 0.0,
+     "fu_inert": 64,
+     "fu_haz": 0.0,
+     "cost_product": 52,
+     "cost_labour": 78,
+     "cost_maintenance": 28,
+     "u_value": 0.48,
+     "acoustic_reduction_pink": 57,
+     "surface_mass": 213,
+     "heat_capacity": 56,
+     "thickness": 242
+    },
+    "levels": {
+     "health": "h2",
+     "fire_reaction": "a1",
+     "impact_resistance": "category_iii"
+    }
+   }
+  ]
+ }
+}
