@@ -143,7 +143,7 @@ candidates:
     source: [KAT ESC-04, KAT ESC-05, EAD]
     tests: {ranking: yes, preference: unclear, external: yes}
     outcome: pilot
-    piloted_to_test: no impact indicator exists; the pilot shows whether the situation acts through other indicators
+    piloted_to_test: no impact indicator existed at first; re-piloted on 2026-11-25 with impact_resistance added (data/partition/context_pilot_impact)
     prevalence: {band: low, basis: "school corridors, sports halls, workshops, hospital corridors; EAD use categories III and IV; judgement"}
     description: >-
       The partition lines rooms in hard everyday use, where people,

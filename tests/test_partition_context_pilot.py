@@ -1,9 +1,13 @@
+import pytest
+
 from experiments.partition_context_pilot import (
+    BOARDS,
     LEAVES,
     brief,
     candidates,
     compose,
     face_heat_capacity,
+    framed_impact,
     sample_shortlists,
     screening,
     typology,
@@ -24,6 +28,21 @@ def test_a_lining_on_both_faces_beats_one_face_on_sound_and_heat():
     two = [p for p in products if "+tr1x2" in p["source"]]
     assert min(p["sound_reduction"] for p in two) > max(p["sound_reduction"] for p in one)
     assert max(p["u_value"] for p in two) < min(p["u_value"] for p in one)
+
+
+def test_two_boards_per_face_reach_severe_unless_the_studs_are_narrow():
+    board = BOARDS["standard_12"]
+    assert framed_impact(board, boards_per_face=2, stud_mm=70) == 4
+    assert framed_impact(board, boards_per_face=2, stud_mm=48) == 2
+    assert framed_impact(board, boards_per_face=1, stud_mm=70) == board.single_layer_impact
+
+
+def test_a_studded_lining_lowers_plastered_masonry_to_the_lining_grade():
+    products = compose(0)
+    plastered = {p["impact_resistance"] for p in products if p["family"] in {"t1", "t2"}}
+    studded = {p["impact_resistance"] for p in products if "+tr1" in p["source"]}
+    assert plastered == {"Category III"}
+    assert studded == {"Category II"}
 
 
 def test_heat_capacity_never_reaches_past_the_midplane():
@@ -57,3 +76,10 @@ def test_every_screened_out_candidate_gives_a_reason():
     for candidate in screening()["candidates"]:
         assert candidate["outcome"] in {"pilot", "compliance", "value", "stakeholder", "scope"}
         assert candidate["outcome"] == "pilot" or candidate.get("reason")
+
+
+def test_a_subset_pilot_names_only_piloted_candidates():
+    record = screening()
+    assert [c.key for c in candidates(record, ["heavy_use"])] == ["heavy_use"]
+    with pytest.raises(ValueError):
+        candidates(record, ["wildfire_edge"])

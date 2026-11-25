@@ -34,6 +34,7 @@ Every value is per square metre of finished partition. A null means unknown. A 0
 
 - health: material health status, from worst to best: Hazardous substances present; Undocumented; No listed substances, uncertified; Material Health Bronze; Silver; Gold; Platinum. "Hazardous substances present" should essentially never be chosen. The step from Undocumented to screened is large; the steps between certification tiers are small.
 - fire_reaction: Euroclass reaction to fire of the exposed faces, from worst to best: Class F, E, D, C, B, A2, A1. A1 and A2 are non-combustible.
+- impact_resistance: resistance to knocks and impacts in use, as the European use category of EAD 210005 (UK duty grades Light, Medium, Heavy and Severe map onto it), from least to most robust: Category I (zones used by people with a strong incentive to take care), Category II (some incentive), Category III (little incentive, some risk of misuse), Category IV (as III, with rough use or where the wall must stop a fall).
 
 ## Building physics
 

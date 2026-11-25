@@ -1,0 +1,2 @@
+context,shortlists,discordance,discordance_low,discordance_high,winner_changed,winner_changed_low,winner_changed_high,mean_shift,mean_shift_low,mean_shift_high,drivers
+heavy_use,50,0.07716666666666666,0.0366625,0.12284166666666663,0.13,0.04,0.23,0.032035,0.020084750000000002,0.04392549999999999,impact_resistance +0.65; fire_reaction +0.41; cost_maintenance -0.25; heat_capacity +0.22

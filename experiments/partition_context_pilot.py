@@ -26,10 +26,7 @@ from experiments.context_influence import (
 SCREENING = Path(__file__).with_name("partition_context_screening.yaml")
 BRIEF_TEMPLATE = Path(__file__).with_name("partition_pilot_brief.md")
 PILOT_DIR = Path("data/partition/context_pilot")
-CHUNKS_DIR = PILOT_DIR / "chunks"
-OUT_DIR = PILOT_DIR / "out"
-INDEX_FILE = PILOT_DIR / "index.json"
-FIGURE = Path(__file__).with_name("figures") / "partition-context-influence.csv"
+FIGURES = Path(__file__).with_name("figures")
 
 ACROSS_SHARE = 0.6
 LETTERS = "ABCDE"
@@ -41,8 +38,12 @@ HEAT_DEPTH_MM = 85.0
 SHOWN = (
     "gwp", "circ_orig", "fu_recyc", "fu_inert", "fu_haz",
     "cost_product", "cost_labour", "cost_maintenance", "health", "fire_reaction",
-    "sound_reduction", "u_value", "surface_mass", "heat_capacity", "thickness",
+    "impact_resistance", "sound_reduction", "u_value", "surface_mass", "heat_capacity", "thickness",
 )
+IMPACT_LEVELS = ("Category I", "Category II", "Category III", "Category IV")
+IMPACT_POSITIONS = dict(zip(IMPACT_LEVELS, (0.0, 1 / 3, 2 / 3, 1.0)))
+MASONRY_IMPACT = 3
+NARROW_STUD_IMPACT_CAP = 2
 HEALTH_LEVELS = (
     "Hazardous substances present", "Undocumented", "No listed substances, uncertified",
     "Material Health Bronze", "Silver", "Gold", "Platinum",
@@ -58,18 +59,29 @@ class Board:
     mass: float
     gwp: float
     cost: float
+    single_layer_impact: int
     sound_bonus: float = 0.0
 
 
 BOARDS = {
-    "standard_12": Board(12.5, 8.7, 1.0, 2.5),
-    "standard_15": Board(15.0, 10.8, 1.3, 3.2),
-    "fire_12": Board(12.5, 10.3, 1.4, 3.5),
-    "fire_15": Board(15.0, 12.5, 1.6, 4.3),
-    "moisture_12": Board(12.5, 8.7, 1.3, 3.4),
-    "hard_15": Board(15.0, 13.5, 1.7, 6.0),
-    "acoustic_12": Board(12.5, 12.4, 1.5, 5.5, sound_bonus=3.0),
+    "standard_12": Board(12.5, 8.7, 1.0, 2.5, 2),
+    "standard_15": Board(15.0, 10.8, 1.3, 3.2, 2),
+    "fire_12": Board(12.5, 10.3, 1.4, 3.5, 2),
+    "fire_15": Board(15.0, 12.5, 1.6, 4.3, 3),
+    "moisture_12": Board(12.5, 8.7, 1.3, 3.4, 2),
+    "hard_15": Board(15.0, 13.5, 1.7, 6.0, 4),
+    "acoustic_12": Board(12.5, 12.4, 1.5, 5.5, 3, sound_bonus=3.0),
 }
+
+
+def framed_impact(board: Board, boards_per_face: int, stud_mm: int) -> int:
+    """EAD use category from the UK duty-grade rules: two boards per face meet Severe, a single board sets the grade, 48 mm studs cap it at Medium."""
+    grade = 4 if boards_per_face >= 2 else board.single_layer_impact
+    return min(grade, NARROW_STUD_IMPACT_CAP) if stud_mm < 70 else grade
+
+
+def impact_label(grade: int) -> str:
+    return IMPACT_LEVELS[grade - 1]
 
 
 @dataclass(frozen=True)
@@ -151,11 +163,12 @@ class Lining:
     cost_product: float
     cost_labour: float
     board_face_mass: float
+    impact: int
 
 
 LININGS = {
-    "tr1": Lining(0.21, 50, 73, 13.9, 6.9, 10.0, 10.0, 10.8),
-    "tr2": Lining(0.04, 30, 40, 8.0, 2.2, 7.0, 6.0, 7.5),
+    "tr1": Lining(0.21, 50, 73, 13.9, 6.9, 10.0, 10.0, 10.8, 2),
+    "tr2": Lining(0.04, 30, 40, 8.0, 2.2, 7.0, 6.0, 7.5, 3),
 }
 LINING_SOUND_GAIN = {("tr1", "lh70"): 16, ("tr1", "lp115"): 14, ("tr2", "lgf70"): 10}
 LINED = (("lh70", "tr1", 1), ("lh70", "tr1", 2), ("lp115", "tr1", 1), ("lgf70", "tr2", 1))
@@ -230,6 +243,7 @@ def framed_product(rng: random.Random, system: FramedSystem, board_key: str, woo
         "heat_capacity": round(system.boards_per_face * board.mass * SPECIFIC_HEAT, 1),
         "thickness": round(thickness),
         "fire_reaction": "Class A2",
+        "impact_resistance": impact_label(framed_impact(board, system.boards_per_face, system.stud_mm)),
         "gwp": round(_noisy(rng, gwp, 0.2), 1),
         "cost_product": round(_noisy(rng, product, 0.15), 1),
         "cost_labour": round(_noisy(rng, labour, 0.15), 1),
@@ -251,6 +265,7 @@ def leaf_product(rng: random.Random, key: str) -> dict:
         "heat_capacity": round(face_heat_capacity(leaf, leaf_mass), 1),
         "thickness": round(leaf.leaf_mm + 2 * PLASTER_MM),
         "fire_reaction": "Class A1",
+        "impact_resistance": impact_label(MASONRY_IMPACT),
         "gwp": round(_noisy(rng, leaf_mass * leaf.gwp_per_kg + 2 * PLASTER_GWP_PER_FACE, 0.15), 1),
         "cost_product": round(_noisy(rng, leaf.cost_product + 2 * PLASTER_COST, 0.15), 1),
         "cost_labour": round(_noisy(rng, leaf.cost_labour + 2 * PLASTER_LABOUR, 0.15), 1),
@@ -277,6 +292,7 @@ def lined_product(rng: random.Random, leaf_key: str, lining_key: str, faces: int
         "heat_capacity": round(float(np.mean(face_values)), 1),
         "thickness": base["thickness"] + faces * lining.thickness,
         "fire_reaction": "Class A2",
+        "impact_resistance": impact_label(min(MASONRY_IMPACT, lining.impact)),
         "gwp": round(base["gwp"] + faces * _noisy(rng, lining.gwp, 0.2), 1),
         "cost_product": round(base["cost_product"] + faces * _noisy(rng, lining.cost_product, 0.15), 1),
         "cost_labour": round(base["cost_labour"] + faces * _noisy(rng, lining.cost_labour, 0.15), 1),
@@ -302,6 +318,7 @@ def double_leaf_product(rng: random.Random, system: DoubleLeaf) -> dict:
         "heat_capacity": round(float(np.mean([face_heat_capacity(f, leaf_mass * s) for f, s in zip(faces, share)])), 1),
         "thickness": round(system.thickness),
         "fire_reaction": "Class A1",
+        "impact_resistance": impact_label(MASONRY_IMPACT),
         "gwp": round(_noisy(rng, gwp, 0.15), 1),
         "cost_product": round(_noisy(rng, product, 0.15), 1),
         "cost_labour": round(_noisy(rng, labour, 0.15), 1),
@@ -375,26 +392,33 @@ def screening() -> dict:
     return yaml.safe_load(SCREENING.read_text(encoding="utf-8"))
 
 
-def candidates(record: Mapping) -> list[Candidate]:
-    return [
+def candidates(record: Mapping, only: Sequence[str] | None = None) -> list[Candidate]:
+    """Candidates sent to the pilot, or the named subset of them."""
+    chosen = [
         Candidate(c["key"], c["name"], " ".join(c["description"].split()), None)
         for c in record["candidates"]
         if c["outcome"] == "pilot"
     ]
+    if only is None:
+        return chosen
+    unknown = set(only) - {c.key for c in chosen}
+    if unknown:
+        raise ValueError(f"not piloted candidates: {sorted(unknown)}")
+    return [c for c in chosen if c.key in only]
 
 
-def brief(record: Mapping) -> str:
+def brief(record: Mapping, only: Sequence[str] | None = None) -> str:
     baseline = record["baseline"]
     lines = [f"- {baseline['name']}: {' '.join(baseline['description'].split())}"]
     lines += [
         f"- {c.name}: the baseline, except that {c.description[0].lower()}{c.description[1:]}"
-        for c in candidates(record)
+        for c in candidates(record, only)
     ]
     return BRIEF_TEMPLATE.read_text(encoding="utf-8").replace("{situations}", "\n".join(lines))
 
 
-def versions(record: Mapping) -> list[str]:
-    return [*BASELINES, *(c.key for c in candidates(record))]
+def versions(record: Mapping, only: Sequence[str] | None = None) -> list[str]:
+    return [*BASELINES, *(c.key for c in candidates(record, only))]
 
 
 def situation_name(record: Mapping, version: str) -> str:
@@ -407,11 +431,16 @@ def shown(product: Mapping) -> dict:
     return {key: product.get(key) for key in SHOWN}
 
 
-def write_chunks(count: int, chunks: int, seed: int) -> None:
+def pilot_candidates(directory: Path) -> list[str] | None:
+    settings = directory / "pilot.json"
+    return json.loads(settings.read_text(encoding="utf-8"))["candidates"] if settings.exists() else None
+
+
+def write_chunks(directory: Path, count: int, chunks: int, seed: int, only: Sequence[str] | None) -> None:
     record = screening()
     products = compose(seed)
     shortlists = sample_shortlists(products, count, seed)
-    keys = versions(record)
+    keys = versions(record, only)
     placement = assign_chunks(len(shortlists), len(keys), chunks)
     rng = random.Random(seed + 1)
 
@@ -431,24 +460,25 @@ def write_chunks(count: int, chunks: int, seed: int) -> None:
         })
         index[sid] = {"shortlist": s, "version": version, "letters": letters}
 
-    CHUNKS_DIR.mkdir(parents=True, exist_ok=True)
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    (directory / "chunks").mkdir(parents=True, exist_ok=True)
+    (directory / "out").mkdir(parents=True, exist_ok=True)
     for number, part in enumerate(work, start=1):
         rng.shuffle(part)
-        (CHUNKS_DIR / f"chunk_{number:02d}.json").write_text(
+        (directory / "chunks" / f"chunk_{number:02d}.json").write_text(
             json.dumps({"scenarios": part}, ensure_ascii=False, indent=1), encoding="utf-8"
         )
-    INDEX_FILE.write_text(json.dumps(index), encoding="utf-8")
-    (PILOT_DIR / "products.json").write_text(json.dumps(products, indent=1), encoding="utf-8")
-    (PILOT_DIR / "shortlists.json").write_text(json.dumps(shortlists), encoding="utf-8")
-    (PILOT_DIR / "brief.md").write_text(brief(record), encoding="utf-8")
-    print(f"{len(products)} products; {len(index)} scenarios ({len(shortlists)} shortlists x {len(keys)} versions) in {chunks} chunks under {CHUNKS_DIR}")
+    (directory / "index.json").write_text(json.dumps(index), encoding="utf-8")
+    (directory / "products.json").write_text(json.dumps(products, indent=1), encoding="utf-8")
+    (directory / "shortlists.json").write_text(json.dumps(shortlists), encoding="utf-8")
+    (directory / "brief.md").write_text(brief(record, only), encoding="utf-8")
+    (directory / "pilot.json").write_text(json.dumps({"seed": seed, "candidates": list(only) if only else None}), encoding="utf-8")
+    print(f"{len(products)} products; {len(index)} scenarios ({len(shortlists)} shortlists x {len(keys)} versions) in {chunks} chunks under {directory / 'chunks'}")
 
 
-def collected() -> dict[tuple[int, str], dict[str, float]]:
-    index = json.loads(INDEX_FILE.read_text(encoding="utf-8"))
+def collected(directory: Path) -> dict[tuple[int, str], dict[str, float]]:
+    index = json.loads((directory / "index.json").read_text(encoding="utf-8"))
     prefs: dict[tuple[int, str], dict[str, float]] = {}
-    for path in sorted(OUT_DIR.glob("chunk_*.json")):
+    for path in sorted((directory / "out").glob("chunk_*.json")):
         for sid, rows in json.loads(path.read_text(encoding="utf-8"))["labels"].items():
             entry = index.get(sid)
             if entry is None:
@@ -469,6 +499,8 @@ def numeric(key: str, value) -> float | None:
         return HEALTH_POSITIONS[value]
     if key == "fire_reaction":
         return FIRE_POSITIONS[value]
+    if key == "impact_resistance":
+        return IMPACT_POSITIONS[value]
     return float(value)
 
 
@@ -496,12 +528,17 @@ def directions(prefs: Mapping[tuple[int, str], Mapping[str, float]], shortlists:
     }
 
 
-def analyse() -> None:
+def figure_path(directory: Path) -> Path:
+    suffix = "" if directory == PILOT_DIR else "-" + directory.name.removeprefix("context_pilot_")
+    return FIGURES / f"partition-context-influence{suffix}.csv"
+
+
+def analyse(directory: Path) -> None:
     record = screening()
-    prefs = collected()
-    shortlists = json.loads((PILOT_DIR / "shortlists.json").read_text(encoding="utf-8"))
+    prefs = collected(directory)
+    shortlists = json.loads((directory / "shortlists.json").read_text(encoding="utf-8"))
     rows = []
-    for candidate in candidates(record):
+    for candidate in candidates(record, pilot_candidates(directory)):
         row = {"context": candidate.key, **influence(prefs, candidate.key, BASELINES)}
         moved = sorted(directions(prefs, shortlists, candidate.key).items(), key=lambda kv: -abs(kv[1]))
         row["drivers"] = "; ".join(f"{k} {v:+.2f}" for k, v in moved[:4])
@@ -515,37 +552,41 @@ def analyse() -> None:
         print(f"| {r['context']} | {r['shortlists']} "
               f"| {r['discordance']:+.3f} ({r['discordance_low']:+.3f} to {r['discordance_high']:+.3f}) "
               f"| {r['winner_changed']:+.2f} | {r['mean_shift']:+.3f} | {r['drivers']} |")
-    FIGURE.parent.mkdir(parents=True, exist_ok=True)
-    with FIGURE.open("w", newline="", encoding="utf-8") as handle:
+    figure = figure_path(directory)
+    figure.parent.mkdir(parents=True, exist_ok=True)
+    with figure.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
 
 
-def status() -> None:
-    index = json.loads(INDEX_FILE.read_text(encoding="utf-8"))
+def status(directory: Path) -> None:
+    index = json.loads((directory / "index.json").read_text(encoding="utf-8"))
     done = set()
-    for path in OUT_DIR.glob("chunk_*.json"):
+    for path in (directory / "out").glob("chunk_*.json"):
         done |= set(json.loads(path.read_text(encoding="utf-8"))["labels"])
     print(f"{len(done & set(index))} of {len(index)} scenarios labelled")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--dir", type=Path, default=PILOT_DIR, help="pilot directory under data/partition")
     commands = parser.add_subparsers(dest="command", required=True)
     chunk = commands.add_parser("chunks", help="compose products, sample shortlists, write the work chunks and brief")
     chunk.add_argument("--shortlists", type=int, default=50)
     chunk.add_argument("--chunks", type=int, default=18)
     chunk.add_argument("--seed", type=int, default=0)
+    chunk.add_argument("--candidates", help="comma-separated subset of piloted candidates; all when omitted")
     commands.add_parser("status", help="count labelled scenarios")
     commands.add_parser("analyse", help="influence per context, written to experiments/figures")
     args = parser.parse_args()
     if args.command == "chunks":
-        write_chunks(args.shortlists, args.chunks, args.seed)
+        only = args.candidates.split(",") if args.candidates else None
+        write_chunks(args.dir, args.shortlists, args.chunks, args.seed, only)
     elif args.command == "status":
-        status()
+        status(args.dir)
     else:
-        analyse()
+        analyse(args.dir)
 
 
 if __name__ == "__main__":
