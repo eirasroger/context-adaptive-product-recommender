@@ -228,7 +228,7 @@ export function App() {
     setIntroducing(false);
     requestAnimationFrame(() => glideTo(outcome.current, still));
   };
-  const [example] = form.examples;
+  const example = form.examples.find((e) => e.request.category === category.key);
 
   const copyLink = async () => {
     const url = `${location.origin}${location.pathname}#${await encodeLink(

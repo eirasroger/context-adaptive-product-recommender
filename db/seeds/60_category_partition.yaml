@@ -92,9 +92,9 @@ category:
       output is no compliance statement.
 
     provenance_weights:
-      control: 0.8
+      control: 0.6
       synthetic: 0.0
-      llm: 0.2
+      llm: 0.4
       expert: 0.0
 
     indicators:
