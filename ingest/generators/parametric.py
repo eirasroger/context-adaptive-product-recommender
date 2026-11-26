@@ -223,6 +223,7 @@ def make_case(
 
     alternatives = []
     qualities = []
+    disqualified = []
     for position, value in enumerate(values):
         values_copy = dict(base.values)
         levels_copy = dict(base.levels)
@@ -238,9 +239,13 @@ def make_case(
         qualities.append(
             quality_of(registry, category_key, indicator_key, value, context_keys)
         )
+        disqualified.append(
+            indicator.is_scale and indicator.level(str(value)).is_disqualifying
+        )
 
     _, context_priority = registry.resolve_direction(category_key, indicator_key, context_keys)
     width = widened(band_width(registry, stakeholder_key, indicator_key), context_priority)
+    banded = labels_for(qualities, width)
     return ProbeCase(
         category_key=category_key,
         indicator_key=indicator_key,
@@ -249,7 +254,7 @@ def make_case(
         alternatives=tuple(alternatives),
         varied=tuple(values),
         quality=tuple(qualities),
-        prefs=labels_for(qualities, width),
+        prefs=tuple(0.0 if out else pref for pref, out in zip(banded, disqualified)),
     )
 
 

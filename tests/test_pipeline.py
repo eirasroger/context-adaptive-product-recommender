@@ -187,6 +187,22 @@ def test_a_context_stressing_an_indicator_widens_its_control_band(registry):
     assert spread(["wildfire_edge"]) > spread(["new_build_mild"]) > 0
 
 
+@pytest.mark.parametrize("category", ["concrete", "facade_system", "indoor_partition"])
+def test_a_never_selectable_level_is_labelled_zero_in_every_category(registry, category):
+    from ingest.generators.parametric import make_case
+
+    for indicator_key in registry.category(category).token_order:
+        indicator = registry.indicator(indicator_key)
+        if not indicator.is_scale or not any(level.is_disqualifying for level in indicator.levels):
+            continue
+        levels = [level.key for level in indicator.levels]
+        for stakeholder in registry.stakeholders:
+            case = make_case(registry, category, indicator_key, levels, [], stakeholder)
+            for level, pref in zip(indicator.levels, case.prefs):
+                if level.is_disqualifying:
+                    assert pref == 0.0, (indicator_key, stakeholder, level.key, pref)
+
+
 def test_a_few_training_steps_reduce_the_loss(corpus):
     registry, prepared, _ = corpus
     from model.loss import LossWeights, composite_loss
