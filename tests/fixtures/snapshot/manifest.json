@@ -1,7 +1,7 @@
 {
-  "content_hash": "e047417eb3d06d52244afb993011b78345b919216d5427e17648f7c6d33414a9",
-  "created_at": "2026-11-26T13:40:24.090206+00:00",
-  "derived_from": "ab8146e4e35aa4d06df45e875404aa24ae614798f9981c5fb592ce86d56417f1",
+  "content_hash": "8a15715ac782852dc477c27c10c76da5204ca25c025109e23dd52a10bdd80b49",
+  "created_at": "2026-11-26T18:37:24.707261+00:00",
+  "derived_from": "501c63e731b9cffa4d079e8cd9f141c5399a9c25061fc0a64fa1a15179734966",
   "filter_spec": {
     "categories": null,
     "folds": [
@@ -14,8 +14,8 @@
   "registry_content_hash": "4793dae094f987c05abbbbf2d00722055f3d5f9d943917b7b85060522dcb1f86",
   "registry_version": "0.7.0",
   "row_counts": {
-    "members": 48655,
-    "sets": 13931,
-    "values": 970346
+    "members": 49193,
+    "sets": 14081,
+    "values": 981106
   }
 }
