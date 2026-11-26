@@ -17,7 +17,8 @@ import yaml
 from scipy.stats import spearmanr
 
 from core.scoring import TIE_EPSILON
-from ingest.facade.label import open_registry, payload
+from ingest.facade.label import ROUND
+from ingest.labelling import open_registry
 from ingest.facade.synthesise import DATASET_DIR, SCENARIOS_FILE
 
 SCREENING = Path(__file__).with_name("context_screening.yaml")
@@ -113,7 +114,7 @@ def write_chunks(count: int, chunks: int, seed: int) -> None:
         alternatives = list(shortlists[s])
         rng.shuffle(alternatives)
         sid = scenario_id(seed, s, version)
-        shown, letters = payload(
+        shown, letters = ROUND.payload(
             registry, {"id": sid, "contexts": [], "stakeholders": [STAKEHOLDER], "alternatives": alternatives}
         )
         shown["applications"] = [situation_name(record, version)]

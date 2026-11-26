@@ -11,7 +11,8 @@ from typing import Mapping, Sequence
 
 import numpy as np
 
-from ingest.facade.label import INDEX_FILE, open_registry, payload
+from ingest.facade.label import ROUND
+from ingest.labelling import open_registry
 from ingest.facade.synthesise import DATASET_DIR, SCENARIOS_FILE
 
 PROBE_DIR = DATASET_DIR / "missing_probe"
@@ -49,7 +50,7 @@ def write_chunks(count: int, chunks: int, seed: int) -> None:
     if chunks < len(VERSIONS):
         raise ValueError(f"{len(VERSIONS)} versions need at least {len(VERSIONS)} chunks")
     registry = open_registry()
-    sent = set(json.loads(INDEX_FILE.read_text(encoding="utf-8"))) if INDEX_FILE.exists() else set()
+    sent = set(json.loads(ROUND.index_file.read_text(encoding="utf-8"))) if ROUND.index_file.exists() else set()
     scenarios = json.loads((DATASET_DIR / SCENARIOS_FILE).read_text(encoding="utf-8"))
     rng = random.Random(seed)
     chosen = rng.sample([s for s in scenarios if s["id"] not in sent and eligible(s)], count)
@@ -63,7 +64,7 @@ def write_chunks(count: int, chunks: int, seed: int) -> None:
         alternatives = list(shown["alternatives"])
         rng.shuffle(alternatives)
         sid = "m" + hashlib.sha1(f"{seed}:{s}:{v}".encode()).hexdigest()[:10]
-        rendered, letters = payload(registry, dict(shown, id=sid, alternatives=alternatives))
+        rendered, letters = ROUND.payload(registry, dict(shown, id=sid, alternatives=alternatives))
         work[chunk].append(rendered)
         index[sid] = {"shortlist": s, "version": VERSIONS[v], "letters": letters, "target": target}
 

@@ -60,7 +60,7 @@ def test_extending_keeps_every_existing_set_and_appends_combined_contexts(regist
 
 
 def test_a_changed_scenario_no_longer_matches_its_fingerprint():
-    from ingest.facade.label import fingerprint
+    from ingest.labelling import fingerprint
 
     scenario = {"id": "s", "contexts": ["hot_summer"], "stakeholders": ["x"], "alternatives": [{"id_prod": "a", "gwp": 1.0}]}
     assert fingerprint(scenario) == fingerprint(dict(scenario, shortlist="within"))

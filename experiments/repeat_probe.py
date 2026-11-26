@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 
 from core.scoring import TIE_EPSILON
-from ingest.facade.label import CHUNKS_DIR as LABEL_CHUNKS_DIR, INDEX_FILE
+from ingest.facade.label import ROUND
 from ingest.facade.synthesise import DATASET_DIR
 
 PROBE_DIR = DATASET_DIR / "repeat_probe"
@@ -33,7 +33,7 @@ def held_out_scenarios(snapshot_dir: Path) -> set[str]:
 def sent_records() -> dict[str, dict]:
     """Every scenario as the first labeller saw it, by id."""
     records = {}
-    for path in sorted(LABEL_CHUNKS_DIR.glob("chunk_*.json")):
+    for path in sorted(ROUND.chunks_dir.glob("chunk_*.json")):
         for scenario in json.loads(path.read_text(encoding="utf-8"))["scenarios"]:
             records[scenario["scenario_id"]] = scenario
     return records
@@ -68,7 +68,7 @@ def first_labels() -> dict[str, dict[str, float]]:
 
 def repeat_labels() -> dict[str, dict[str, float]]:
     """The probe's labels, by scenario and product, through the letters the scenario was sent with."""
-    letters = json.loads(INDEX_FILE.read_text(encoding="utf-8"))
+    letters = json.loads(ROUND.index_file.read_text(encoding="utf-8"))
     labels = {}
     for path in sorted(OUT_DIR.glob("chunk_*.json")):
         for scenario, rows in json.loads(path.read_text(encoding="utf-8"))["labels"].items():

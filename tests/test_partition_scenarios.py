@@ -6,6 +6,7 @@ import pytest
 from core import registry as registry_module
 from db.seed import seed
 from db.session import create_all, create_db_engine, session_factory
+from ingest.labelling import fingerprint
 from ingest.partition import label, synthesise
 
 
@@ -37,7 +38,7 @@ def test_a_mixed_shortlist_always_holds_two_typologies_or_more():
 def test_the_labeller_sees_letters_and_indicators_never_the_typology_or_sources(registry):
     scenario = {"id": "s", "contexts": ["heavy_use"], "stakeholders": ["balanced_optimizer"],
                 "alternatives": [POOLS["framed"][0], POOLS["masonry"][0]]}
-    shown, letters = label.payload(registry, scenario)
+    shown, letters = label.ROUND.payload(registry, scenario)
     text = json.dumps(shown)
     assert "framed" not in text and "masonry" not in text and "uuid" not in text
     assert letters == {"A": "framed_0", "B": "masonry_0"}
@@ -48,4 +49,4 @@ def test_a_changed_value_changes_the_fingerprint():
     scenario = {"contexts": ["heavy_use"], "stakeholders": ["balanced_optimizer"], "alternatives": [_product("a", "framed")]}
     changed = json.loads(json.dumps(scenario))
     changed["alternatives"][0]["gwp"] = 21.0
-    assert label.fingerprint(scenario) != label.fingerprint(changed)
+    assert fingerprint(scenario) != fingerprint(changed)

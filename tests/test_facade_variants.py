@@ -4,7 +4,7 @@ import random
 import pytest
 
 from ingest.facade import synthesise, variants
-from ingest.facade.label import of_kind
+from ingest.labelling import of_kind
 
 PRODUCTS = {
     "sandwich_panel": {"gwp": 35.0, "wdp": 11.0, "fwu": 0.2, "circ_orig": 13.0, "fu_recyc": 44.0, "fu_incin": 0.0,

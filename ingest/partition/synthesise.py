@@ -71,7 +71,7 @@ def synthesise(registry: Registry, products: list[dict], sets: int, seed: int) -
 
 
 def main() -> None:
-    from ingest.partition.label import open_registry
+    from ingest.labelling import open_registry
 
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--sets", type=int, default=4_000)
