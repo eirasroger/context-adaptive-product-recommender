@@ -1,6 +1,6 @@
 {
   "checkpoint": "serve/release/model.pt",
-  "model_sha256": "0a0c3a864354ef80900ec178203a379fd21890168ef347833de97fdd2258c835",
+  "model_sha256": "bcaaae03803cd1969f401d1dfcf30b32ec70a29f2126e5b1af3da6c9f08d334c",
   "registry_version": "0.7.0",
   "snapshot": "tests/fixtures/snapshot",
   "seed": 0,

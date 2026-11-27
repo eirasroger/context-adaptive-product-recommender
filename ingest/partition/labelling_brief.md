@@ -24,7 +24,11 @@ Values are per square metre of finished partition. A null means unknown; a 0 is 
 - wdp (m³ world-equivalent/m²): scarcity-weighted water deprivation, lower is better. Typical 1 to 55.
 - fwu (m³/m²): net freshwater use, lower is better. Typical 0.06 to 1.2; differences under a factor of two are minor.
 - circ_orig (%): share of the wall's mass from secondary material. Higher is better; above about 30% is a real strength.
-- End of life, as shares of the wall's mass: fu_recyc recycled or reused (higher is better); fu_incin burnt with energy recovery (neutral); fu_inert sent to inert landfill (lower is better); fu_haz hazardous waste (lower is strongly better; above 1% is a clear drawback).
+- End of life, as shares of the wall's mass in per cent; the four sum to 100. Each value is already a percentage: fu_haz 0.02 is 0.02 %, far below 1 %, and fu_haz 2 is 2 %. Never multiply by 100.
+  - fu_recyc (%): recycled or reused. Higher is better.
+  - fu_incin (%): burnt with energy recovery. Depends on the context.
+  - fu_inert (%): sent to inert landfill. Lower is better.
+  - fu_haz (%): hazardous waste. Lower is strongly better; above 1 % is a clear drawback, and most walls sit under 0.1 %.
 
 ## Cost (currency per m², lower is better)
 
