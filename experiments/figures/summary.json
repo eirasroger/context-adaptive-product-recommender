@@ -9,25 +9,13 @@
   },
   "categories": {
     "concrete": {
-      "shortlists": 300,
-      "shap_rank_correlation": {
-        "all": 0.6227130857661786,
-        "unmasked": 0.5688101668219449
-      }
+      "shortlists": 300
     },
     "facade_system": {
-      "shortlists": 300,
-      "shap_rank_correlation": {
-        "all": 0.6282743697196789,
-        "unmasked": 0.6513967027998467
-      }
+      "shortlists": 300
     },
     "indoor_partition": {
-      "shortlists": 300,
-      "shap_rank_correlation": {
-        "all": 0.6304737580173262,
-        "unmasked": 0.6283884018047642
-      }
+      "shortlists": 300
     }
   }
 }

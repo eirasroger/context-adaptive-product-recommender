@@ -22,8 +22,9 @@ def pyplot():
     import matplotlib.pyplot as plt
 
     plt.rcParams.update({
-        "font.family": "sans-serif",
-        "font.sans-serif": ["Segoe UI", "Helvetica Neue", "Arial", "DejaVu Sans"],
+        "font.family": "serif",
+        "font.serif": ["Times New Roman", "Times", "Nimbus Roman", "DejaVu Serif"],
+        "mathtext.fontset": "stix",
         "font.size": 9,
         "figure.facecolor": SURFACE,
         "axes.facecolor": SURFACE,
@@ -39,6 +40,7 @@ def pyplot():
     return plt
 
 
-def title(fig, heading: str, subtitle: str) -> None:
+def title(fig, heading: str, subtitle: str = "") -> None:
     fig.text(0.01, 0.985, heading, fontsize=12, fontweight="semibold", va="top")
-    fig.text(0.01, 0.95, subtitle, fontsize=9, color=INK_SECONDARY, va="top", wrap=True)
+    if subtitle:
+        fig.text(0.01, 0.95, subtitle, fontsize=9, color=INK_SECONDARY, va="top", wrap=True)

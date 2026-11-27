@@ -1,0 +1,25 @@
+{
+  "model_sha256": "0a0c3a864354ef80900ec178203a379fd21890168ef347833de97fdd2258c835",
+  "registry_version": "0.7.0",
+  "computed": "2026-11-27",
+  "categories": {
+    "concrete": {
+      "rank_correlation": 0.6905255432417943,
+      "r2": 0.6207809855396986,
+      "slope": 0.8017955681525544,
+      "intercept": -0.010020022231726522
+    },
+    "facade_system": {
+      "rank_correlation": 0.6796730525728795,
+      "r2": 0.6873269715389463,
+      "slope": 0.7672920112848989,
+      "intercept": -0.006755007323247497
+    },
+    "indoor_partition": {
+      "rank_correlation": 0.7087054382222704,
+      "r2": 0.7562256152568109,
+      "slope": 0.6542959617814732,
+      "intercept": -0.0006495779431504363
+    }
+  }
+}

@@ -244,6 +244,7 @@ def promote(
         from experiments import attribution
 
         attribution.run(checkpoint=release_dir / MODEL_FILE, snapshot_dir=fixture_dir, out=figures)
+        print(attribution.shap_status(release_dir / MODEL_FILE, figures))
     return manifest
 
 

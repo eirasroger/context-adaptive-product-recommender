@@ -26,8 +26,6 @@ def available() -> bool:
 MISSING = -1.0
 
 DEFAULT_BACKGROUND = 60
-DEFAULT_SAMPLES = 400
-MAX_SAMPLES = 4000
 
 
 @dataclass(frozen=True)
@@ -166,7 +164,6 @@ def explain(
     background_samples: Sequence[dict] | None = None,
     background_origin: str = "reference ranges",
     background_size: int = DEFAULT_BACKGROUND,
-    nsamples: int = DEFAULT_SAMPLES,
     device: str = "cpu",
 ) -> dict:
     try:
@@ -206,12 +203,10 @@ def explain(
     background = _background(
         columns, registry, category_key, background_samples, background_size
     )
-    summary = shap.kmeans(background, min(10, len(background)))
-
-    explainer = shap.KernelExplainer(predict, summary)
+    explainer = shap.KernelExplainer(predict, background)
     row = _row(columns, subject).reshape(1, -1)
     raw = explainer.shap_values(
-        row, nsamples=min(nsamples, MAX_SAMPLES), silent=True
+        row, nsamples="auto", l1_reg=False, silent=True
     )
     if isinstance(raw, list):
         raw = raw[0]
@@ -250,7 +245,7 @@ def explain(
         ],
         "background": background_origin if background_samples else "reference ranges",
         "background_size": int(len(background)),
-        "nsamples": int(min(nsamples, MAX_SAMPLES)),
+        "nsamples": int(explainer.nsamples),
     }
 
 

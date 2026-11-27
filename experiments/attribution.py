@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import random
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -26,6 +27,8 @@ SNAPSHOT = ROOT / "tests" / "fixtures" / "snapshot"
 CHECKPOINT = ROOT / "serve" / "release" / "model.pt"
 OUTPUT = ROOT / "experiments" / "figures"
 SUMMARY = "summary.json"
+SHAP_RECORD = "shap-agreement.json"
+SHAP_COMMAND = "python -m experiments.attribution --shap"
 
 
 @dataclass(frozen=True)
@@ -432,38 +435,57 @@ def family_shares(
     return rows_out
 
 
-def agreement(
-    registry: Registry, pairs: Sequence[dict], masked: dict[str, str], title: str, path: Path
-) -> dict[str, float]:
-    """Plot withholding against SHAP and return their rank correlation."""
+def agreement(pairs: Sequence[dict], title: str, path: Path) -> dict[str, float]:
+    """Plot withholding against SHAP with a least-squares line; return the fit and the rank correlation."""
     plt = pyplot()
 
     x = np.array([p["withholding"] for p in pairs])
     y = np.array([p["shap"] for p in pairs])
-    shown = np.array([p["indicator"] not in masked for p in pairs])
-    rho = {
-        "all": rank_correlation(x, y),
-        "unmasked": rank_correlation(x[shown], y[shown]),
-    }
+    slope, intercept = np.polyfit(x, y, 1)
+    residual = y - (slope * x + intercept)
+    r2 = 1.0 - float(residual @ residual) / float(((y - y.mean()) ** 2).sum())
 
     fig, ax = plt.subplots(figsize=(5.8, 5.0))
-    fig.subplots_adjust(left=0.15, right=0.96, top=0.76, bottom=0.12)
+    fig.subplots_adjust(left=0.15, right=0.96, top=0.92, bottom=0.12)
     ax.axhline(0, color=GRID, linewidth=1, zorder=0)
     ax.axvline(0, color=GRID, linewidth=1, zorder=0)
-    ax.scatter(
-        x[shown], y[shown], s=22, color=POSITIVE, edgecolors=SURFACE, linewidths=1, zorder=2,
+    ax.scatter(x, y, s=22, color=POSITIVE, edgecolors=SURFACE, linewidths=1, zorder=2)
+    xlim, ylim = ax.get_xlim(), ax.get_ylim()
+    ax.plot(xlim, [slope * end + intercept for end in xlim], color=POSITIVE, linewidth=0.8,
+            linestyle=(0, (4, 3)), zorder=1)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    sign = "+" if intercept >= 0 else "−"
+    _label_below_line(
+        fig, ax, np.column_stack([x, y]), slope, intercept,
+        f"y = {slope:.2f}x {sign} {abs(intercept):.3f},  R² = {r2:.2f}",
     )
     ax.set_xlabel("Shift in score when the indicator is withheld")
     ax.set_ylabel("SHAP contribution")
     ax.tick_params(length=0)
-    figure_title(
-        fig, title,
-        f"One point per alternative and indicator ({int(shown.sum())} points). "
-        f"Rank correlation {rho['unmasked']:.2f}." + masking_note(registry, masked),
-    )
+    figure_title(fig, title)
     fig.savefig(path, dpi=200)
     plt.close(fig)
-    return rho
+    return {
+        "rank_correlation": rank_correlation(x, y),
+        "r2": r2, "slope": float(slope), "intercept": float(intercept),
+    }
+
+
+def _label_below_line(fig, ax, points: np.ndarray, slope: float, intercept: float, text: str) -> None:
+    """Write the label just below the line, at the first spot from its upper end that covers no point."""
+    renderer = fig.canvas.get_renderer()
+    shown = ax.transData.transform(points)
+    x0, x1 = ax.get_xlim()
+    for share in np.linspace(0.95, 0.05, 19):
+        anchor = x0 + share * (x1 - x0)
+        label = ax.annotate(text, (anchor, slope * anchor + intercept), xytext=(4, -4),
+                            textcoords="offset points", va="top", color=INK_SECONDARY)
+        box = label.get_window_extent(renderer).padded(5)
+        inside = ax.bbox.contains(box.x0, box.y0) and ax.bbox.contains(box.x1, box.y1)
+        if inside and not any(box.contains(px, py) for px, py in shown):
+            return
+        label.remove()
 
 
 def _write_csv(path: Path, rows: Sequence[dict]) -> None:
@@ -510,10 +532,10 @@ def run(
     snapshot_dir: Path = SNAPSHOT,
     out: Path = OUTPUT,
     sets: int = 300,
-    shap_alternatives: int = 30,
     seed: int = 0,
     device: str = "cpu",
 ) -> dict:
+    """The withholding figures; promotion runs this."""
     from model import checkpoint as checkpoint_module
     from serve.release import digest
 
@@ -584,35 +606,103 @@ def run(
         )
         _write_csv(out / f"{category_key}-family-share.csv", shares)
 
-        summary = {"shortlists": len(chosen)}
-        if shap_alternatives:
-            summary["shap_rank_correlation"] = _shap_agreement(
-                model, registry, chosen, shap_alternatives, seed, device, out,
-                category_key, masked,
-            )
-        report["categories"][category_key] = summary
+        report["categories"][category_key] = {"shortlists": len(chosen)}
 
     (out / SUMMARY).write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report
 
 
-def _shap_agreement(
-    model, registry, chosen, count, seed, device, out, category_key, masked
-) -> dict[str, float]:
+def run_shap(
+    checkpoint: Path = CHECKPOINT,
+    snapshot_dir: Path = SNAPSHOT,
+    out: Path = OUTPUT,
+    sets: int = 300,
+    explained: int = 30,
+    seed: int = 0,
+    device: str = "cpu",
+) -> dict:
+    """Withholding against SHAP, run on request, recorded with the model it describes."""
+    from datetime import date
+
+    from model import checkpoint as checkpoint_module
+    from serve.release import digest
+
+    model, meta, _ = checkpoint_module.load(checkpoint, device=device)
+    registry = checkpoint_module.load_registry(checkpoint)
+    everything = load_shortlists(Path(snapshot_dir))
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
+    record: dict = {
+        "model_sha256": digest(Path(checkpoint)),
+        "registry_version": meta.registry_version,
+        "computed": date.today().isoformat(),
+        "categories": {},
+    }
+    for category_key in sorted({s.category_key for s in everything}):
+        pool = [s for s in everything if s.category_key == category_key]
+        chosen = random.Random(seed).sample(pool, min(sets, len(pool)))
+        record["categories"][category_key] = _shap_agreement(
+            model, registry, checkpoint, chosen, explained, seed, device, out, category_key,
+        )
+    (out / SHAP_RECORD).write_text(json.dumps(record, indent=2), encoding="utf-8")
+    return record
+
+
+def shap_status(checkpoint: Path = CHECKPOINT, out: Path = OUTPUT) -> str:
+    """Whether the SHAP figures describe this model."""
+    from serve.release import digest
+
+    path = Path(out) / SHAP_RECORD
+    if not path.exists():
+        return f"SHAP figures: none yet; {SHAP_COMMAND}"
+    record = json.loads(path.read_text(encoding="utf-8"))
+    if record["model_sha256"] == digest(Path(checkpoint)):
+        return f"SHAP figures: match this model (computed {record['computed']})"
+    return (
+        f"SHAP figures: from an older model (computed {record['computed']}, registry "
+        f"{record['registry_version']}); {SHAP_COMMAND} to refresh, about 30 minutes"
+    )
+
+
+_worker: dict = {}
+
+
+def _load_worker(checkpoint: Path, device: str) -> None:
+    from model import checkpoint as checkpoint_module
+
+    torch.set_num_threads(1)
+    _worker["model"] = checkpoint_module.load(checkpoint, device=device)[0]
+    _worker["registry"] = checkpoint_module.load_registry(checkpoint)
+    _worker["device"] = device
+
+
+def _explain(job: tuple) -> list[dict]:
     from experiments import shap_slices
+
+    number, category_key, shortlist, target, background = job
+    np.random.seed(number)  # KernelExplainer samples coalitions from numpy's global generator
+    return shap_slices.explain(
+        _worker["model"], _worker["registry"], category_key, shortlist.alternatives, target,
+        shortlist.contexts, shortlist.stakeholders,
+        background_samples=background, background_origin="test fold", device=_worker["device"],
+    )["indicators"]
+
+
+def _shap_agreement(
+    model, registry, checkpoint, chosen, count, seed, device, out, category_key
+) -> dict[str, float]:
+    from concurrent.futures import ProcessPoolExecutor
 
     rng = random.Random(seed)
     background = shap_samples(chosen)
+    picked = [(s, rng.randrange(len(s.alternatives))) for s in rng.sample(chosen, min(count, len(chosen)))]
+    jobs = [(number, category_key, s, target, background) for number, (s, target) in enumerate(picked)]
+    with ProcessPoolExecutor(os.cpu_count(), initializer=_load_worker, initargs=(checkpoint, device)) as pool:
+        explanations = list(pool.map(_explain, jobs))
     pairs: list[dict] = []
-    for shortlist in rng.sample(chosen, min(count, len(chosen))):
-        target = rng.randrange(len(shortlist.alternatives))
+    for (shortlist, target), explained in zip(picked, explanations):
         withheld = attribution(model, registry, shortlist, device)
-        explained = shap_slices.explain(
-            model, registry, category_key, shortlist.alternatives, target,
-            shortlist.contexts, shortlist.stakeholders,
-            background_samples=background, background_origin="test fold", device=device,
-        )
-        for entry in explained["indicators"]:
+        for entry in explained:
             if entry["indicator"] in withheld:
                 pairs.append({
                     "indicator": entry["indicator"],
@@ -620,10 +710,7 @@ def _shap_agreement(
                     "shap": entry["contribution"],
                 })
     _write_csv(out / f"{category_key}-shap-agreement.csv", pairs)
-    return agreement(
-        registry, pairs, masked, "Withholding compared with SHAP",
-        out / f"{category_key}-shap-agreement.png",
-    )
+    return agreement(pairs, "Withholding compared with SHAP", out / f"{category_key}-shap-agreement.png")
 
 
 def main() -> None:
@@ -632,14 +719,18 @@ def main() -> None:
     parser.add_argument("--snapshot", type=Path, default=SNAPSHOT)
     parser.add_argument("--out", type=Path, default=OUTPUT)
     parser.add_argument("--sets", type=int, default=300, help="shortlists sampled per category")
-    parser.add_argument("--shap", type=int, default=30, help="alternatives to explain with SHAP; 0 skips")
+    parser.add_argument("--shap", action="store_true", help="only the SHAP comparison, about 30 minutes")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--device", default="cpu")
     args = parser.parse_args()
 
-    report = run(args.checkpoint, args.snapshot, args.out, args.sets, args.shap, args.seed, args.device)
+    if args.shap:
+        report = run_shap(args.checkpoint, args.snapshot, args.out, args.sets, seed=args.seed, device=args.device)
+    else:
+        report = run(args.checkpoint, args.snapshot, args.out, args.sets, args.seed, args.device)
     print(json.dumps(report, indent=2))
     print(f"figures and tables in {args.out}")
+    print(shap_status(args.checkpoint, args.out))
 
 
 if __name__ == "__main__":
